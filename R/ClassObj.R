@@ -3,7 +3,6 @@ methods::setClass("scTypeEval",
                   slots = c(
                      counts = "dgCMatrix", # raw counts
                      metadata = "data.frame", # data.frame with metadata
-                     norm.param = "list", # normalization parameters to normalize a subset of genes on the fly
                      consistency = "list", # actual consistency results assays
                      gene.lists = "list", # list of either HGV, markers
                      black.list = "character", # list of genes in black list
