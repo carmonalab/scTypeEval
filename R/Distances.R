@@ -5,7 +5,7 @@ compute_stat_dist <- function(norm.mat, dist.method) {
 
 compute_jaccard <- function(mat) {
    mat[mat != 0] <- 1  # Convert to binary
-   as.dist(1 - tcrossprod(mat) / Matrix::rowSums(mat + t(mat)))  # Jaccard distance calculation without extra dependencies
+   as.dist(1 - Matrix::tcrossprod(mat) / Matrix::rowSums(mat + t(mat)))  # Jaccard distance calculation without extra dependencies
 }
 
 
@@ -35,11 +35,11 @@ compute_gower <- function(mat, norm.mat) {
 
 compute_bray_curtis <- function(norm.mat) {
    row_sums <- Matrix::rowSums(norm.mat)
-   as.dist(1 - tcrossprod(norm.mat) / outer(row_sums, row_sums, "+"))
+   as.dist(1 - Matrix::tcrossprod(norm.mat) / outer(row_sums, row_sums, "+"))
 }
 
 compute_cosine <- function(norm.mat) {
-   dot_product <- tcrossprod(norm.mat)
+   dot_product <- Matrix::tcrossprod(norm.mat)
    magnitude <- sqrt(Matrix::rowSums(norm.mat^2))
    cosine_similarity <- dot_product / outer(magnitude, magnitude)
    as.dist(1 - cosine_similarity)
