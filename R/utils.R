@@ -32,9 +32,3 @@ set_parallel_params <- function(ncores = NULL,
 }
 
 
-
-
-clr_function <- function(x){
-   #https://github.com/satijalab/seurat/blob/1549dcb3075eaeac01c925c4b4bb73c73450fc50/R/preprocessing.R#L4418
-   return(log1p(x = x / (exp(x = sum(log1p(x = x[x > 0]), na.rm = TRUE) / length(x = x)))))
-}
