@@ -44,6 +44,22 @@ get.GeomMean <- function(mat,
 #                                                        mat,
 #                                                        verbose = FALSE)
 
+# join function to get params for normalization
+get.Normalization_params <- function(mat,
+                                     method = c("Log1p", "CLR", "pearson"),
+                                     margin = 2L,
+                                     size_factors = TRUE){
+   # Run the requested methods
+   norm_params <- switch(method[1],
+                         "Log1p" = get.SumCounts(mat, margin),
+                         "CLR" = get.GeoMean(mat, margin),
+                         "pearson" = transformGamPoi:::.handle_size_factors(size_factors, data = mat),
+                         stop(method, " is not a supported normalization method.")
+   )
+   
+   return(norm_params)
+}
+
 
 ########################################################################################################
 # Normalization 
@@ -62,9 +78,9 @@ Log_Normalize <- function(mat,
    total.counts <- total.counts[cell.ids]
    
    # Normalize the matrix by scaling the values using the precomputed total counts per cell
-   xnorm <- sweep(mat, MARGIN = 2, total.counts, FUN = "/")  # Divide by total counts per cell
+   xnorm <- sweep(mat, MARGIN = margin, total.counts, FUN = "/")  # Divide by total counts per cell
    # Scale by the given scale factor
-   xnorm <- sweep(xnorm, MARGIN = 2, scale.factor, FUN = "*")
+   xnorm <- sweep(xnorm, MARGIN = margin, scale.factor, FUN = "*")
    # Apply log1p normalization efficiently
    xnorm <- log1p(xnorm)
    
@@ -74,7 +90,8 @@ Log_Normalize <- function(mat,
 
 
 clr_Normalize <- function(mat,
-                          GeomMeans = NULL){
+                          GeomMeans = NULL,
+                          margin = 2L){
    cell.ids <- colnames(mat)
    if(!all(cell.ids %in% names(GeomMeans))){
       stop("Missing normalization parameters: Geometric mean")
@@ -84,7 +101,7 @@ clr_Normalize <- function(mat,
    GeomMeans <- GemoMeans[cell.ids]
    
    # Divide by geometric means
-   xnorm <- sweep(mat, MARGIN = 2, GeomMeans, FUN = "/")  
+   xnorm <- sweep(mat, MARGIN = margin, GeomMeans, FUN = "/")  
    # Apply log1p normalization efficiently
    xnorm <- log1p(xnorm)
    
@@ -173,4 +190,39 @@ residual_transform <- function(data,
    }else{
       list(Residuals = resid, fit = fit)
    }
+}
+
+
+
+Normalize_data <- function(mat,
+                           method = c("Log1p", "CLR", "pearson"),
+                           margin = 2L,
+                           scale.factor = 1e4,
+                           size_factors = TRUE,
+                           norm.params = NULL,
+                           residual_type = "pearson",
+                           ...){
+   
+   if(is.null(norm.params)){
+   norm.params <- get.Normalization_params(mat,
+                                           method = method[1],
+                                           margin = margin,
+                                           size_factors = size_factors)
+   }
+   
+   norm.mat <- switch(method[1],
+                         "Log1p" = Log_Normalize(mat,
+                                                 scale.factor = scale.factor,
+                                                 total.counts = norm.params,
+                                                 margin = margin),
+                         "CLR" = clr_Normalize(mat,
+                                               GeomMeans = norm.params,
+                                               margin = margin),
+                         "pearson" = residual_transform(data = mat,
+                                                        size_factors = norm.params,
+                                                        residual_type = residual_type,
+                                                        ...),
+                         stop(method, " is not a supported normalization method.")
+   )
+   
 }
