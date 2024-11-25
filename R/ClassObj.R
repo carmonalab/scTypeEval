@@ -21,12 +21,12 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
    
    # Set default for consistency if not provided
    if (is.null(args$consistency)) {
-      args$consistency <- list(intraSample = NULL, interSample = NULL)
+      args$consistency <- list()
    }
    
    # Set default for reductions if not provided
    if (is.null(args$reductions)) {
-      args$reductions <- list(intraSample = NULL, interSample = NULL)
+      args$reductions <- list()
    }
    
    # Set default for metadata if not provided
