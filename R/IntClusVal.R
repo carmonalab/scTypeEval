@@ -254,8 +254,10 @@ compute_i_index <- function(norm.mat,
 
 # Main dispatcher for internal validation metrics
 # Return a vector as long as the number of ident with the consistency value
-calculate_IntVal_metric <- function(norm.mat, 
-                                    metric, 
+calculate_IntVal_metric <- function(mat = NULL,
+                                    norm.mat = NULL,
+                                    metrics,  # Accept a vector of metric names
+                                    dist.method = "euclidean",
                                     ident, 
                                     dist = NULL, 
                                     centroids = NULL, 
@@ -263,15 +265,44 @@ calculate_IntVal_metric <- function(norm.mat,
                                     KNNGraph_k = 5, 
                                     hclust.method = "ward.D2") {
    
-   # Run the requested metric
-   switch(metric,
-          "silhouette" = compute_silhouette(dist, ident),
-          "modularity" = compute_modularity(dist, ident, KNNGraph_k),
-          "ward" = compute_ward(dist, ident, hclust.method),
-          "inertia" = if(is.null(inertia)){compute_inertia(norm.mat, ident, centroids)} else {inertia}, 
-          "Xie-Beni" = compute_xie_beni(norm.mat, ident, inertia, centroids),
-          "S_Dbw" = compute_s_dbw(norm.mat, ident, centroids),
-          "I" = compute_i_index(norm.mat, ident, centroids),
-          stop(metric, " is not a supported consistency method.")
-   )
+   # Validate metrics input
+   if (!all(metrics %in% c("silhouette", "modularity", "ward",
+                           "inertia", "Xie-Beni", "S_Dbw", "I"))) {
+      stop("One or more requested metrics are not supported.")
+   }
+   
+   # Precompute distance if needed
+   dist.need <- c("silhouette", "modularity", "ward")
+   if (is.null(dist) && any(metrics %in% dist.need)) {
+      dist <- get.distance(mat = mat,
+                           norm.mat = norm.mat,
+                           dist.method = dist.method)
+   }
+   
+   # Precompute inertia if needed
+   if ("inertia" %in% metrics && is.null(inertia)) {
+      inertia <- compute_inertia(norm.mat = norm.mat,
+                                 ident = ident,
+                                 centroids = centroids)
+   }
+   
+   # Initialize results list
+   results <- list()
+   
+   # Run requested metrics
+   for (metric in metrics) {
+      results[[metric]] <- switch(metric,
+                                  "silhouette" = compute_silhouette(dist, ident),
+                                  "modularity" = compute_modularity(dist, ident, KNNGraph_k),
+                                  "ward" = compute_ward(dist, ident, hclust.method),
+                                  "inertia" = inertia, 
+                                  "Xie-Beni" = compute_xie_beni(norm.mat, ident, inertia, centroids),
+                                  "S_Dbw" = compute_s_dbw(norm.mat, ident, centroids),
+                                  "I" = compute_i_index(norm.mat, ident, centroids),
+                                  stop(metric, " is not a supported consistency method.")
+      )
+   }
+   
+   return(results)
 }
+
