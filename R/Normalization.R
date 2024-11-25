@@ -9,8 +9,18 @@
 
 # Parameters
 # get total counts
-get.SumCounts <- function(mat){
-   colSums(mat)
+get.SumCounts <- function(mat,
+                          margin = 2L){
+   if(!margin %in% c(1,2)){
+      stop("Margin must be either 1 (cells as rows) or 2 (cells as column)")
+   }
+   
+   if(margin == 2) {
+   r <- Matrix::colSums(mat) 
+   } else if (margin == 1) {
+      r <- Matrix::rowSums(mat)
+   }
+   return (r)
 }
 
 GeomMean <- function(x){ 
@@ -30,13 +40,13 @@ get.GeomMean <- function(mat,
 
 # size factors for pearson residuals
 # https://github.com/const-ae/transformGamPoi/blob/10bcccd4fc02e2659c2803ec97ccfbc6215e9600/R/helpers.R#L116
-size_factors <- transformGamPoi:::.handle_size_factors(size_factors = TRUE,
-                                                       mat,
-                                                       verbose = FALSE)
+# size_factors <- transformGamPoi:::.handle_size_factors(size_factors = TRUE,
+#                                                        mat,
+#                                                        verbose = FALSE)
 
 
-
-# Normalization
+########################################################################################################
+# Normalization 
 
 Log_Normalize <- function(mat,
                           scale.factor = 1e4,
@@ -64,17 +74,17 @@ Log_Normalize <- function(mat,
 
 
 clr_Normalize <- function(mat,
-                          GeoMeans = NULL){
+                          GeomMeans = NULL){
    cell.ids <- colnames(mat)
-   if(!all(cell.ids %in% names(GeoMeans))){
+   if(!all(cell.ids %in% names(GeomMeans))){
       stop("Missing normalization parameters: Geometric mean")
    }
    
    # Get total counts per cell
-   GeomMeans <- GeoMeans[cell.ids]
+   GeomMeans <- GemoMeans[cell.ids]
    
    # Divide by geometric means
-   xnorm <- sweep(mat, MARGIN = 2, GeoMeans, FUN = "/")  
+   xnorm <- sweep(mat, MARGIN = 2, GeomMeans, FUN = "/")  
    # Apply log1p normalization efficiently
    xnorm <- log1p(xnorm)
    
