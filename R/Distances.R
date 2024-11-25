@@ -52,14 +52,14 @@ compute_pearson <- function(norm.mat) {
 
 
 # Main function with dispatcher
-get.distance <- function(mat,
-                         norm.mat,
+get.distance <- function(mat = NULL,
+                         norm.mat = NULL,
                          transpose = TRUE,
                          dist.method = "euclidean") {
    # Handle transposition
    if (transpose) {
-      mat <- t(mat)
-      norm.mat <- t(norm.mat)
+      if(!is.null(mat)){mat <- t(mat)}
+      if(!is.null(norm.mat)){norm.mat <- t(norm.mat)}
    }
    
    # Dispatcher to call the appropriate function
