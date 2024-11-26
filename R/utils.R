@@ -16,8 +16,8 @@ set_parallel_params <- function(ncores = NULL,
    if (is.null(bparam)) {
       if (ncores > 1) {
          if(.Platform$OS.type == "windows"){
-            param <- BiocParallel::SnowParam(workers=ncores,
-                                             progressbar = progressbar)
+            param <- BiocParallel::SerialParam(progressbar = progressbar)
+            warning("Parallel processing not possible for Windows operating system.\n")
          } else {
             param <- BiocParallel::MulticoreParam(workers =  ncores,
                                                   progressbar = progressbar)
