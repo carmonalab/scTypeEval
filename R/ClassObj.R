@@ -46,11 +46,13 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
 # define consistency assay object
 methods::setClass("ConsistencyAssay",
                   slots = c(
-                     metrics = "data.frame",
+                     metrics = "character",
                      method = "character",
                      gene.list = "character",
                      black.list = "character",
-                     ident = "factor"
+                     ident = "factor",
+                     data.type = "character",
+                     sample = "character"
                   )
 )
 
