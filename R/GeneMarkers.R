@@ -5,7 +5,7 @@
 
 # This will be added to slot gene.list of scTypeEval object
 
-get.HGV <- function(norm.mat,
+get.HVG <- function(norm.mat,
                     ngenes = 500,
                     margin = 1L){
    # Here we will compute the variance across genes (rows) and select the HVGs
