@@ -73,4 +73,74 @@ get_pseudobulk <- function(mat,
 }
 
 
+# sketching 1 vs all at single-cel level
 
+get_PCA <- function(norm.mat,
+                      hgv,
+                      ndim = 30){
+   # compute PCA
+   pca <- prcomp(t(norm.mat[hgv,]),
+                 rank. = ndim)
+   return(pca)
+}
+
+
+# get_intra_SvB <- function(object,
+#                           colLabel,
+#                           celltype,
+#                           min.cells = 10,
+#                           nfeatures = 1000,
+#                           seed = 22,
+#                           ncores = 1) {
+#    
+#    # set paralelization
+#    param <- set_parallel_params(ncores = ncores, progressbar = F)
+#    
+#    ct.mat <- object[, object@meta.data[[colLabel]] == celltype][[assay]]$counts
+#    colnames(ct.mat) <- gsub("_", "-", colnames(ct.mat)) %>%
+#       paste(., celltype, sep = "_")
+#    
+#    ncells <- ncol(ct.mat)
+#    
+#    # adjust if their proportions is very discrepant
+#    seu.psblk <- object[, object@meta.data[[colLabel]] != celltype]
+#    
+#    # find variable featurs
+#    seu.psblk <- FindVariableFeatures(seu.psblk,
+#                                      selection.method = "vst",
+#                                      nfeatures = nfeatures,
+#                                      verbose = F)
+#    
+#    # produce sketching and merge recursively
+#    ps.mat <- bplapply(1:ncells,
+#                       BPPARAM = param,
+#                       function(n){
+#                          # sketching
+#                          
+#                          myseed <- seed + n
+#                          suppressMessages(
+#                             {
+#                                ds <- Seurat::SketchData(seu.psblk,
+#                                                         assay = assay,
+#                                                         ncells = min.cells,
+#                                                         seed = myseed,
+#                                                         verbose = F)
+#                                ds.mat <- ds[["sketch"]]$counts
+#                                ds.mat <- Matrix::rowSums(ds.mat)
+#                             })
+#                          
+#                          return(ds.mat)
+#                       })
+#    
+#    # join Sketch pseudobulk
+#    ps.mat <- do.call(cbind, ps.mat)
+#    
+#    colnames(ps.mat) <- paste0(paste0("r", 1:ncells), "_psblk")
+#    
+#    # join with actual celltypes
+#    fi <- cbind(ct.mat, ps.mat)
+#    
+#    return(fi)
+#    
+#    
+# }
