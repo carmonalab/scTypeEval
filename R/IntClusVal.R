@@ -279,6 +279,11 @@ calculate_IntVal_metric <- function(mat = NULL,
                            dist.method = dist.method)
    }
    
+   if(is.null(centroids)){
+      centroids <- compute_centroids(norm.mat, ident)
+   }
+   
+   
    # Precompute inertia if needed
    if ("inertia" %in% metrics && is.null(inertia)) {
       inertia <- compute_inertia(norm.mat = norm.mat,
