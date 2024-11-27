@@ -32,3 +32,62 @@ set_parallel_params <- function(ncores = NULL,
 }
 
 
+consistency.helper <- function(mat,
+                              ident,
+                              normalization.method,
+                              IntVal.metric,
+                              data.type,
+                              sample = NULL){
+   
+   mat <- get.matrix(mat,
+                     data.type = data.type,
+                     ident = ident,
+                     sample = sample,
+                     min.samples = min.samples,
+                     min.cells = min.cells)
+   
+   
+   
+   if(!is.list(mat)){
+      mat <- as.list(mat)
+   }
+   
+   consist <- lapply(mat,
+                     function(red.mat){
+                        
+                        # normalized subetted matrix
+                        norm.mat <- Normalize_data(red.mat[["matrix"]],
+                                                   method = normalization.method)
+                        
+                        # compute internal validation metrics
+                        con <- calculate_IntVal_metric(mat = red.mat[["matrix"]],
+                                                       norm.mat = norm.mat,
+                                                       metrics = IntVal.metric,
+                                                       dist.method = distance.method,
+                                                       ident = red.mat[["ident"]])
+                        return(con)
+                        
+                     })
+   
+   names(consist) <- names(mat)
+   
+   # combine consistencies if 1vsAll
+   if(data.type == "pseudobulk_1vsall"){
+      join <- list()
+      for(cm in IntVal.metric){
+         vec <- lapply(consist, function(m){
+            m[[cm]][names(m[[cm]]) != "psblk"]
+         }) %>% unlist()
+         
+         join[[cm]] <- vec
+      }
+      consist <- join
+   }
+   
+   names(consist) <- IntVal.metric
+   
+   return(consist)
+   
+}
+
+
