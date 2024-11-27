@@ -5,8 +5,7 @@ get_pseudobulk <- function(mat,
                            ident = NULL, 
                            sample = NULL, 
                            min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
-                           min.cells = 10,   # Minimum cells per pseudobulk to be included
-                           ncores = 1, 
+                           min.cells = 10,   # Minimum cells per pseudobulk to be included 
                            sep = "_") {  
    
    if (is.null(sample)) {
@@ -69,8 +68,87 @@ get_pseudobulk <- function(mat,
    # Set row names for clarity (genes as rows, groups as columns)
    colnames(summed_matrix) <- group_levels
    
-   return(summed_matrix)
+   # retrieve new idents
+   if(is.null(sample)){
+      new.idents <- group_levels
+   } else {
+      new.idents <- strsplit(group_levels, sep)[[1]][2]
+   }
+   
+   ret <- list(matrix = summed_matrix,
+               ident = new.idents)
+   
+   return(ret)
 }
+
+
+get.pseudobulk1vsAll <- function(mat, 
+                                 ident = NULL, 
+                                 sample = NULL, 
+                                 min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
+                                 min.cells = 10, 
+                                 ncores = NULL,
+                                 bparam = NULL,
+                                 sep = "_"){
+   
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   mat.list <- BiocParallel::bplapply(levels(ident),
+                                      BPPARAM = param,
+                                      function(i){
+                                         ident[ident != i] <- "psblk"
+                                         
+                                        mat <- get_pseudobulk(mat, 
+                                                        ident = ident, 
+                                                        sample = sample,
+                                                        min.samples = min.samples,
+                                                        min.cells = min.cells)
+                                        return(mat)
+                                         
+                                      })
+   
+   names(mat.list) <- levels(ident)
+   
+   return(mat.list)
+   
+}
+
+
+# get matrix according to the data type
+get.matrix <- function(matrix,
+                       data.type,
+                       ident,
+                       sample,
+                       min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
+                       min.cells = 10, # Minimum cells per pseudobulk to be included 
+                       ncores = 1,
+                       bparam = NULL,
+                       progressbar = TRUE){
+   
+   
+   mat <- switch(data.type,
+                 "sc" = list(matrix = matrix,
+                             ident = ident),
+                 "pseudobulk" = get_pseudobulk(mat, 
+                                               ident = ident, 
+                                               sample = sample,
+                                               min.samples = min.samples,
+                                               min.cells = min.cells),
+                 # return a list of matrix, one for each ident
+                 "pseudobulk_1vsall" = get.pseudobulk1vsAll(mat, 
+                                                            ident = ident, 
+                                                            sample = sample,
+                                                            min.samples = min.samples,
+                                                            min.cells = min.cells,
+                                                            bparam = bparam),
+                 stop(data.type, " is not a supported data.type.")
+                 )
+                 
+   return(mat)
+}
+
 
 
 # sketching 1 vs all at single-cel level
