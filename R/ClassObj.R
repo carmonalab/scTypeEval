@@ -9,7 +9,6 @@ methods::setClass("scTypeEval",
                      active.ident = "factor", # default grouping variable
                      reductions = "list", # list of dim reductions
                      misc = "list", # miscellaneous
-                     commands = "list", # commands performed
                      version = "character" # package version
                   )
 )
@@ -46,8 +45,8 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
 # define consistency assay object
 methods::setClass("ConsistencyAssay",
                   slots = c(
-                     metrics = "character",
-                     method = "character",
+                     consistency.metric = "character",
+                     dist.method = "character",
                      gene.list = "character",
                      black.list = "character",
                      ident = "factor",
