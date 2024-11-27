@@ -24,12 +24,12 @@ create.scTypeEval <- function(matrix,
    }
    
    # Create the scTypeEval object
-   scTypeEval_obj <- new("scTypeEval",
-                         counts = counts,
-                         metadata = metadata,
-                         gene.lists = gene.lists,
-                         black.list = black.list,
-                         version = version)
+   scTypeEval_obj <- methods::new("scTypeEval",
+                                  counts = counts,
+                                  metadata = metadata,
+                                  gene.lists = gene.lists,
+                                  black.list = black.list,
+                                  version = version)
    
    return(scTypeEval_obj)
 }
@@ -39,6 +39,10 @@ set.activeIdent <- function(scTypeEval,
                             ident = NULL){
    if(is.null(ident)){
       stop("Specificy a cell type annotation in the provided metadata")
+   }
+   if(!ident %in% names(scTypeEval@metadata)){
+      stop("Please provide a ident, i.e. a cell type or annotation
+           to group cells included in metadata")
    }
    
    scTypeEval@active.ident <- ident
@@ -51,9 +55,17 @@ set.activeIdent <- function(scTypeEval,
 add.HVG <- function(scTypeEval,
                     normalization.method = c("Log1p", "CLR", "pearson"),
                     ngenes = 500,
+                    black.list = NULL,
                     ...){
    # normalize matrix
-   norm.mat <- Normalize_data(mat = scTypeEval@counts,
+   mat <- scTypeEval@counts
+   if(is.null(black.list)){
+      black.list <- scTypeEval@black.list
+   }
+   # remove blacked listed genes
+   mat <- mat[!rownames(mat) %in% black.list,]
+   
+   norm.mat <- Normalize_data(mat = mat,
                               method = normalization.method[1],
                               ...)
    
@@ -108,57 +120,148 @@ get.Consistency <- function(scTypeEval,
                             IntVal.metric = c("silhouette", "modularity", "ward",
                                               "inertia", "Xie-Beni", "S_Dbw", "I"),
                             data.type = c("sc", "pseudobulk", "pseudobulk_1vsall"),
+                            min.samples = 5,
+                            min.cells = 10,
+                            black.list = NULL,
                             ncores = 1,
                             bparam = NULL,
                             progressbar = TRUE,
+                            verbose = TRUE,
                             ...
                             
 ){
-   
-
-   param <- set_parallel_params(ncores = ncores,
-                                bparam = bparam,
-                                progressbar = progressbar)
-   
    if(is.null(ident)){
       ident <- scTypeEval@active.ident
    }
    
-   normalization.method <- normalization.method[1]
-   data.type <- data.type[1]
+   if(!ident %in% names(scTypeEval@metadata)){
+      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
+   }
+   
+   # retrieve ident and convert to factor
+   ident.name <- ident
+   ident <- scTypeEval@metadata[[ident]]
+   ident <- factor(ident)
+   
+   if(!is.null(sample)){
+      if(!sample %in% names(scTypeEval@metadata)){
+         stop("`sample` parameter not found in metadata colnames.")
+      }
+      # retrieve sample and convert to factor
+      sample.name <- sample
+      sample <- scTypeEval@metadata[[sample]]
+      sample <- factor(sample)
+      
+   } else {
+      if(data.type != "sc"){
+         stop("For pseudobulk provide a dataset with multiple samples,
+              and specifiy their respective column metadata in `sample` parameter")
+      } else {
+         if(verbose){message("Using dataset as a unique sample, computing consistency across cells.\n")}
+      }
+   }
+   
+   distance_methods <- c(
+      "euclidean",
+      "maximum",
+      "manhattan",
+      "canberra",
+      "binary",
+      "minkowski",
+      "Jaccard",
+      "Weighted_Jaccard",
+      "gower",
+      "bray-curtis",
+      "cosine",
+      "pearson"
+   )
+   if(distance.method %in% distance_methods){
+      stop(distance, " distance method not supported. Pick up one of: ", 
+           paste(distance_methods, collapse = ", "))
+   }
+   
+   IntVal_metric = c("silhouette", "modularity", "ward",
+                     "inertia", "Xie-Beni", "S_Dbw", "I")
+   
+   if(all(IntVal.metric %in% IntVal_metric)){
+      stop(IntVal.metric, "at least one internal validation metrics(s) method not supported.
+           Pick up one, some or all out of: ", 
+           paste(IntVal_metric, collapse = ", "))
+   }
+   
+   data_type = c("sc", "pseudobulk", "pseudobulk_1vsall")
+   
+   if(data.type %in% data_type){
+      stop(data.type, " data type conversion method not supported. Pick up one of: ", 
+           paste(data_type, collapse = ", "))
+   }
+   
+   
+   param1 <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   if(data_type == "pseudobulk_1vsall")
+   
 
    
-   # get normalization parameters
-   norm.params <- get.Normalization_params(mat = mat,
-                                           method = normalization.method)
+   normalization.method <- normalization.method[1]
+   data.type <- data.type[1]
+   
+   if(is.null(black.list)){
+   black.list <- scTypeEval@black.list
+   }
+   
 
    # loop over each gene.list
    consist.list <- BiocParallel::bplapply(names(gene.list),
                                           BPPARAM = param,
                                           function(sc){
-                                             # get data.type
-                                             mat <- switch(data.type,
-                                                           "sc" = scTypeEval@counts,
-                                                           "pseudobulk" = get_pseudobulk())
-                                             # subset gene list
-                                             red.mat <- mat[gene.list[[sc]],]
-                                             # normalize data
-                                             norm.mat <- Normalize_data(red.mat,
-                                                                        method = normalization.method,
-                                                                        norm.params = norm.params)
                                              
-                                             consist <- calculate_IntVal_metric(mat = red.mat,
-                                                                                norm.mat = norm.mat,
-                                                                                metrics = IntVal.metric,
-                                                                                dist.method = distance.method,
-                                                                                ident = ident,
-                                                                                ...)
-                                                
+                                             # get matrix
+                                             mat <- scTypeEval@counts[gene.list[[sc]]]
+                                             
+                                             # remove black list genes
+                                             mat <- mat[!rownames(mat) %in% black.list,]
+                                             
+                                             con.list <- consistency.helper(mat,
+                                                                            ident = ident,
+                                                                            sample = sample,
+                                                                            normalization.method = normalization.method,
+                                                                            distance.method = distance.method,
+                                                                            IntVal.metric = IntVal.metric,
+                                                                            data.type = data.type)
+                                             
+                                             # accommodte to ConsistencyAssay
+                                             
+                                            CA <- lapply(names(con.list),
+                                                         function(cc){
+                                                            methods::new("ConsistencyAssay",
+                                                                         consistency.metric = con.list[[cc]],
+                                                                         dist.method = distance.method,
+                                                                         gene.list = sc,
+                                                                         black.list = black.list,
+                                                                         ident = ident.name,
+                                                                         data.type = data.type,
+                                                                         sample = sample.name)
+                                                         })
+                                            
+                                            return(CA)
                                           })
    
-   
-   
+   names(consist.list) <- names(gene.list)
+
+   scTypeEval@consistency <- consist.list
+   return(scTypeEval)
+
 }
+
+
+# get.ConsistencyData <- function(scTypeEval,
+#                                 consisteny.metric = NULL,
+#                                 dist.method = ){
+#    
+# }
 
 
 
