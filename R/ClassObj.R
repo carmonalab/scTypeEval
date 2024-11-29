@@ -6,7 +6,7 @@ methods::setClass("scTypeEval",
                      consistency = "list", # actual consistency results assays
                      gene.lists = "list", # list of either HGV, markers
                      black.list = "character", # list of genes in black list
-                     active.ident = "factor", # default grouping variable
+                     active.ident = "character", # default grouping variable
                      reductions = "list", # list of dim reductions
                      misc = "list", # miscellaneous
                      version = "character" # package version
@@ -27,16 +27,10 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
       args$reductions <- list()
    }
    
-   # Set default for metadata if not provided
-   if (is.null(args$metadata)) {
-      args$metadata <- data.frame()
-   }
-   
    # Pass the updated arguments to the default initialize method
    .Object <- callNextMethod(.Object, ..., 
                              consistency = args$consistency, 
-                             reductions = args$reductions, 
-                             metadata = args$metadata)
+                             reductions = args$reductions)
    
    validObject(.Object)  # Validate the object
    .Object
@@ -45,13 +39,14 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
 # define consistency assay object
 methods::setClass("ConsistencyAssay",
                   slots = c(
+                     measure = "numeric",
                      consistency.metric = "character",
-                     dist.method = "character",
+                     dist.method = "ANY",
                      gene.list = "character",
                      black.list = "character",
-                     ident = "factor",
+                     ident = "character",
                      data.type = "character",
-                     sample = "character"
+                     sample = "ANY"
                   )
 )
 
@@ -63,5 +58,12 @@ methods::setClass("DimReduc",
                      gene.list = "character",
                      black.list = "character",
                      key = "character" # type of reduction, PCA, UMAP...
+                  )
+)
+
+methods::setClass("Mat_ident",
+                  slots = c(
+                     matrix = 'ANY',
+                     ident = 'factor'
                   )
 )
