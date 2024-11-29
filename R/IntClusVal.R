@@ -1,3 +1,9 @@
+IntVal_metric <- c("silhouette", "modularity", "ward",
+                  "inertia", "Xie-Beni", "S_Dbw", "I")
+
+dist.need <- c("silhouette", "modularity", "ward")
+
+
 # Helper function to compute centroids for each cluster
 compute_centroids <- function(norm.mat, ident) {
    centroid.list <- tapply(seq_len(ncol(norm.mat)), ident, function(idx) {
@@ -28,11 +34,12 @@ compute_silhouette <- function(dist, ident) {
    silh_df$celltype <- ident
    
    # Calculate the mean silhouette width per cell type
-   mean_per_celltype <- silh_df %>%
-      dplyr::group_by(celltype) %>%
-      dplyr::summarise(mean_sil_width = mean(sil_width, na.rm = TRUE))
+   mean_per_celltype <- silh_df |>
+      dplyr::group_by(celltype) |>
+      dplyr::summarise(mean_sil_width = mean(sil_width, na.rm = TRUE)) |>
+      dplyr::pull(mean_sil_width, name = celltype)
    
-   return(mean_per_celltype[["mean_sil_width"]])
+   return(mean_per_celltype)
 }
 
 # Modularity Calculation (modified)
@@ -59,7 +66,13 @@ compute_modularity <- function(dist,
    # Normalize by KNNGraph_k to get a proportion
    modularities <- modularities / KNNGraph_k
    
-   aggregate_scores <- tapply(modularities, ident, mean)
+   aggregate_scores <- tapply(modularities, ident, mean) 
+   aggregate_scores <- aggregate_scores[!is.na(aggregate_scores)]
+   
+   # convert to numeric vector
+   an <- names(aggregate_scores)
+   aggregate_scores <- as.vector(aggregate_scores)
+   names(aggregate_scores) <- an
    
    return(aggregate_scores)
 }
@@ -137,7 +150,7 @@ compute_xie_beni <- function(norm.mat,
    
    # compute inertia if not provided
    if(is.null(inertia)){
-      intertia <- compute_inertia(norm.mat = norm.mat,
+      inertia <- compute_inertia(norm.mat = norm.mat,
                                   ident = ident,
                                   centroids = centroids)
    }
@@ -149,7 +162,7 @@ compute_xie_beni <- function(norm.mat,
    # Iterate over each ident
    for (cluster in unique(ident)) {
       # Obtain inertia for the current ident
-      inertia.sub <- intertia[cluster]
+      inertia.sub <- inertia[cluster]
       
       # Compute minimum distance between the current centroid and all other centroids
       # using Euclidean by default
@@ -263,29 +276,32 @@ calculate_IntVal_metric <- function(mat = NULL,
                                     centroids = NULL, 
                                     inertia = NULL, 
                                     KNNGraph_k = 5, 
-                                    hclust.method = "ward.D2") {
+                                    hclust.method = "ward.D2",
+                                    verbose = T) {
    
    # Validate metrics input
-   if (!all(metrics %in% c("silhouette", "modularity", "ward",
-                           "inertia", "Xie-Beni", "S_Dbw", "I"))) {
+   if (!all(metrics %in% IntVal_metric)) {
       stop("One or more requested metrics are not supported.")
    }
    
    # Precompute distance if needed
-   dist.need <- c("silhouette", "modularity", "ward")
+   
    if (is.null(dist) && any(metrics %in% dist.need)) {
+      if(verbose){message("Computing distances...\n")}
       dist <- get.distance(mat = mat,
                            norm.mat = norm.mat,
                            dist.method = dist.method)
    }
    
-   if(is.null(centroids)){
+   if(is.null(centroids) && any(!metrics %in% dist.need)){
+      if(verbose){message("Computing centroids...\n")}
       centroids <- compute_centroids(norm.mat, ident)
    }
    
    
    # Precompute inertia if needed
    if ("inertia" %in% metrics && is.null(inertia)) {
+      if(verbose){message("Computing inertia...\n")}
       inertia <- compute_inertia(norm.mat = norm.mat,
                                  ident = ident,
                                  centroids = centroids)
@@ -301,7 +317,7 @@ calculate_IntVal_metric <- function(mat = NULL,
                                   "modularity" = compute_modularity(dist, ident, KNNGraph_k),
                                   "ward" = compute_ward(dist, ident, hclust.method),
                                   "inertia" = inertia, 
-                                  "Xie-Beni" = compute_xie_beni(norm.mat, ident, inertia, centroids),
+                                  "Xie-Beni" = compute_xie_beni(norm.mat, ident, centroids, inertia),
                                   "S_Dbw" = compute_s_dbw(norm.mat, ident, centroids),
                                   "I" = compute_i_index(norm.mat, ident, centroids),
                                   stop(metric, " is not a supported consistency method.")
