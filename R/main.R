@@ -4,7 +4,8 @@ create.scTypeEval <- function(matrix,
                               metadata = NULL, 
                               gene.lists = list(), 
                               black.list = character(), 
-                              active.ident = NULL) {
+                              active.ident = NULL,
+                              version = "") {
    
    # Check input type
    if (inherits(matrix, "Seurat")) {
@@ -29,6 +30,7 @@ create.scTypeEval <- function(matrix,
                                   metadata = metadata,
                                   gene.lists = gene.lists,
                                   black.list = black.list,
+                                  active.ident = active.ident,
                                   version = version)
    
    return(scTypeEval_obj)
@@ -73,7 +75,7 @@ add.HVG <- function(scTypeEval,
    hgv <- get.HVG(norm.mat,
                   ngenes = ngenes)
    
-   scTypeEval@gene.list[["HVG"]] <- hgv
+   scTypeEval@gene.lists[["HVG"]] <- hgv
    
    return(scTypeEval)
 }
@@ -111,11 +113,11 @@ add.GeneList <- function(scTypeEval,
 
 # Wrapper for creating consistency assay
 
-get.Consistency <- function(scTypeEval,
+Run.Consistency <- function(scTypeEval,
                             ident = NULL,
                             sample = NULL,
                             normalization.method = c("Log1p", "CLR", "pearson"),
-                            gene.list = "all",
+                            gene.list = NULL,
                             distance.method = "euclidean",
                             IntVal.metric = c("silhouette", "modularity", "ward",
                                               "inertia", "Xie-Beni", "S_Dbw", "I"),
@@ -138,9 +140,12 @@ get.Consistency <- function(scTypeEval,
       stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
    }
    
+   data.type = data.type[1]
+   
    # retrieve ident and convert to factor
    ident.name <- ident
    ident <- scTypeEval@metadata[[ident]]
+   ident <- gsub("_", ".", ident)
    ident <- factor(ident)
    
    if(!is.null(sample)){
@@ -150,6 +155,7 @@ get.Consistency <- function(scTypeEval,
       # retrieve sample and convert to factor
       sample.name <- sample
       sample <- scTypeEval@metadata[[sample]]
+      sample <- gsub("_", ".", sample)
       sample <- factor(sample)
       
    } else {
@@ -159,67 +165,78 @@ get.Consistency <- function(scTypeEval,
       } else {
          if(verbose){message("Using dataset as a unique sample, computing consistency across cells.\n")}
       }
+      sample.name <- NULL
    }
    
-   distance_methods <- c(
-      "euclidean",
-      "maximum",
-      "manhattan",
-      "canberra",
-      "binary",
-      "minkowski",
-      "Jaccard",
-      "Weighted_Jaccard",
-      "gower",
-      "bray-curtis",
-      "cosine",
-      "pearson"
-   )
-   if(distance.method %in% distance_methods){
-      stop(distance, " distance method not supported. Pick up one of: ", 
+
+   if(!distance.method %in% distance_methods){
+      stop(distance.method, " distance method not supported. Pick up one of: ", 
            paste(distance_methods, collapse = ", "))
-   }
+   } 
    
-   IntVal_metric = c("silhouette", "modularity", "ward",
-                     "inertia", "Xie-Beni", "S_Dbw", "I")
    
-   if(all(IntVal.metric %in% IntVal_metric)){
+   if(!all(IntVal.metric %in% IntVal_metric)){
       stop(IntVal.metric, "at least one internal validation metrics(s) method not supported.
            Pick up one, some or all out of: ", 
            paste(IntVal_metric, collapse = ", "))
    }
    
-   data_type = c("sc", "pseudobulk", "pseudobulk_1vsall")
-   
-   if(data.type %in% data_type){
+   if(!data.type %in% data_type){
       stop(data.type, " data type conversion method not supported. Pick up one of: ", 
            paste(data_type, collapse = ", "))
    }
    
+   # set normalization method
+   normalization.method <- normalization.method[1]
    
-   param1 <- set_parallel_params(ncores = ncores,
+   # set gene lists
+   if(is.null(gene.list)){
+      gene.list <- scTypeEval@gene.lists
+   } else {
+      if(!all(gene.list %in% names(scTypeEval@gene.lists))){
+         stop("Some gene list names not included in scTypeEval object")
+      }
+      gene.list <- scTypeEval@gene.lists[gene.list]
+   }
+   
+   if(is.null(black.list)){
+      black.list <- scTypeEval@black.list
+   }
+   
+   
+   param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
-   if(data_type == "pseudobulk_1vsall")
+   if(ncores == 1 && is.null(bparam)){
+      param1 <- param
+      param2 <- param
+   } else {
+      if(!is.null(sample) && data.type %in% c("sc", "pseudobulk_1vsall")){
+         if(length(unique(sample))>length(gene.list)){
+            param1 <- BiocParallel::SerialParam()
+            param2 <- param
+         } else {
+            param1 <- param
+            param2 <- BiocParallel::SerialParam()
+         }
+      } else {
+         param1 <- param
+         param2 <- BiocParallel::SerialParam()
+      }
+   }
    
 
-   
-   normalization.method <- normalization.method[1]
-   data.type <- data.type[1]
-   
-   if(is.null(black.list)){
-   black.list <- scTypeEval@black.list
-   }
    
 
    # loop over each gene.list
    consist.list <- BiocParallel::bplapply(names(gene.list),
-                                          BPPARAM = param,
-                                          function(sc){
+                                          BPPARAM = param1,
+                                          function(t){
                                              
                                              # get matrix
-                                             mat <- scTypeEval@counts[gene.list[[sc]]]
+                                             keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
+                                             mat <- scTypeEval@counts[keep,]
                                              
                                              # remove black list genes
                                              mat <- mat[!rownames(mat) %in% black.list,]
@@ -230,38 +247,118 @@ get.Consistency <- function(scTypeEval,
                                                                             normalization.method = normalization.method,
                                                                             distance.method = distance.method,
                                                                             IntVal.metric = IntVal.metric,
-                                                                            data.type = data.type)
+                                                                            data.type = data.type,
+                                                                            bparam = param2,
+                                                                            min.samples = min.samples,
+                                                                            min.cells = min.cells)
                                              
                                              # accommodte to ConsistencyAssay
                                              
-                                            CA <- lapply(names(con.list),
-                                                         function(cc){
-                                                            methods::new("ConsistencyAssay",
-                                                                         consistency.metric = con.list[[cc]],
-                                                                         dist.method = distance.method,
-                                                                         gene.list = sc,
-                                                                         black.list = black.list,
-                                                                         ident = ident.name,
-                                                                         data.type = data.type,
-                                                                         sample = sample.name)
-                                                         })
+                                             CA <- lapply(seq_along(con.list),
+                                                          function(cc){
+                                                             lapply(names(con.list[[cc]]),
+                                                                    function(y){
+                                                                       if(!y %in% dist.need){distance.method <- NULL}
+                                                                       
+                                                                       methods::new("ConsistencyAssay",
+                                                                                    measure = con.list[[cc]][[y]],
+                                                                                    consistency.metric = y,
+                                                                                    dist.method = distance.method,
+                                                                                    gene.list = t,
+                                                                                    black.list = black.list,
+                                                                                    ident = ident.name,
+                                                                                    data.type = data.type,
+                                                                                    sample = names(con.list)[[cc]])
+                                                                       
+                                                                    })
+                                                             
+                                                          }) %>% unlist()
+                                            
+                                    
+                                             
+                                             # name consistency assays
+                                             names(CA) <- lapply(seq_along(CA),
+                                                                 function(ca){
+                                                                    paste(CA[[ca]]@sample,
+                                                                          CA[[ca]]@data.type,
+                                                                          CA[[ca]]@dist.method,
+                                                                          CA[[ca]]@consistency.metric,
+                                                                          sep = "_")
+                                                                 })
                                             
                                             return(CA)
                                           })
    
    names(consist.list) <- names(gene.list)
-
-   scTypeEval@consistency <- consist.list
+   
+   # add to scTypeEval object
+   for(n in names(consist.list)){
+      for(m in names(consist.list[[n]]))
+         scTypeEval@consistency[[n]][[m]] <- consist.list[[n]][[m]]
+   }
+   
    return(scTypeEval)
 
 }
 
 
-# get.ConsistencyData <- function(scTypeEval,
-#                                 consisteny.metric = NULL,
-#                                 dist.method = ){
-#    
-# }
+get.ConsistencyData <- function(scTypeEval,
+                                gene.list = NULL,
+                                consistency.metric = NULL,
+                                dist.method = NULL,
+                                data.type = NULL,
+                                scale = TRUE
+)
+{
+   
+   # Ensure the consistency slot is not empty
+   if (length(scTypeEval@consistency) == 0) {
+      stop("The 'consistency' slot in the 'scTypeEval' object is empty.")
+   }
+   
+   # Initialize an empty list to store filtered data
+   filtered_data <- list()
+   assays <- unlist(scTypeEval@consistency)
+   
+   # Loop through each ConsistencyAssay object in scTypeEval@consistency
+   for (a in seq_along(assays)) {
+      assay <- assays[[a]]
+      # Check for class validity
+      if (!inherits(assay, "ConsistencyAssay")) {
+         stop(paste("Invalid object in consistency slot"))
+      }
+      
+      # Apply filtering:
+      # For `gene.list`, check if it is NULL or if the intersection with the assay's gene list is non-empty
+      if (!is.null(gene.list) && length(intersect(gene.list, assay@gene.list)) == 0) next
+      # For other parameters, check if they are NULL or match any value in the corresponding vector
+      if (!is.null(consistency.metric) && !assay@consistency.metric %in% consistency.metric) next
+      if (!is.null(dist.method) && !identical(assay@dist.method, dist.method)) next
+      if (!is.null(data.type) && !assay@data.type %in% data.type) next
+      
+      # Extract relevant information into a named list
+      filtered_data[[a]] <- data.frame(
+         celltype = names(assay@measure),
+         measure = assay@measure,
+         consistency.metric = assay@consistency.metric,
+         dist.method = if (is.null(assay@dist.method)) NA else assay@dist.method,
+         gene.list = paste(assay@gene.list, collapse = ", "),
+         ident = assay@ident,
+         data.type = assay@data.type,
+         sample = if (is.null(assay@sample)) NA else assay@sample
+      )
+   }
+   
+   # Combine all data frames into one
+   if (length(filtered_data) == 0) {
+      stop("Filters provided yielded no result in current scTypeEval object") # Return an empty data frame if no results
+   }
+   
+   result <- do.call(rbind, filtered_data)
+   return(result)
+   
+   
+}
 
 
 
