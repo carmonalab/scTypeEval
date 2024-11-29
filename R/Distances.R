@@ -1,3 +1,19 @@
+distance_methods <- c(
+   "euclidean",
+   "maximum",
+   "manhattan",
+   "canberra",
+   "binary",
+   "minkowski",
+   "Jaccard",
+   "Weighted_Jaccard",
+   "gower",
+   "bray-curtis",
+   "cosine",
+   "pearson"
+)
+
+
 # Define sub-functions for specific distance methods
 compute_stat_dist <- function(norm.mat, dist.method) {
    stats::dist(norm.mat, method = dist.method)
