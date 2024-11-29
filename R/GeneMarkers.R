@@ -5,20 +5,41 @@
 
 # This will be added to slot gene.list of scTypeEval object
 
-get.HVG <- function(norm.mat,
-                    ngenes = 500,
-                    margin = 1L){
-   # Here we will compute the variance across genes (rows) and select the HVGs
-   gene_variance <- apply(norm.mat, margin, var)  # Variance per gene
-   gene_mean <- apply(norm.mat, margin, mean)  # Mean expression per gene
+get.HVG <- function(norm.mat, 
+                    ngenes = 500, 
+                    margin = 1L) {
+   # Compute mean per gene (row-wise or column-wise)
+   if (margin == 1L) {
+      # Row-wise mean
+      gene_mean <- Matrix::rowMeans(norm.mat)
+      # Row-wise variance (need to compute sum of squares)
+      gene_variance <- Matrix::rowSums((norm.mat - gene_mean)^2) / (ncol(norm.mat) - 1)
+   } else if (margin == 2L) {
+      # Column-wise mean
+      gene_mean <- Matrix::colMeans(norm.mat)
+      # Column-wise variance (need to compute sum of squares)
+      gene_variance <- Matrix::colSums((norm.mat - gene_mean)^2) / (nrow(norm.mat) - 1)
+   } else {
+      stop("Invalid margin. Use 1 for rows or 2 for columns.")
+   }
    
-   # Compute the coefficient of variation (CV) for each gene
+   # Compute coefficient of variation (CV)
    cv <- gene_variance / gene_mean
    
-   # Rank genes by CV and select top n_hvg most variable genes
+   # Handle cases where the mean is zero to avoid dividing by zero
+   cv[is.na(cv) | is.infinite(cv)] <- 0
+   
+   # Rank genes by CV and select the top ngenes
    hvg_genes <- order(cv, decreasing = TRUE)[1:ngenes]
    
-   return(hvg_genes)
+   # Return the names of the HVGs based on the margin
+   if (margin == 1L) {
+      hvg <- rownames(norm.mat)[hvg_genes]
+   } else if (margin == 2L) {
+      hvg <- colnames(norm.mat)[hvg_genes]
+   }
+   
+   return(hvg)
 }
 
 # get markers using scran findMarkers
