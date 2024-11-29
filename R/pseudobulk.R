@@ -1,8 +1,10 @@
 # script to pseudobulking cells:
 
+data_type <- c("sc", "pseudobulk", "pseudobulk_1vsall")
+
 # get either regular pseudobulk or 1 vs all pseudobulk
 get_pseudobulk <- function(mat, 
-                           ident = NULL, 
+                           ident, 
                            sample = NULL, 
                            min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
                            min.cells = 10,   # Minimum cells per pseudobulk to be included 
@@ -30,8 +32,10 @@ get_pseudobulk <- function(mat,
       # Split by ident and check sample distribution
       ident_samples_count <- sapply(unique(ident), function(cell_type) {
          sample_counts <- table(sample[ident == cell_type])
-         sum(sample_counts >= 5)  # Count samples with at least 5 cells for this cell type
+         sum(sample_counts >= min.samples)  # Count samples with at least 5 cells for this cell type
       })
+      
+      names(ident_samples_count) <- unique(ident)
       
       valid_idents <- names(ident_samples_count[ident_samples_count >= min.samples])
       
@@ -75,8 +79,9 @@ get_pseudobulk <- function(mat,
       new.idents <- strsplit(group_levels, sep)[[1]][2]
    }
    
-   ret <- list(matrix = summed_matrix,
-               ident = new.idents)
+   ret <- new("Mat_ident",
+              matrix = summed_matrix,
+              ident = new.idents)
    
    return(ret)
 }
@@ -115,6 +120,47 @@ get.pseudobulk1vsAll <- function(mat,
    
 }
 
+valid.sc <- function(mat,
+                     ident,
+                     min.cells = 10){
+   # Count the number of cells per group
+   cell_counts <- table(ident)
+   # Filter groups with at least `min.cells` cells
+   valid_groups <- names(cell_counts[cell_counts >= min.cells])
+   k <- ident %in% valid_groups
+   mat <- mat[,k, drop = FALSE]
+   
+   new.ident <- ident[k]
+   
+   ret <- new("Mat_ident",
+              matrix = mat,
+              ident = new.ident)
+   
+   return(ret)
+}
+
+
+get.sc <- function(mat,
+                   ident,
+                   sample = NULL,
+                   min.cells = 10,
+                   bparam = BiocParallel::SerialParam()){
+   
+   if(is.null(sample)){
+      ret <- valid.sc(mat = mat,
+                      ident = ident,
+                      min.cells = min.cells)
+   } else {
+      ret <- split.matrix(mat = mat,
+                          ident = ident,
+                          sample = sample,
+                          bparam = bparam)
+   }
+   
+   return(ret) 
+   
+}
+
 
 # get matrix according to the data type
 get.matrix <- function(matrix,
@@ -123,21 +169,22 @@ get.matrix <- function(matrix,
                        sample,
                        min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
                        min.cells = 10, # Minimum cells per pseudobulk to be included 
-                       ncores = 1,
-                       bparam = NULL,
-                       progressbar = TRUE){
+                       bparam = NULL){
    
    
    mat <- switch(data.type,
-                 "sc" = list(matrix = matrix,
-                             ident = ident),
-                 "pseudobulk" = get_pseudobulk(mat, 
+                 "sc" = get.sc(mat = matrix,
+                               ident = ident,
+                               sample = sample,
+                               min.cells = min.cells,
+                               bparam = bparam),
+                 "pseudobulk" = get_pseudobulk(mat = matrix, 
                                                ident = ident, 
                                                sample = sample,
                                                min.samples = min.samples,
                                                min.cells = min.cells),
                  # return a list of matrix, one for each ident
-                 "pseudobulk_1vsall" = get.pseudobulk1vsAll(mat, 
+                 "pseudobulk_1vsall" = get.pseudobulk1vsAll(mat = matrix, 
                                                             ident = ident, 
                                                             sample = sample,
                                                             min.samples = min.samples,
