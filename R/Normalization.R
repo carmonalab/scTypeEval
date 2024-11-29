@@ -34,7 +34,27 @@ GeomMean <- function(x){
 
 get.GeomMean <- function(mat,
                          margin = 2L){
-   gmeans <- apply(mat, MARGIN = margin, GeomMean)
+   if (margin == 1L) {
+      # Geometric mean for rows
+      gmeans <- sapply(1:nrow(mat), function(row_idx) {
+         row_start <- mat@p[row_idx] + 1
+         row_end <- mat@p[row_idx + 1]
+         row_values <- mat@x[row_start:row_end]
+         GeomMean(row_values)
+      })
+      names(gmeans) <- rownames(mat)  # Assign row names
+   } else if (margin == 2L) {
+      # Geometric mean for columns
+      gmeans <- sapply(1:ncol(mat), function(col_idx) {
+         col_start <- mat@p[col_idx] + 1
+         col_end <- mat@p[col_idx + 1]
+         col_values <- mat@x[col_start:col_end]
+         GeomMean(col_values)
+      })
+      names(gmeans) <- colnames(mat)  # Assign column names
+   } else {
+      stop("Invalid margin. Use 1 for rows or 2 for columns.")
+   }
    return(gmeans)   
 }
 
@@ -52,8 +72,8 @@ get.Normalization_params <- function(mat,
    # Run the requested methods
    norm_params <- switch(method[1],
                          "Log1p" = get.SumCounts(mat, margin),
-                         "CLR" = get.GeoMean(mat, margin),
-                         "pearson" = transformGamPoi:::.handle_size_factors(size_factors, data = mat),
+                         "CLR" = get.GeomMean(mat, margin),
+                         "pearson" = transformGamPoi:::.handle_size_factors(size_factors, Y = mat),
                          stop(method, " is not a supported normalization method.")
    )
    
@@ -69,20 +89,23 @@ Log_Normalize <- function(mat,
                           total.counts = NULL,
                           margin = 2L){
    
-   cell.ids <- colnames(mat)
-   if(!all(cell.ids %in% names(total.counts))){
+   if (is.null(total.counts)) {
+      stop("`total.counts` must be provided")
+   }
+   
+   cell.ids <- if (margin == 2L) colnames(mat) else rownames(mat)
+   if (is.null(cell.ids) || !all(cell.ids %in% names(total.counts))) {
       stop("Missing normalization parameters: total counts per cell")
    }
    
-   # Get total counts per cell
+   # Ensure counts are aligned
    total.counts <- total.counts[cell.ids]
    
-   # Normalize the matrix by scaling the values using the precomputed total counts per cell
-   xnorm <- sweep(mat, MARGIN = margin, total.counts, FUN = "/")  # Divide by total counts per cell
-   # Scale by the given scale factor
-   xnorm <- sweep(xnorm, MARGIN = margin, scale.factor, FUN = "*")
-   # Apply log1p normalization efficiently
-   xnorm <- log1p(xnorm)
+   # Normalize matrix sparsely
+   xnorm <- mat
+   xnorm@x <- xnorm@x / rep(total.counts, diff(xnorm@p))  # Sparse division
+   xnorm@x <- xnorm@x * scale.factor                     # Sparse scaling
+   xnorm@x <- log1p(xnorm@x)  
    
    return(xnorm)
 }
@@ -92,18 +115,21 @@ Log_Normalize <- function(mat,
 clr_Normalize <- function(mat,
                           GeomMeans = NULL,
                           margin = 2L){
-   cell.ids <- colnames(mat)
-   if(!all(cell.ids %in% names(GeomMeans))){
-      stop("Missing normalization parameters: Geometric mean")
+   if (is.null(GeomMeans)) {
+      stop("`GeomMeans` must be provided")
    }
    
-   # Get total counts per cell
-   GeomMeans <- GemoMeans[cell.ids]
+   cell.ids <- if (margin == 2L) colnames(mat) else rownames(mat)
+   if (is.null(cell.ids) || !all(cell.ids %in% names(GeomMeans))) {
+      stop("Missing normalization parameters: Geometric means")
+   }
+   # Ensure geometric means are aligned
+   GeomMeans <- GeomMeans[cell.ids]
    
-   # Divide by geometric means
-   xnorm <- sweep(mat, MARGIN = margin, GeomMeans, FUN = "/")  
-   # Apply log1p normalization efficiently
-   xnorm <- log1p(xnorm)
+   # CLR normalization sparingly
+   xnorm <- mat
+   xnorm@x <- xnorm@x / rep(GeomMeans, diff(xnorm@p))  # Sparse division
+   xnorm@x <- log1p(xnorm@x)    
    
    return(xnorm)
 }
@@ -203,14 +229,20 @@ Normalize_data <- function(mat,
                            residual_type = "pearson",
                            ...){
    
+   method <- method[1]
+   
+   if(method == "pearson"){
+      mat <- as.matrix(mat)
+   }
+   
    if(is.null(norm.params)){
    norm.params <- get.Normalization_params(mat,
-                                           method = method[1],
+                                           method = method,
                                            margin = margin,
                                            size_factors = size_factors)
    }
    
-   norm.mat <- switch(method[1],
+   norm.mat <- switch(method,
                          "Log1p" = Log_Normalize(mat,
                                                  scale.factor = scale.factor,
                                                  total.counts = norm.params,
