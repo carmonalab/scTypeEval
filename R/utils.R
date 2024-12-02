@@ -75,9 +75,10 @@ consistency.helper <- function(mat,
                               sample = NULL,
                               bparam = BiocParallel::SerialParam(),
                               min.samples = 5,
-                              min.cells = 10){
+                              min.cells = 10,
+                              KNNGraph_k = 5){
    
-   mat <- get.matrix(mat,
+   mats <- get.matrix(mat,
                      data.type = data.type,
                      ident = ident,
                      sample = sample,
@@ -85,11 +86,11 @@ consistency.helper <- function(mat,
                      min.cells = min.cells,
                      bparam = bparam)
 
-   if(!is.list(mat)){
-      mat <- list(mat)
+   if(!is.list(mats)){
+      mats <- list(mats)
    }
    
-   consist <- BiocParallel::bplapply(mat,
+   consist <- BiocParallel::bplapply(mats,
                                      BPPARAM = bparam,
                                      function(red.mat){
                                         
@@ -103,12 +104,13 @@ consistency.helper <- function(mat,
                                                                        norm.mat = norm.mat,
                                                                        metrics = IntVal.metric,
                                                                        dist.method = distance.method,
-                                                                       ident = red.mat@ident)
+                                                                       ident = red.mat@ident,
+                                                                       KNNGraph_k = KNNGraph_k)
                                         return(con)
                                         
                                      })
    
-   names(consist) <- names(mat)
+   names(consist) <- names(mats)
    
    # combine consistencies if 1vsAll
    if(data.type == "pseudobulk_1vsall"){
@@ -116,11 +118,14 @@ consistency.helper <- function(mat,
       for(cm in IntVal.metric){
          vec <- lapply(consist, function(m){
             m[[cm]][names(m[[cm]]) != "psblk"]
-         }) %>% unlist()
-         
+         })
+         names(vec) <- NULL
+         vec <- unlist(vec)
          join[[cm]] <- vec
       }
-      consist <- join
+      consist <- list(join)
+   } else{
+      unlist(consist, recursive = F)
    }
 
    
@@ -128,4 +133,47 @@ consistency.helper <- function(mat,
    
 }
 
+
+minmax_norm <- function(value, min_value, max_value, inverse = FALSE) {
+   if (inverse) {
+      # For values where higher values mean worse clustering, scale to [-1, 1]
+      return(1 - 2 * ((value - min_value) / (max_value - min_value)))
+   } else {
+      # For values where higher values mean better clustering, scale to [-1, 1]
+      return(2 * ((value - min_value) / (max_value - min_value)) - 1)
+   }
+}
+
+
+normalize_metric <- function(value,
+                             metric){
+   
+   scaled_metric <- switch(metric,
+                           # do not scale for silhouette and modularity
+                           "silhouette" = value,
+                           "modularity" = value,
+                           "ward" = minmax_norm(value,
+                                                min_value = 0,
+                                                max_value = 1,
+                                                inverse = F),
+                           "inertia" = minmax_norm(value,
+                                                   min_value = min(value),
+                                                   max_value = max(value),
+                                                   inverse = T),
+                           "Xie-Beni" = minmax_norm(value,
+                                                    min_value = min(value),
+                                                    max_value = max(value),
+                                                    inverse = T),
+                           "S_Dbw" = minmax_norm(value,
+                                                 min_value = min(value),
+                                                 max_value = max(value),
+                                                 inverse = T),
+                           "I" = minmax_norm(value,
+                                             min_value = min(value),
+                                             max_value = max(value),
+                                             inverse = F)
+                           )
+   
+   return(scaled_metric)
+}
 
