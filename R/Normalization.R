@@ -254,7 +254,7 @@ Normalize_data <- function(mat,
                                                         size_factors = norm.params,
                                                         residual_type = residual_type,
                                                         ...),
-                         stop(method, " is not a supported normalization method.")
+                         stop(method, " is not a supported normalization method. Please use either Log1p, CLR, or pearson")
    )
    
 }
