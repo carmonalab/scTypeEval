@@ -2,6 +2,55 @@
 
 data_type <- c("sc", "pseudobulk", "pseudobulk_1vsall")
 
+
+valid.indices <- function(groups,
+                          ident,
+                          sample,
+                          min.cells = 10,
+                          min.samples = 5,
+                          sep = "_"){
+   
+   
+   # Count the number of cells per group
+   cell_counts <- table(groups)
+   
+   # Filter groups with at least `min.cells` cells
+   valid_groups <- names(cell_counts[cell_counts >= min.cells])
+   
+   #update ident
+   nident <- ident[groups %in% valid_groups]
+   
+   # Check that each ident has at least `min.samples` samples with more than `min.cells` cells
+   if (!is.null(sample)) {
+      # update samples
+      nsample <- sample[groups %in% valid_groups]
+      # Split by ident and check sample distribution
+      ident_samples_count <- sapply(unique(nident), function(cell_type) {
+         sample_counts <- table(nsample[nident == cell_type])
+         sum(sample_counts >= min.samples)  # Count samples with at least `min.samples` cells for this cell type
+      })
+      
+      names(ident_samples_count) <- unique(nident)
+      
+      valid_idents <- names(ident_samples_count[ident_samples_count >= min.samples])
+      
+      # Filter valid groups based on the number of samples with at least `min.cells` cells
+      valid_groups <- valid_groups[sapply(valid_groups, function(g) {
+         ident_name <- strsplit(g, sep)[[1]][2]
+         ident_name %in% valid_idents
+      })]
+   }
+   
+   # Filter the grouping indices to keep only valid groups
+   valid_indices <- which(groups %in% valid_groups)
+   if (length(valid_indices) == 0) {
+      stop("No valid pseudobulk groups meet the specified thresholds.")
+   }
+   
+   return(valid_indices)
+}
+
+
 # get either regular pseudobulk or 1 vs all pseudobulk
 get_pseudobulk <- function(mat, 
                            ident, 
@@ -18,56 +67,28 @@ get_pseudobulk <- function(mat,
       groups <- factor(paste(sample, ident, sep = sep))
    }
    
-   group_levels <- levels(groups)
-   group_indices <- as.integer(groups)
-   
-   # Count the number of cells per group
-   cell_counts <- table(groups)
-   
-   # Filter groups with at least `min.cells` cells
-   valid_groups <- names(cell_counts[cell_counts >= min.cells])
-   
-   # Check that each ident has at least `min.samples` samples with more than 5 cells
-   if (!is.null(sample)) {
-      # Split by ident and check sample distribution
-      ident_samples_count <- sapply(unique(ident), function(cell_type) {
-         sample_counts <- table(sample[ident == cell_type])
-         sum(sample_counts >= min.samples)  # Count samples with at least 5 cells for this cell type
-      })
-      
-      names(ident_samples_count) <- unique(ident)
-      
-      valid_idents <- names(ident_samples_count[ident_samples_count >= min.samples])
-      
-      # Filter valid groups based on the number of samples with at least 5 cells
-      valid_groups <- valid_groups[sapply(valid_groups, function(g) {
-         ident_name <- strsplit(g, sep)[[1]][2]
-         ident_name %in% valid_idents
-      })]
-   }
-   
-   # Filter the grouping indices to keep only valid groups
-   valid_indices <- which(groups %in% valid_groups)
-   if (length(valid_indices) == 0) {
-      stop("No valid pseudobulk groups meet the specified thresholds.")
-   }
-   
-   groups <- groups[valid_indices]
+   valid_indices <- valid.indices(groups = groups,
+                                  ident = ident,
+                                  sample = sample,
+                                  min.samples = min.samples,
+                                  min.cells = min.cells,
+                                  sep = sep)
+
+   groups <- factor(groups[valid_indices])
    mat <- mat[, valid_indices, drop = FALSE]
    
    group_levels <- levels(groups)
    group_indices <- as.integer(groups)
    
-   # Create a sparse matrix for grouping, ensuring groups are columns
    grouping_matrix <- Matrix::sparseMatrix(
-      i = seq_along(group_indices),       # Set rows as indices for each sample
-      j = group_indices,                  # Set columns as the group indices
-      x = 1,                              # Weights are 1 (indicating inclusion in the group)
-      dims = c(ncol(mat), length(group_levels))  # Dimensions: genes (rows) x groups (columns)
+      i = seq_along(group_indices),           # Cell indices (columns)
+      j = group_indices,                      # Group indices (rows)
+      x = 1,                                  # Weights are 1 (indicating inclusion in the group)
+      dims = c(ncol(mat), length(group_levels))  # Cells (columns) x Groups (rows)
    )
    
    # Multiply the grouping matrix with the count matrix to get the summed matrix
-   summed_matrix <- grouping_matrix %*% mat
+   summed_matrix <- mat %*% grouping_matrix
    
    # Set row names for clarity (genes as rows, groups as columns)
    colnames(summed_matrix) <- group_levels
@@ -76,12 +97,12 @@ get_pseudobulk <- function(mat,
    if(is.null(sample)){
       new.idents <- group_levels
    } else {
-      new.idents <- strsplit(group_levels, sep)[[1]][2]
+      new.idents <- sapply(group_levels, function(x){strsplit(x, sep)[[1]][2]})
    }
    
    ret <- new("Mat_ident",
               matrix = summed_matrix,
-              ident = new.idents)
+              ident = factor(new.idents))
    
    return(ret)
 }
@@ -95,26 +116,66 @@ get.pseudobulk1vsAll <- function(mat,
                                  ncores = NULL,
                                  bparam = NULL,
                                  sep = "_"){
+   # check if pseudobulk 1 vs all is possible
+   if(is.null(sample)){
+      stop("1vsAll pseudobulk only possible for multiple samples.
+           Please provide `sample` parameter.")
+   }
+   
+   groups <- factor(paste(sample, ident, sep = sep))
+   names(groups) <- sample
+   
+   
+   valid_indices <- valid.indices(groups = groups,
+                                  ident = ident,
+                                  sample = sample,
+                                  min.samples = min.samples,
+                                  min.cells = min.cells,
+                                  sep = sep)
+   ngroups <- groups[valid_indices]
+   nident <- sapply(as.character(ngroups),
+                    function(x)strsplit(x, sep)[[1]][2]) |> unique()
+   
+   nsamples <- lapply(nident,
+                      function(x){
+                         g <- sapply(as.character(ngroups),
+                                     function(x){strsplit(x, sep)[[1]][2]})
+                         names(g) <- sapply(as.character(ngroups),
+                                     function(x){strsplit(x, sep)[[1]][1]})
+                         g <- g[g == x]
+                         r <- unique(names(g))
+                         return(r)
+                      })
+   names(nsamples) <- nident
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
-   mat.list <- BiocParallel::bplapply(levels(ident),
+   mat.list <- BiocParallel::bplapply(nident,
                                       BPPARAM = param,
                                       function(i){
+                                         vsample <- nsamples[[i]]
+                                         ind <- names(groups) %in% vsample
+                                         
+                                         nmat <- mat[,ind]
+                                         ident <- ident[ind]
+                                         sample <- sample[ind]
+                                         
+                                         ident <- as.character(ident)
                                          ident[ident != i] <- "psblk"
+                                         ident <- as.factor(ident)
                                          
-                                        mat <- get_pseudobulk(mat, 
-                                                        ident = ident, 
-                                                        sample = sample,
-                                                        min.samples = min.samples,
-                                                        min.cells = min.cells)
-                                        return(mat)
+                                         mat <- get_pseudobulk(nmat, 
+                                                               ident = ident, 
+                                                               sample = sample,
+                                                               min.samples = min.samples,
+                                                               min.cells = min.cells)
                                          
+                                         return(mat)
                                       })
    
-   names(mat.list) <- levels(ident)
+   names(mat.list) <- nident
    
    return(mat.list)
    
