@@ -64,12 +64,14 @@ add.HVG <- function(scTypeEval,
    if(is.null(black.list)){
       black.list <- scTypeEval@black.list
    }
-   # remove blacked listed genes
-   mat <- mat[!rownames(mat) %in% black.list,]
+   
    
    norm.mat <- Normalize_data(mat = mat,
                               method = normalization.method[1],
                               ...)
+   
+   # remove blacked listed genes
+   norm.mat <- norm.mat[!rownames(norm.mat) %in% black.list,]
    
    # get highly variable genes
    hgv <- get.HVG(norm.mat,
@@ -82,8 +84,67 @@ add.HVG <- function(scTypeEval,
 
 
 add.GeneMarkers <- function(scTypeEval,
+                            ident = NULL,
+                            sample = NULL,
                             method = c("scran.findMarkers", "gpsFISH"),
-                            ngenes = 500){
+                            ngenes.total = 500,
+                            ngenes.celltype = 50,
+                            ncores = 1,
+                            bparam = NULL,
+                            progressbar = TRUE,
+                            ...){
+   
+   method <- method[1]
+   if(!method %in% c("scran.findMarkers", "gpsFISH")){
+      stop("Current gene markes definitions are either `scran.findMarkers` and `gpsFISH`")
+   }
+   
+   if(is.null(ident)){
+      ident <- scTypeEval@active.ident
+   }
+   
+   if(!ident %in% names(scTypeEval@metadata)){
+      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
+   }
+   
+   # retrieve ident and convert to factor
+   ident.name <- ident
+   ident <- scTypeEval@metadata[[ident]]
+   ident <- gsub("_", ".", ident)
+   ident <- factor(ident)
+   
+   if(!is.null(sample)){
+      if(!sample %in% names(scTypeEval@metadata)){
+         stop("`sample` parameter not found in metadata colnames.")
+      }
+      # retrieve sample and convert to factor
+      sample <- scTypeEval@metadata[[sample]]
+      sample <- gsub("_", ".", sample)
+      sample <- factor(sample)
+   }
+   
+   if(is.null(black.list)){
+      black.list <- scTypeEval@black.list
+   }
+   
+   mat <- scTypeEval@counts
+   
+   markers <- switch(method,
+                     "scran.findMarkers" = get.DEG(mat = mat,
+                                                   ident = ident,
+                                                   block = sample,
+                                                   ngenes.celltype = ngenes.celltype,
+                                                   ncores = ncores,
+                                                   bparam = bparam,
+                                                   progressbar = progressbar,
+                                                   ...),
+                     "gpsFISH" = get.gpsFISHMarkers(sc_count = mat,
+                                                    ident = ident
+                                                    )
+                     )
+   
+   scTypeEval@gene.lists[[method]] <- markers
+   
    
    return(scTypeEval)
    
@@ -124,6 +185,7 @@ Run.Consistency <- function(scTypeEval,
                             data.type = c("sc", "pseudobulk", "pseudobulk_1vsall"),
                             min.samples = 5,
                             min.cells = 10,
+                            KNNGraph_k = 5,
                             black.list = NULL,
                             ncores = 1,
                             bparam = NULL,
@@ -158,7 +220,13 @@ Run.Consistency <- function(scTypeEval,
       sample <- gsub("_", ".", sample)
       sample <- factor(sample)
       
+      if(min.samples < 2){
+         stop("For intersample comparison a minimum threshold of cell population
+              in at least 2 samples is required, but more is recommended.")
+      }
+      
    } else {
+      
       if(data.type != "sc"){
          stop("For pseudobulk provide a dataset with multiple samples,
               and specifiy their respective column metadata in `sample` parameter")
@@ -250,7 +318,8 @@ Run.Consistency <- function(scTypeEval,
                                                                             data.type = data.type,
                                                                             bparam = param2,
                                                                             min.samples = min.samples,
-                                                                            min.cells = min.cells)
+                                                                            min.cells = min.cells,
+                                                                            KNNGraph_k = KNNGraph_k)
                                              
                                              # accommodte to ConsistencyAssay
                                              
@@ -279,11 +348,12 @@ Run.Consistency <- function(scTypeEval,
                                              # name consistency assays
                                              names(CA) <- lapply(seq_along(CA),
                                                                  function(ca){
-                                                                    paste(CA[[ca]]@sample,
-                                                                          CA[[ca]]@data.type,
-                                                                          CA[[ca]]@dist.method,
-                                                                          CA[[ca]]@consistency.metric,
-                                                                          sep = "_")
+                                                                    v <- na.omit(c(CA[[ca]]@sample,
+                                                                                   CA[[ca]]@data.type,
+                                                                                   CA[[ca]]@dist.method,
+                                                                                   CA[[ca]]@consistency.metric))
+                                                                    paste(v,
+                                                                          collapse = "_")
                                                                  })
                                             
                                             return(CA)
@@ -306,8 +376,7 @@ get.ConsistencyData <- function(scTypeEval,
                                 gene.list = NULL,
                                 consistency.metric = NULL,
                                 dist.method = NULL,
-                                data.type = NULL,
-                                scale = TRUE
+                                data.type = NULL
 )
 {
    
@@ -336,11 +405,19 @@ get.ConsistencyData <- function(scTypeEval,
       if (!is.null(dist.method) && !identical(assay@dist.method, dist.method)) next
       if (!is.null(data.type) && !assay@data.type %in% data.type) next
       
+      cm <- assay@consistency.metric
+      
+      # scale if needed, convert to all metric to a -1 to 1 scale
+      scaled_measure <- normalize_metric(value = assay@measure,
+                                         metric = cm)
+     
+      
       # Extract relevant information into a named list
       filtered_data[[a]] <- data.frame(
          celltype = names(assay@measure),
          measure = assay@measure,
-         consistency.metric = assay@consistency.metric,
+         scaled_measure = scaled_measure,
+         consistency.metric = cm,
          dist.method = if (is.null(assay@dist.method)) NA else assay@dist.method,
          gene.list = paste(assay@gene.list, collapse = ", "),
          ident = assay@ident,
@@ -355,6 +432,8 @@ get.ConsistencyData <- function(scTypeEval,
    }
    
    result <- do.call(rbind, filtered_data)
+
+   
    return(result)
    
    
