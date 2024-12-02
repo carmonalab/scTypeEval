@@ -166,8 +166,17 @@ compute_xie_beni <- function(norm.mat,
       
       # Compute minimum distance between the current centroid and all other centroids
       # using Euclidean by default
-      other_centroids <- centroids[, setdiff(unique(ident), cluster), drop = FALSE]
-      min_dist <- min(dist(t(other_centroids) - centroids[, cluster], method = "euclidean"))^2
+      # Check if there are more than one cluster to compute minimum distance
+      if (length(unique(ident)) > 2) {
+         # Compute minimum distance between the current centroid and all other centroids
+         # using Euclidean distance by default
+         other_centroids <- centroids[, setdiff(unique(ident), cluster), drop = FALSE]
+         min_dist <- min(dist(t(other_centroids) - centroids[, cluster], method = "euclidean"))^2
+      } else {
+         # If there are only two clusters, compute the distance directly between the two centroids
+         # Compute distance between the centroids (squared Euclidean distance)
+         min_dist <- sum((centroids[, setdiff(unique(ident), cluster)] - centroids[, cluster])^2)
+      }
       
       # Number of cells in the current cluster
       n_cells <- sum(ident == cluster)
@@ -275,7 +284,7 @@ calculate_IntVal_metric <- function(mat = NULL,
                                     dist = NULL, 
                                     centroids = NULL, 
                                     inertia = NULL, 
-                                    KNNGraph_k = 5, 
+                                    KNNGraph_k = 3, 
                                     hclust.method = "ward.D2",
                                     verbose = T) {
    
