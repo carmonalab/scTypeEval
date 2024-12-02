@@ -372,6 +372,110 @@ Run.Consistency <- function(scTypeEval,
 }
 
 
+Run.BestHit <- function(scTypeEval,
+                        ident = NULL,
+                        sample = NULL,
+                        gene.list = NULL,
+                        black.list = NULL,
+                        min.cells = 10,
+                        ncores = 1,
+                        bparam = NULL,
+                        progressbar = TRUE,
+                        verbose = TRUE,
+                        ...
+                            
+){
+   if(is.null(ident)){
+      ident <- scTypeEval@active.ident
+   }
+   
+   if(!ident %in% names(scTypeEval@metadata)){
+      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
+   }
+
+   # retrieve ident and convert to factor
+   ident.name <- ident
+   ident <- scTypeEval@metadata[[ident]]
+   ident <- gsub("_", ".", ident)
+   ident <- factor(ident)
+   
+   if(!is.null(sample)){
+      if(!sample %in% names(scTypeEval@metadata)){
+         stop("`sample` parameter not found in metadata colnames.")
+      }
+      # retrieve sample and convert to factor
+      sample.name <- sample
+      sample <- scTypeEval@metadata[[sample]]
+      sample <- gsub("_", ".", sample)
+      sample <- factor(sample)
+   } else {
+      stop("BestHit consistency requires multiple samples and specify it in `sample` parameter.")
+   }
+
+   # set gene lists
+   if(is.null(gene.list)){
+      gene.list <- scTypeEval@gene.lists
+   } else {
+      if(!all(gene.list %in% names(scTypeEval@gene.lists))){
+         stop("Some gene list names not included in scTypeEval object")
+      }
+      gene.list <- scTypeEval@gene.lists[gene.list]
+   }
+   
+   if(is.null(black.list)){
+      black.list <- scTypeEval@black.list
+   }
+   
+   
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+
+   # loop over each gene.list
+   consist.list <- lapply(names(gene.list),
+                          function(t){
+                             
+                             # get matrix
+                             keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
+                             mat <- scTypeEval@counts[keep,]
+                             
+                             # remove black list genes
+                             mat <- mat[!rownames(mat) %in% black.list,]
+                             
+                             con <- bestHit.SingleR(mat = mat,
+                                                    ident = ident,
+                                                    sample = sample,
+                                                    min.cells = min.cells,
+                                                    bparam = param)
+                             
+                             # accommodte to ConsistencyAssay
+                             
+                             CA <- methods::new("ConsistencyAssay",
+                                                measure = con,
+                                                consistency.metric = "BestHit.SingleR",
+                                                dist.method = NA,
+                                                gene.list = t,
+                                                black.list = black.list,
+                                                ident = ident.name,
+                                                data.type = "sc",
+                                                sample = NA)
+                             
+                             return(list("BestHit" = CA))
+                          })
+   
+   names(consist.list) <- names(gene.list)
+   
+   # add to scTypeEval object
+   for(n in names(consist.list)){
+      for(m in names(consist.list[[n]]))
+         scTypeEval@consistency[[n]][[m]] <- consist.list[[n]][[m]]
+   }
+   
+   return(scTypeEval)
+   
+}
+
+
 get.ConsistencyData <- function(scTypeEval,
                                 gene.list = NULL,
                                 consistency.metric = NULL,
