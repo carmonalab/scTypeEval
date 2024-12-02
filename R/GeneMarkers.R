@@ -46,30 +46,46 @@ get.HVG <- function(norm.mat,
 get.DEG <- function(mat,
                     ident,
                     block = NULL,
-                    ngenes = 500,
+                    ngenes.celltype = 50,
                     test.type = "t",
                     ncores = 1,
                     bparam = NULL,
                     progressbar = TRUE,
+                    min.prop = 0.6,
+                    black.list = NULL,
                     ...){
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
+   norm.mat <- Normalize_data(mat = mat,
+                              method = "Log1p")
+   
+
+   norm.mat <- norm.mat[!rownames(norm.mat) %in% black.list,]
+   
    de <- scran::findMarkers(x = norm.mat,
-                            group = ident,
-                            pval.type = "all",
+                            groups = ident,
+                            block = sample,
+                            pval.type = "some",
                             BPPARAM = param,
-                            direction = "up",
+                            min.prop = min.prop,
                             ...)
    
-   markers <- de |>
-      dplyr::arrange(log2FC) |>
-      head(ngenes)
-      
-      
-   
+   markers <- lapply(de,
+                function(d){
+                   d <- d |> 
+                      as.data.frame() |>
+                      dplyr::filter(FDR < 0.05) |>
+                      dplyr::arrange(dplyr::desc(summary.logFC)) |>
+                      head(ngenes.celltype)
+                   
+                   return(rownames(d))
+                }) |>
+      unlist() |>
+      unique()
+
    return(markers)
    
    
@@ -80,15 +96,24 @@ get.DEG <- function(mat,
 get.gpsFISHMarkers <- function(sc_count,
                                ident,
                                rm_unannot = T,
+                               ngenes.celltype = 50,
                                total.ngenes = 500,
-                               perCT.ngenes = NULL,
+                               black.list = NULL,
                                seed = 22,
                                ncores = 1){
    #https://htmlpreview.github.io/?https://github.com/kharchenkolab/gpsFISH/blob/main/doc/gene_panel_selection.html
    simulation_params <- gpsFISH::simulation_params
    
+   # remove black listed genes
+   sc_count <- sc_count[!rownames(sc_count) %in% black.list,]
+   
    # relative expression
    unique_cluster_label <- as.character(unique(ident))#unique cell type labels
+   
+   # adapt ident for function
+   ccc <- data.frame(cell_name = colnames(sc_count),
+                     class_label = ident,
+                     row.names = colnames(sc_count))
    
    #cluster-wise relative expression
    relative_prop <-  list()
@@ -96,7 +121,7 @@ get.gpsFISHMarkers <- function(sc_count,
                                                 gene_list=rownames(sc_count),
                                                 gpsFISH::relative_freq,
                                                 count_matrix=sc_count,             
-                                                cell_cluster_conversion=ident)
+                                                cell_cluster_conversion=ccc)
    #individual cell level relative expression
    relative_prop[["cell.level"]] = t(t(sc_count)/colSums(sc_count))
    
@@ -105,7 +130,7 @@ get.gpsFISHMarkers <- function(sc_count,
                                   gene_list = rownames(sc_count),
                                   gpsFISH::average_count,
                                   count_matrix = sc_count,               
-                                  cell_cluster_conversion = sc_cluster)
+                                  cell_cluster_conversion = ccc)
    maxexpr <- apply(ave_count_ik_all_gene, 1, max) 
    
    #keep genes with maxexpr >= 1
@@ -126,12 +151,9 @@ get.gpsFISHMarkers <- function(sc_count,
    relative_prop$cluster.average <- relative_prop$cluster.average[gene2keep, ]
    relative_prop$cell.level <- relative_prop$cell.level[gene2keep, ]
    
-   gene2include.id <- which(rownames(sc_count) %in% gene2include.symbol)   #in the gene panel selection, genes will be encoded by their position in the gene list. Therefore, we need to get the position of curated marker genes here.
-   gene2include.symbol <- rownames(sc_count)[gene2include.id]
-   
    # Construct weighted penalty matrix based on cell type hierarchy
    cluster_distance <- gpsFISH::cluster_dis(count_table = sc_count,                       
-                                            cell_cluster_conversion = sc_cluster,
+                                            cell_cluster_conversion = ccc,
                                             cluster_metric = "complete",
                                             dist_metric = "correlation",
                                             log.transform = F,                                 
@@ -161,8 +183,8 @@ get.gpsFISHMarkers <- function(sc_count,
    diff_expr_result = diff_expr$diff_result
    
    #statistics for the population
-   pop_size = 100 #population size: number of gene panels in a population
-   panel_size = ngenes        #panel size: number of genes in a gene panel
+   pop_size = ngenes.celltype #population size: number of gene panels in a population
+   panel_size = total.ngenes        #panel size: number of genes in a gene panel
    num.random.panel = 95   #number of panels that we initialize randomly
    num.DE.panel = pop_size-num.random.panel    #number of panels initialized using DEGs
    
