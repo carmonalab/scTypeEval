@@ -171,7 +171,11 @@ normalize_metric <- function(value,
                            "I" = minmax_norm(value,
                                              min_value = min(value),
                                              max_value = max(value),
-                                             inverse = F)
+                                             inverse = F),
+                           "BestHit.SingleR" = minmax_norm(value,
+                                                   min_value = 0,
+                                                   max_value = 1,
+                                                   inverse = F)
                            )
    
    return(scaled_metric)
