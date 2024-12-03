@@ -67,7 +67,7 @@ get.DEG <- function(mat,
    
    de <- scran::findMarkers(x = norm.mat,
                             groups = ident,
-                            block = sample,
+                            block = block,
                             pval.type = "some",
                             BPPARAM = param,
                             min.prop = min.prop,
