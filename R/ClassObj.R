@@ -6,7 +6,7 @@ methods::setClass("scTypeEval",
                      consistency = "list", # actual consistency results assays
                      gene.lists = "list", # list of either HGV, markers
                      black.list = "character", # list of genes in black list
-                     active.ident = "character", # default grouping variable
+                     active.ident = "ANY", # default grouping variable
                      reductions = "list", # list of dim reductions
                      misc = "list", # miscellaneous
                      version = "character" # package version

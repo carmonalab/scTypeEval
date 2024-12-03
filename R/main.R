@@ -24,6 +24,10 @@ create.scTypeEval <- function(matrix,
       stop("Input object must be a Seurat, SingleCellExperiment, or matrix-like object.")
    }
    
+   if(ncol(counts) != nrow(metadata)){
+      stop("Different number of columns in counts and number of rows in metadata.")
+   }
+   
    # Create the scTypeEval object
    scTypeEval_obj <- methods::new("scTypeEval",
                                   counts = counts,
