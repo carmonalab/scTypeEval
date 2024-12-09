@@ -60,9 +60,29 @@ set.activeIdent <- function(scTypeEval,
 
 add.HVG <- function(scTypeEval,
                     normalization.method = c("Log1p", "CLR", "pearson"),
+                    var.method = c("Seurat", "scran"),
+                    sample = NULL,
                     ngenes = 500,
                     black.list = NULL,
+                    ncores = 1,
+                    bparam = NULL,
+                    progressbar = TRUE,
                     ...){
+   if(!is.null(sample)){
+      if(!sample %in% names(scTypeEval@metadata)){
+         stop("`sample` parameter not found in metadata colnames.")
+      }
+      # retrieve sample and convert to factor
+      sample.name <- sample
+      sample <- scTypeEval@metadata[[sample]]
+      sample <- gsub("_", ".", sample)
+      sample <- factor(sample)
+   }
+   
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
    # normalize matrix
    mat <- scTypeEval@counts
    if(is.null(black.list)){
@@ -77,9 +97,21 @@ add.HVG <- function(scTypeEval,
    # remove blacked listed genes
    norm.mat <- norm.mat[!rownames(norm.mat) %in% black.list,]
    
+   var.method <- var.method[1]
+   
    # get highly variable genes
-   hgv <- get.HVG(norm.mat,
-                  ngenes = ngenes)
+   hgv <- switch(var.method,
+                 "Seurat" = get.HVG(norm.mat,
+                                    ngenes = ngenes,
+                                    sample = sample,
+                                    bparam = param),
+                 "scran" = get.GeneVar(norm.mat = norm.mat,
+                                       sample = sample,
+                                       ngenes = ngenes,
+                                       bparam = param),
+                 stop(var.method, " not supported for getting variable genes.")
+                 )
+
    
    scTypeEval@gene.lists[["HVG"]] <- hgv
    
