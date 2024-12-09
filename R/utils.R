@@ -134,49 +134,61 @@ consistency.helper <- function(mat,
 }
 
 
+# Function to scale any value to the range [0, 1]
 minmax_norm <- function(value, min_value, max_value, inverse = FALSE) {
    if (inverse) {
-      # For values where higher values mean worse clustering, scale to [-1, 1]
-      return(1 - 2 * ((value - min_value) / (max_value - min_value)))
+      # For values where higher means worse clustering, scale to [0, 1] (inverted)
+      return(1 - ((value - min_value) / (max_value - min_value)))
    } else {
-      # For values where higher values mean better clustering, scale to [-1, 1]
-      return(2 * ((value - min_value) / (max_value - min_value)) - 1)
+      # For values where higher means better clustering, scale to [0, 1]
+      return((value - min_value) / (max_value - min_value))
    }
 }
 
-
-normalize_metric <- function(value,
-                             metric){
-   
+normalize_metric <- function(value, metric) {
+   # Normalize all metrics to the range [0, 1]
    scaled_metric <- switch(metric,
-                           # do not scale for silhouette and modularity
-                           "silhouette" = value,
-                           "modularity" = value,
-                           "ward" = minmax_norm(value,
-                                                min_value = 0,
-                                                max_value = 1,
-                                                inverse = F),
+                           
+                           # Normalize silhouette from [-1, 1] to [0, 1]
+                           "silhouette" = minmax_norm(value,
+                                                      min_value = -1,
+                                                      max_value = 1,
+                                                      inverse = FALSE),
+                           
+                           # Normalize modularity from [-1, 1] to [0, 1]
+                           "modularity" = minmax_norm(value,
+                                                      min_value = -1,
+                                                      max_value = 1,
+                                                      inverse = FALSE),
+                           
+                           # Ward and BestHit are already in [0, 1], no need to scale
+                           "ward" = value,
+                           "BestHit" = value,
+                           
+                           # Normalize inertia to [0, 1] (higher is worse, hence inverse = TRUE)
                            "inertia" = minmax_norm(value,
                                                    min_value = min(value),
                                                    max_value = max(value),
-                                                   inverse = T),
+                                                   inverse = TRUE),
+                           
+                           # Normalize Xie-Beni to [0, 1] (higher is worse, hence inverse = TRUE)
                            "Xie-Beni" = minmax_norm(value,
                                                     min_value = min(value),
                                                     max_value = max(value),
-                                                    inverse = T),
+                                                    inverse = TRUE),
+                           
+                           # Normalize S_Dbw to [0, 1] (higher is worse, hence inverse = TRUE)
                            "S_Dbw" = minmax_norm(value,
                                                  min_value = min(value),
                                                  max_value = max(value),
-                                                 inverse = T),
+                                                 inverse = TRUE),
+                           
+                           # Normalize I to [0, 1] (higher is better, inverse = FALSE)
                            "I" = minmax_norm(value,
                                              min_value = min(value),
                                              max_value = max(value),
-                                             inverse = F),
-                           "BestHit.SingleR" = minmax_norm(value,
-                                                   min_value = 0,
-                                                   max_value = 1,
-                                                   inverse = F)
-                           )
+                                             inverse = FALSE)
+   )
    
    return(scaled_metric)
 }
