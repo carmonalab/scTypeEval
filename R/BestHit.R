@@ -1,4 +1,30 @@
 # code to perform a best-hit classifier based on singleR
+singleR.helper <- function(test,
+                           ref,
+                           bparam = BiocParallel::SerialParam()){
+   pred <- SingleR::SingleR(
+      test = sce.list[[test]],
+      ref = sce.list[[ref]],
+      labels = sce.list[[ref]]$ident,
+      BPPARAM = bparam
+   ) |> 
+      as.data.frame() |> 
+      dplyr::select(dplyr::starts_with("score"))
+   pred$cellid <- rownames(pred)
+   pred <- pred |>  
+      dplyr::mutate(true = sce.list[[test]]$ident) |>
+      tidyr::pivot_longer(-c(cellid, true),
+                          names_to = "celltype",
+                          values_to = "score") |>
+      dplyr::filter(true == gsub("scores[.]", "", celltype)) |>
+      dplyr::group_by(true) |>
+      dplyr::summarize(score = mean(score))
+   
+   return(pred)
+   
+}
+
+
 
 bestHit.SingleR <- function(mat,
                             ident,
@@ -29,43 +55,34 @@ bestHit.SingleR <- function(mat,
                                          sce <- scuttle::logNormCounts(sce)
                                          return(sce)
                                       })
+   names_list <- names(sce.list)
+   # Create combinations and ensure columns are not factors
+   combis <- expand.grid(names_list, names_list, stringsAsFactors = FALSE) |>
+      dplyr::filter(Var1 < Var2)
    
-   res <- data.frame(matrix(nrow= 0, ncol = length(sce.list)+1))
-   names(res) <- c("original", paste("sample", 1:(length(sce.list)-1), sep = "_"), "hit_proportion")
-   for(a in names(sce.list)){
-      df.tmp <- data.frame(original = sce.list[[a]]$ident)
-      s <- 1
-      for(b in names(sce.list)[names(sce.list) != a]){
-         pred <- SingleR::SingleR(
-            test = sce.list[[a]],
-            ref = sce.list[[b]],
-            labels = sce.list[[b]]$ident,
-            BPPARAM = param
-         ) |> 
-            as.data.frame() |>
-            dplyr::mutate(pruned.labels = ifelse(is.na(pruned.labels),
-                                                       "na",
-                                                       pruned.labels)
-                          ) |>
-           dplyr::pull(pruned.labels)
-         
-         df.tmp[[paste("sample", s, sep = "_")]] <- pred
-         s <- s + 1
-      }
-      df.tmp <- df.tmp |>
-         dplyr::rowwise() |>
-         dplyr::mutate(
-            hit_proportion = sum(c_across(starts_with("sample")) == original, na.rm = TRUE)/(length(sce.list)-1)
-         ) |>
-         ungroup()
-      res <- rbind(res, df.tmp)
+   df.tmp <- list()
+   
+   for(i in 1:nrow(combis)){
+      a <- combis[i,1]
+      b <- combis[i,2]
+      pred1 <- singleR.helper(a,b,bparam = param)
+      pred2 <- singleR.helper(b,a, bparam = param)
+      
+      pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
+         dplyr::mutate(score = score.x * score.y,
+                       comp = paste(a, b, sep = "_vs_")) |>
+         dplyr::select(true, score, comp) |>
+         dplyr::rename("celltype" = "true")
+      
+      df.tmp[[paste(a, b, sep = "_vs_")]] <- pred
    }
    
+   res <- do.call(rbind, df.tmp)
    # summarize results per cell type
    res <- res |>
-      dplyr::group_by(original) |>
-      dplyr::summarize(hit_proportion = mean(hit_proportion)) |>
-      dplyr::pull(hit_proportion, name = original)
+      dplyr::group_by(celltype) |>
+      dplyr::summarize(score = mean(score)) |>
+      dplyr::pull(score, name = celltype)
    
    return(res)
    
