@@ -488,7 +488,7 @@ Run.BestHit <- function(scTypeEval,
                              
                              CA <- methods::new("ConsistencyAssay",
                                                 measure = con,
-                                                consistency.metric = "BestHit.SingleR",
+                                                consistency.metric = "BestHit",
                                                 dist.method = NA,
                                                 gene.list = t,
                                                 black.list = black.list,
