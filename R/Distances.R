@@ -13,6 +13,24 @@ distance_methods <- c(
    "pearson"
 )
 
+compute_fast_euclidean <- function(norm.mat) {
+   
+   # Compute the dot product (squared sums)
+   diag_norm <- Matrix::rowSums(norm.mat^2)  # Diagonal terms (squared magnitudes)
+   # Compute the squared distance matrix
+   dist_squared <- outer(diag_norm, diag_norm, "+") - 2 * Matrix::tcrossprod(norm.mat)
+   
+   # Fix numerical precision issues: Negative values close to 0 are set to 0
+   dist_squared[dist_squared < 0] <- 0
+   
+   # Return the distance matrix
+   d <- as.dist(sqrt(dist_squared))
+   return(d)
+}
+
+
+
+
 
 # Define sub-functions for specific distance methods
 compute_stat_dist <- function(norm.mat, dist.method) {
@@ -81,7 +99,7 @@ get.distance <- function(mat = NULL,
    # Dispatcher to call the appropriate function
    dist <- switch(
       dist.method,
-      "euclidean" = compute_stat_dist(norm.mat, dist.method),
+      "euclidean" = compute_fast_euclidean(norm.mat),
       "maximum" = compute_stat_dist(norm.mat, dist.method),
       "manhattan" = compute_stat_dist(norm.mat, dist.method),
       "canberra" = compute_stat_dist(norm.mat, dist.method),
