@@ -3,16 +3,16 @@ singleR.helper <- function(test,
                            ref,
                            bparam = BiocParallel::SerialParam()){
    pred <- SingleR::SingleR(
-      test = sce.list[[test]],
-      ref = sce.list[[ref]],
-      labels = sce.list[[ref]]$ident,
+      test = test,
+      ref = ref,
+      labels = ref$ident,
       BPPARAM = bparam
    ) |> 
       as.data.frame() |> 
       dplyr::select(dplyr::starts_with("score"))
    pred$cellid <- rownames(pred)
    pred <- pred |>  
-      dplyr::mutate(true = sce.list[[test]]$ident) |>
+      dplyr::mutate(true = test$ident) |>
       tidyr::pivot_longer(-c(cellid, true),
                           names_to = "celltype",
                           values_to = "score") |>
@@ -65,8 +65,8 @@ bestHit.SingleR <- function(mat,
    for(i in 1:nrow(combis)){
       a <- combis[i,1]
       b <- combis[i,2]
-      pred1 <- singleR.helper(a,b,bparam = param)
-      pred2 <- singleR.helper(b,a, bparam = param)
+      pred1 <- singleR.helper(sce.list[[a]],sce.list[[b]],bparam = param)
+      pred2 <- singleR.helper(sce.list[[b]],sce.list[[a]], bparam = param)
       
       pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
          dplyr::mutate(score = score.x * score.y,
