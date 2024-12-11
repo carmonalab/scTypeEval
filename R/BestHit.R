@@ -65,6 +65,13 @@ bestHit.SingleR <- function(mat,
    for(i in 1:nrow(combis)){
       a <- combis[i,1]
       b <- combis[i,2]
+      
+      # if reference consist of only one cell, singleR do not return score
+      # but all cells are classified as this unique cell with score of 1
+      nc <- lapply(sce.list[c(a,b)],
+                   function(x){length(unique(x$ident))})
+      if(any(nc < 2)){ next }
+      
       pred1 <- singleR.helper(sce.list[[a]],sce.list[[b]],bparam = param)
       pred2 <- singleR.helper(sce.list[[b]],sce.list[[a]], bparam = param)
       
