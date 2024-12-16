@@ -85,14 +85,16 @@ get.HVG <- function(norm.mat,
 get.GeneVar <- function(norm.mat,
                         sample = NULL,
                         ngenes = 500, 
+                        equiweight = TRUE,
                         bparam = BiocParallel::SerialParam(),
                         ...){
    
    var <- scran::modelGeneVar(x = norm.mat,
                               block = sample,
                               BPPARAM = bparam,
-                              equiweight = F,
+                              equiweight = equiweight,
                               ...)
+   
    hgv <- scran::getTopHVGs(var,
                             n=ngenes)
       

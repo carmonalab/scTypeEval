@@ -60,7 +60,7 @@ set.activeIdent <- function(scTypeEval,
 
 add.HVG <- function(scTypeEval,
                     normalization.method = c("Log1p", "CLR", "pearson"),
-                    var.method = c("Seurat", "scran"),
+                    var.method = c("scran", "basic"),
                     sample = NULL,
                     ngenes = 500,
                     black.list = NULL,
@@ -101,7 +101,7 @@ add.HVG <- function(scTypeEval,
    
    # get highly variable genes
    hgv <- switch(var.method,
-                 "Seurat" = get.HVG(norm.mat,
+                 "basic" = get.HVG(norm.mat,
                                     ngenes = ngenes,
                                     sample = sample,
                                     bparam = param),
