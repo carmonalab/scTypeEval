@@ -216,8 +216,9 @@ Run.Consistency <- function(scTypeEval,
                             normalization.method = c("Log1p", "CLR", "pearson"),
                             gene.list = NULL,
                             distance.method = "euclidean",
-                            IntVal.metric = c("silhouette", "modularity", "ward",
-                                              "inertia", "Xie-Beni", "S_Dbw", "I"),
+                            IntVal.metric = c("silhouette", "NeighborhoodPurity", "ward",
+                                              "inertia", "Xie-Beni", "S_Dbw", "I",
+                                              "modularity", "modularity_pct"),
                             data.type = c("sc", "pseudobulk", "pseudobulk_1vsall"),
                             min.samples = 5,
                             min.cells = 10,
@@ -288,6 +289,12 @@ Run.Consistency <- function(scTypeEval,
    if(!data.type %in% data_type){
       stop(data.type, " data type conversion method not supported. Pick up one of: ", 
            paste(data_type, collapse = ", "))
+   }
+   
+   # if datatype == pseudobulk_1vsall do not run modularity_pct
+   if(data.type == "pseudobulk_1vsall"){
+      message("With datatype pseudobulk_1vsall, modularity contribution per cell type (modularity_pct) not supported. Not running...")
+      IntVal.metric <- IntVal.metric[IntVal.metric != "modularity_pct"]
    }
    
    # set normalization method

@@ -119,8 +119,7 @@ consistency.helper <- function(mat,
          vec <- lapply(consist, function(m){
             m[[cm]][names(m[[cm]]) != "psblk"]
          })
-         names(vec) <- NULL
-         vec <- unlist(vec)
+         vec <- sapply(vec, unname)
          join[[cm]] <- vec
       }
       consist <- list(join)
@@ -154,14 +153,18 @@ normalize_metric <- function(value, metric) {
                                                       min_value = -1,
                                                       max_value = 1,
                                                       inverse = FALSE),
-                           
                            # Normalize modularity from [-1, 1] to [0, 1]
                            "modularity" = minmax_norm(value,
                                                       min_value = -1,
                                                       max_value = 1,
                                                       inverse = FALSE),
-                           
-                           # Ward and BestHit are already in [0, 1], no need to scale
+                           "modularity_pct" = minmax_norm(value,
+                                                      min_value = -1,
+                                                      max_value = 1,
+                                                      inverse = FALSE),
+                           # Ward, neighborhood purity and BestHit are already in [0, 1],
+                           # no need to scale
+                           "NeighborhoodPurity" = value,
                            "ward" = value,
                            "BestHit" = value,
                            

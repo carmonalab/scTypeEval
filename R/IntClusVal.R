@@ -1,7 +1,9 @@
-IntVal_metric <- c("silhouette", "modularity", "ward",
-                  "inertia", "Xie-Beni", "S_Dbw", "I")
+IntVal_metric <- c("silhouette", "NeighborhoodPurity", "ward",
+                  "inertia", "Xie-Beni", "S_Dbw", "I",
+                  "modularity", "modularity_pct")
 
-dist.need <- c("silhouette", "modularity", "ward")
+dist.need <- c("silhouette", "NeighborhoodPurity", "ward",
+               "modularity", "modularity_pct")
 
 
 # Helper function to compute centroids for each cluster
@@ -42,12 +44,83 @@ compute_silhouette <- function(dist, ident) {
    return(mean_per_celltype)
 }
 
-# Modularity Calculation (modified)
+# moudularity
+compute_snn_graph <- function(dist, KNNGraph_k = 5) {
+   # Compute KNN
+   knn <- RANN::nn2(as.matrix(dist), k = KNNGraph_k + 1)$nn.idx
+   knn <- knn[, -1]  # Remove self-neighbor
+   
+   # Initialize adjacency matrix
+   n <- nrow(as.matrix(dist))
+   adj_matrix <- matrix(0, n, n)
+   
+   # Count shared neighbors
+   for (i in seq_len(n)) {
+      for (j in knn[i, ]) {
+         adj_matrix[i, j] <- length(intersect(knn[i, ], knn[j, ]))
+      }
+   }
+   
+   # Create graph object
+   g <- igraph::graph_from_adjacency_matrix(adj_matrix,
+                                            mode = "undirected",
+                                            weighted = TRUE,
+                                            diag = FALSE)
+   return(g)
+}
+
+
+compute_modularity_global <- function(dist,
+                                      ident,
+                                      KNNGraph_k = 5) {
+   # Create a graph object
+   g <- compute_snn_graph(dist = dist,
+                          KNNGraph_k = KNNGraph_k)
+   
+   # Compute modularity
+   modularity_score <- igraph::modularity(g, membership = as.numeric(factor(ident)))
+   names(modularity_score) <- "global"
+   
+   return(modularity_score)
+}
+
+# Uses the modularity matrix to calculate contributions for specific cell types directly.
+
+# This code computes the modularity contribution per cell type using a graph-based approach,
+# where the input distance matrix is converted into a graph, and community detection is
+# approximated based on a predefined identity (ident) assigned to each node.
+
+compute_modularity_pct <- function(dist, ident, KNNGraph_k = 5) {
+   # Create a graph object
+   g <- compute_snn_graph(dist = dist, KNNGraph_k = KNNGraph_k)
+   
+   # Get the modularity matrix
+   mod_matrix <- igraph::modularity_matrix(g)
+   
+   # Compute modularity contributions per cell type
+   cell_types <- unique(ident)
+   modularity_per_type <- sapply(cell_types, function(ct) {
+      type_cells <- which(ident == ct)  # Indices of cells in this type
+      num_type_cells <- length(type_cells)  # Number of cells in this type
+      
+      # Modularity contribution normalized by the number of type cells
+      type_modularity <- (sum(mod_matrix[type_cells, type_cells]) / num_type_cells) /
+                           (2 * igraph::ecount(g))
+      return(type_modularity)
+   })
+   
+   # Return a named vector of modularity contributions
+   names(modularity_per_type) <- cell_types
+   return(modularity_per_type)
+}
+
+
+# NeighborhoodPurity 
 # What it measures:
 # KNN consistency evaluates the local clustering quality by checking,
 # for each cell, how many of its nearest neighbors belong to the same cluster (ident).
 
-compute_modularity <- function(dist,
+compute_NeighborhoodPurity <- function(dist,
                                ident,
                                KNNGraph_k = 5) {
    # Create the KNN matrix
@@ -323,7 +396,9 @@ calculate_IntVal_metric <- function(mat = NULL,
    for (metric in metrics) {
       results[[metric]] <- switch(metric,
                                   "silhouette" = compute_silhouette(dist, ident),
-                                  "modularity" = compute_modularity(dist, ident, KNNGraph_k),
+                                  "NeighborhoodPurity" = compute_NeighborhoodPurity(dist, ident, KNNGraph_k),
+                                  "modularity" = compute_modularity_global(dist, ident, KNNGraph_k),
+                                  "modularity_pct" = compute_modularity_pct(dist, ident, KNNGraph_k),
                                   "ward" = compute_ward(dist, ident, hclust.method),
                                   "inertia" = inertia, 
                                   "Xie-Beni" = compute_xie_beni(norm.mat, ident, centroids, inertia),
