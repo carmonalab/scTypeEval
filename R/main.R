@@ -297,7 +297,7 @@ Run.Consistency <- function(scTypeEval,
    if(is.null(gene.list)){
       gene.list <- scTypeEval@gene.lists
    } else {
-      if(!all(gene.list %in% names(scTypeEval@gene.lists))){
+      if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
          stop("Some gene list names not included in scTypeEval object")
       }
       gene.list <- scTypeEval@gene.lists[gene.list]
@@ -411,9 +411,11 @@ Run.Consistency <- function(scTypeEval,
 Run.BestHit <- function(scTypeEval,
                         ident = NULL,
                         sample = NULL,
+                        data.type = "sc",
                         gene.list = NULL,
                         black.list = NULL,
                         min.cells = 10,
+                        min.samples = 5,
                         ncores = 1,
                         bparam = NULL,
                         progressbar = TRUE,
@@ -421,6 +423,14 @@ Run.BestHit <- function(scTypeEval,
                         ...
                             
 ){
+   
+   if(!data.type %in% data_type){
+      stop(data.type, " data type conversion method not supported. Pick up one of: ", 
+           paste(data_type[1:2], collapse = ", "))
+   } else if(data.type == "pseudobulk_1vsall"){
+      stop("pseudobulk_1vsall not supported for mutual BestHit.") 
+   }
+   
    if(is.null(ident)){
       ident <- scTypeEval@active.ident
    }
@@ -452,7 +462,7 @@ Run.BestHit <- function(scTypeEval,
    if(is.null(gene.list)){
       gene.list <- scTypeEval@gene.lists
    } else {
-      if(!all(gene.list %in% names(scTypeEval@gene.lists))){
+      if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
          stop("Some gene list names not included in scTypeEval object")
       }
       gene.list <- scTypeEval@gene.lists[gene.list]
@@ -481,7 +491,9 @@ Run.BestHit <- function(scTypeEval,
                              con <- bestHit.SingleR(mat = mat,
                                                     ident = ident,
                                                     sample = sample,
+                                                    data.type = data.type,
                                                     min.cells = min.cells,
+                                                    min.samples = min.samples,
                                                     bparam = param)
                              
                              # accommodte to ConsistencyAssay

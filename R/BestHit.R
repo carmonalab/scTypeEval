@@ -29,7 +29,10 @@ singleR.helper <- function(test,
 bestHit.SingleR <- function(mat,
                             ident,
                             sample,
+                            data.type = "sc",
                             min.cells = 10,
+                            min.samples = 5,
+                            sep = "_",
                             ncores = 1,
                             bparam = NULL,
                             progressbar = TRUE){
@@ -37,12 +40,38 @@ bestHit.SingleR <- function(mat,
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
+
+   # Combined grouping
+   groups <- factor(paste(sample, ident, sep = sep))
    
-   mat.split <- split.matrix(mat,
-                             ident = ident,
-                             sample = sample,
-                             min.cells = min.cells,
-                             bparam = param)
+   valid_indices <- valid.indices(groups = groups,
+                                  ident = ident,
+                                  sample = sample,
+                                  min.samples = min.samples,
+                                  min.cells = min.cells,
+                                  sep = sep)
+   
+   groups <- factor(groups[valid_indices])
+   mat <- mat[, valid_indices, drop = FALSE]
+   
+   mats <- split.matrix(mat,
+                        ident = ident[valid_indices],
+                        sample = sample[valid_indices],
+                        min.cells = min.cells,
+                        bparam = param)
+   
+   mat.split <- lapply(mats,
+                       function(mat){
+                          get.matrix(mat@matrix,
+                                     data.type = data.type,
+                                     ident = mat@ident,
+                                     sample = NULL, # now is pseudobulk per cell type per invidividual sample
+                                     min.cells = min.cells,
+                                     bparam = bparam)
+                       })
+      
+
+   
    
    sce.list <- BiocParallel::bplapply(mat.split,
                                       BPPARAM = param,
