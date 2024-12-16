@@ -92,8 +92,8 @@ get.distance <- function(mat = NULL,
                          dist.method = "euclidean") {
    # Handle transposition
    if (transpose) {
-      if(!is.null(mat)){mat <- t(mat)}
-      if(!is.null(norm.mat)){norm.mat <- t(norm.mat)}
+      if(!is.null(mat)){mat <- Matrix::t(mat)}
+      if(!is.null(norm.mat)){norm.mat <- Matrix::t(norm.mat)}
    }
    
    # Dispatcher to call the appropriate function

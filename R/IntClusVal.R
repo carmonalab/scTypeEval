@@ -5,6 +5,8 @@ IntVal_metric <- c("silhouette", "NeighborhoodPurity", "ward",
 dist.need <- c("silhouette", "NeighborhoodPurity", "ward",
                "modularity", "modularity_pct")
 
+knn.need <- c( "NeighborhoodPurity", "modularity", "modularity_pct")
+
 
 # Helper function to compute centroids for each cluster
 compute_centroids <- function(norm.mat, ident) {
@@ -44,11 +46,19 @@ compute_silhouette <- function(dist, ident) {
    return(mean_per_celltype)
 }
 
-# moudularity
-compute_snn_graph <- function(dist, KNNGraph_k = 5) {
+compute_KNN <- function(dist, KNNGraph_k){
    # Compute KNN
    knn <- RANN::nn2(as.matrix(dist), k = KNNGraph_k + 1)$nn.idx
    knn <- knn[, -1]  # Remove self-neighbor
+   return(knn)
+}
+
+# moudularity
+compute_snn_graph <- function(dist, KNNGraph_k = 5, knn = NULL) {
+   
+   if(is.null(knn)){
+      knn <- compute_KNN(dist = dist, KNNGraph_k = KNNGraph_k)
+   }
    
    # Initialize adjacency matrix
    n <- nrow(as.matrix(dist))
@@ -57,7 +67,9 @@ compute_snn_graph <- function(dist, KNNGraph_k = 5) {
    # Count shared neighbors
    for (i in seq_len(n)) {
       for (j in knn[i, ]) {
-         adj_matrix[i, j] <- length(intersect(knn[i, ], knn[j, ]))
+         shared_neighbors <- length(intersect(knn[i, ], knn[j, ]))
+         adj_matrix[i, j] <- shared_neighbors
+         adj_matrix[j, i] <- shared_neighbors  # Ensure symmetry
       }
    }
    
@@ -72,10 +84,12 @@ compute_snn_graph <- function(dist, KNNGraph_k = 5) {
 
 compute_modularity_global <- function(dist,
                                       ident,
-                                      KNNGraph_k = 5) {
+                                      KNNGraph_k = 5,
+                                      knn = NULL) {
    # Create a graph object
    g <- compute_snn_graph(dist = dist,
-                          KNNGraph_k = KNNGraph_k)
+                          KNNGraph_k = KNNGraph_k,
+                          knn = knn)
    
    # Compute modularity
    modularity_score <- igraph::modularity(g, membership = as.numeric(factor(ident)))
@@ -90,9 +104,14 @@ compute_modularity_global <- function(dist,
 # where the input distance matrix is converted into a graph, and community detection is
 # approximated based on a predefined identity (ident) assigned to each node.
 
-compute_modularity_pct <- function(dist, ident, KNNGraph_k = 5) {
+compute_modularity_pct <- function(dist,
+                                   ident,
+                                   KNNGraph_k = 5,
+                                   knn = NULL) {
    # Create a graph object
-   g <- compute_snn_graph(dist = dist, KNNGraph_k = KNNGraph_k)
+   g <- compute_snn_graph(dist = dist,
+                          KNNGraph_k = KNNGraph_k,
+                          knn = knn)
    
    # Get the modularity matrix
    mod_matrix <- igraph::modularity_matrix(g)
@@ -122,10 +141,11 @@ compute_modularity_pct <- function(dist, ident, KNNGraph_k = 5) {
 
 compute_NeighborhoodPurity <- function(dist,
                                ident,
-                               KNNGraph_k = 5) {
-   # Create the KNN matrix
-   knn <- RANN::nn2(as.matrix(dist), k = KNNGraph_k + 1)$nn.idx
-   knn <- knn[, -1]  # Remove self-neighbor
+                               KNNGraph_k = 5,
+                               knn = NULL) {
+   if(is.null(knn)){
+      knn <- compute_KNN(dist = dist, KNNGraph_k = KNNGraph_k)
+   }
    
    # Initialize a vector to store consistency scores for each cell
    modularities <- numeric(length(ident))
@@ -283,7 +303,7 @@ compute_s_dbw <- function(norm.mat,
    for (cluster in unique(ident)) {
       # Dispersion for the current cluster
       cluster_cells <- norm.mat[, ident == cluster, drop = FALSE]
-      dispersion <- mean(sqrt(colSums((cluster_cells - centroids[, cluster])^2)))
+      dispersion <- mean(sqrt(Matrix::colSums((cluster_cells - centroids[, cluster])^2)))
       
       # Separation relative to each other clusters
       other_centroids <- centroids[, setdiff(colnames(centroids), cluster), drop = FALSE]
@@ -324,7 +344,7 @@ compute_i_index <- function(norm.mat,
    }
    
    # Calculate the total dataset centroid
-   total_centroid <- rowMeans(norm.mat)
+   total_centroid <- Matrix::rowMeans(norm.mat)
    
    # Initialize a vector to store the I index for each ident
    i_index_scores <- numeric(length(unique(ident)))
@@ -336,7 +356,7 @@ compute_i_index <- function(norm.mat,
       separation <- sum((centroids[, cluster] - total_centroid)^2)
       
       # Compute cohesion for the current cluster
-      cohesion <- sum(colSums((norm.mat[, ident == cluster] - centroids[, cluster])^2))
+      cohesion <- sum(Matrix::colSums((norm.mat[, ident == cluster] - centroids[, cluster])^2))
       
       # Compute the I index for the current cluster
       i_index_scores[cluster] <- separation / cohesion
@@ -375,6 +395,10 @@ calculate_IntVal_metric <- function(mat = NULL,
                            dist.method = dist.method)
    }
    
+   if(any(metrics %in% knn.need)){
+      knn <- compute_KNN(dist, KNNGraph_k = KNNGraph_k)
+   }
+   
    if(is.null(centroids) && any(!metrics %in% dist.need)){
       if(verbose){message("Computing centroids...\n")}
       centroids <- compute_centroids(norm.mat, ident)
@@ -396,9 +420,9 @@ calculate_IntVal_metric <- function(mat = NULL,
    for (metric in metrics) {
       results[[metric]] <- switch(metric,
                                   "silhouette" = compute_silhouette(dist, ident),
-                                  "NeighborhoodPurity" = compute_NeighborhoodPurity(dist, ident, KNNGraph_k),
-                                  "modularity" = compute_modularity_global(dist, ident, KNNGraph_k),
-                                  "modularity_pct" = compute_modularity_pct(dist, ident, KNNGraph_k),
+                                  "NeighborhoodPurity" = compute_NeighborhoodPurity(dist, ident, KNNGraph_k, knn),
+                                  "modularity" = compute_modularity_global(dist, ident, KNNGraph_k, knn),
+                                  "modularity_pct" = compute_modularity_pct(dist, ident, KNNGraph_k, knn),
                                   "ward" = compute_ward(dist, ident, hclust.method),
                                   "inertia" = inertia, 
                                   "Xie-Beni" = compute_xie_beni(norm.mat, ident, centroids, inertia),
