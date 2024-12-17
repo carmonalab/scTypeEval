@@ -207,6 +207,9 @@ compute_ward <- function(dist,
 # Helper function to compute inertia (sum of squared distances)
 # Inertia Calculation
 # the lowest more consistency
+# Global: summing the per-cluster inertia values gives the overall inertia for the dataset.
+# The mean of per-cluster inertia values would divide by the number of clusters,
+# but the global inertia is the sum across all clusters, not the mean.
 compute_inertia <- function(norm.mat,
                             ident,
                             centroids = NULL) {
@@ -236,6 +239,12 @@ compute_inertia <- function(norm.mat,
 #A lower Xie-Beni index indicates better clustering quality, meaning that
 # clusters are more distinct and compact.
 # it is computed dividing the inertia by the minimum distance to the closer cluster
+# Global: summing the per-cluster Xie-Beni values does not yield the correct global Xie-Beni index.
+# The denominator of the global Xie-Beni includes the minimum distance between any two clusters
+# and the total number of cells. Summing per-cluster Xie-Beni values will distort the result
+# because the minimum distance is not shared across clusters
+# Averaging per-cluster Xie-Beni values would still not reflect the global denominator 
+
 compute_xie_beni <- function(norm.mat,
                              ident,
                              centroids = NULL,
@@ -287,6 +296,12 @@ compute_xie_beni <- function(norm.mat,
 # 2 - Separation: Computes the average pairwise dissimilarity between cluster
 #  centroids using the Pearson correlation coefficient
 # Again the lower the better
+
+# Global: summing per-cluster S_Dbw values will not yield the global S_Dbw index.
+# The global dispersion and global separation must be averaged across clusters,
+# rather than summed. Summing will overestimate the result and misrepresent the
+# balance between dispersion and separation.
+
 compute_s_dbw <- function(norm.mat,
                           ident,
                           centroids = NULL) {
@@ -333,6 +348,10 @@ compute_s_dbw <- function(norm.mat,
 #  the squared distances between each point and its cluster centroid.
 
 # A higher I index indicates better clustering, as it suggests that clusters are well-separated
+
+# Global: summing per-cluster I index values does not yield the global I index.
+# The global I index is a ratio of total separation to total cohesion.
+# Simply summing the per-cluster ratios will not preserve this relationship.
 
 compute_i_index <- function(norm.mat,
                             ident,
