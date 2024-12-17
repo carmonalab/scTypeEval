@@ -417,6 +417,7 @@ Run.Consistency <- function(scTypeEval,
 
 Run.BestHit <- function(scTypeEval,
                         ident = NULL,
+                        ident_GroundTruth = NULL,
                         sample = NULL,
                         data.type = "sc",
                         gene.list = NULL,
@@ -451,6 +452,12 @@ Run.BestHit <- function(scTypeEval,
    ident <- scTypeEval@metadata[[ident]]
    ident <- gsub("_", ".", ident)
    ident <- factor(ident)
+   
+   if(!is.null(ident_GroundTruth)){
+      ident_GroundTruth <- scTypeEval@metadata[[ident_GroundTruth]]
+      ident_GroundTruth <- gsub("_", ".", ident_GroundTruth)
+      ident_GroundTruth <- factor(ident_GroundTruth)
+   }
    
    if(!is.null(sample)){
       if(!sample %in% names(scTypeEval@metadata)){
@@ -497,6 +504,7 @@ Run.BestHit <- function(scTypeEval,
                              
                              con <- bestHit.SingleR(mat = mat,
                                                     ident = ident,
+                                                    ident_GroundTruth = ident_GroundTruth,
                                                     sample = sample,
                                                     data.type = data.type,
                                                     min.cells = min.cells,

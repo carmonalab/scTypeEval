@@ -24,23 +24,14 @@ singleR.helper <- function(test,
    
 }
 
-
-
-bestHit.SingleR <- function(mat,
-                            ident,
-                            sample,
-                            data.type = "sc",
-                            min.cells = 10,
-                            min.samples = 5,
-                            sep = "_",
-                            ncores = 1,
-                            bparam = NULL,
-                            progressbar = TRUE){
-   
-   param <- set_parallel_params(ncores = ncores,
-                                bparam = bparam,
-                                progressbar = progressbar)
-
+get.MutualMatrix <- function(mat,
+                             ident,
+                             sample,
+                             data.type = "sc",
+                             min.cells = 10,
+                             min.samples = 5,
+                             sep = "_",
+                             bparam = BiocParallel::SerialParam()){
    # Combined grouping
    groups <- factor(paste(sample, ident, sep = sep))
    
@@ -50,15 +41,14 @@ bestHit.SingleR <- function(mat,
                                   min.samples = min.samples,
                                   min.cells = min.cells,
                                   sep = sep)
-   
-   groups <- factor(groups[valid_indices])
+
    mat <- mat[, valid_indices, drop = FALSE]
    
    mats <- split.matrix(mat,
                         ident = ident[valid_indices],
                         sample = sample[valid_indices],
                         min.cells = min.cells,
-                        bparam = param)
+                        bparam = bparam)
    
    mat.split <- lapply(mats,
                        function(mat){
@@ -69,21 +59,67 @@ bestHit.SingleR <- function(mat,
                                      min.cells = min.cells,
                                      bparam = bparam)
                        })
-      
-
    
+   return(mat.split)
+}
+
+get.SCE <-  function(m){
+   sce <- SingleCellExperiment::SingleCellExperiment(
+      assays = list(counts = m@matrix),
+      colData = data.frame(ident = m@ident)
+   )
+   sce <- sce[,colSums(SingleCellExperiment::counts(sce)) > 0] # Remove libraries with no counts.
+   sce <- scuttle::logNormCounts(sce)
+   return(sce)
+}
+
+bestHit.SingleR <- function(mat,
+                            ident,
+                            ident_GroundTruth = NULL,
+                            sample,
+                            data.type = "sc",
+                            min.cells = 10,
+                            min.samples = 5,
+                            sep = "_",
+                            ncores = 1,
+                            bparam = NULL,
+                            progressbar = FALSE){
+   
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   mat.split <- get.MutualMatrix(mat = mat,
+                                 ident = ident,
+                                 sample = sample,
+                                 data.type = data.type,
+                                 min.cells = min.cells,
+                                 min.samples = min.samples,
+                                 sep = sep,
+                                 bparam = param)
    
    sce.list <- BiocParallel::bplapply(mat.split,
                                       BPPARAM = param,
-                                      function(m){
-                                         sce <- SingleCellExperiment::SingleCellExperiment(
-                                            assays = list(counts = m@matrix),
-                                            colData = data.frame(ident = m@ident)
-                                         )
-                                         sce <- sce[,colSums(SingleCellExperiment::counts(sce)) > 0] # Remove libraries with no counts.
-                                         sce <- scuttle::logNormCounts(sce)
-                                         return(sce)
-                                      })
+                                      get.SCE)
+   
+   if(is.null(ident_GroundTruth)){
+      sce.listGT <- sce.list
+   } else {
+      mat.split <- get.MutualMatrix(mat = mat,
+                                    ident = ident_GroundTruth,
+                                    sample = sample,
+                                    data.type = data.type,
+                                    min.cells = min.cells,
+                                    min.samples = min.samples,
+                                    sep = sep,
+                                    bparam = param)
+      
+      sce.listGT <- BiocParallel::bplapply(mat.split,
+                                           BPPARAM = param,
+                                           get.SCE)
+   }
+   
+   
    names_list <- names(sce.list)
    # Create combinations and ensure columns are not factors
    combis <- expand.grid(names_list, names_list, stringsAsFactors = FALSE) |>
@@ -101,8 +137,8 @@ bestHit.SingleR <- function(mat,
                    function(x){length(unique(x$ident))})
       if(any(nc < 2)){ next }
       
-      pred1 <- singleR.helper(sce.list[[a]],sce.list[[b]],bparam = param)
-      pred2 <- singleR.helper(sce.list[[b]],sce.list[[a]], bparam = param)
+      pred1 <- singleR.helper(sce.list[[a]],sce.listGT[[b]],bparam = param)
+      pred2 <- singleR.helper(sce.list[[b]],sce.listGT[[a]], bparam = param)
       
       pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
          dplyr::mutate(score = score.x * score.y,
