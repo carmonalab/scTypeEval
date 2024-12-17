@@ -1,11 +1,11 @@
 IntVal_metric <- c("silhouette", "NeighborhoodPurity", "ward",
                   "inertia", "Xie-Beni", "S_Dbw", "I",
-                  "modularity", "modularity_pct")
+                  "modularity")
 
 dist.need <- c("silhouette", "NeighborhoodPurity", "ward",
-               "modularity", "modularity_pct")
+               "modularity")
 
-knn.need <- c( "NeighborhoodPurity", "modularity", "modularity_pct")
+knn.need <- c( "NeighborhoodPurity", "modularity")
 
 
 # Helper function to compute centroids for each cluster
@@ -441,7 +441,6 @@ calculate_IntVal_metric <- function(mat = NULL,
                                   "silhouette" = compute_silhouette(dist, ident),
                                   "NeighborhoodPurity" = compute_NeighborhoodPurity(dist, ident, KNNGraph_k, knn),
                                   "modularity" = compute_modularity_global(dist, ident, KNNGraph_k, knn),
-                                  "modularity_pct" = compute_modularity_pct(dist, ident, KNNGraph_k, knn),
                                   "ward" = compute_ward(dist, ident, hclust.method),
                                   "inertia" = inertia, 
                                   "Xie-Beni" = compute_xie_beni(norm.mat, ident, centroids, inertia),

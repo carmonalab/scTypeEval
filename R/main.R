@@ -218,7 +218,7 @@ Run.Consistency <- function(scTypeEval,
                             distance.method = "euclidean",
                             IntVal.metric = c("silhouette", "NeighborhoodPurity", "ward",
                                               "inertia", "Xie-Beni", "S_Dbw", "I",
-                                              "modularity", "modularity_pct"),
+                                              "modularity"),
                             data.type = c("sc", "pseudobulk", "pseudobulk_1vsall"),
                             min.samples = 5,
                             min.cells = 10,
@@ -512,7 +512,7 @@ Run.BestHit <- function(scTypeEval,
                                                 gene.list = t,
                                                 black.list = black.list,
                                                 ident = ident.name,
-                                                data.type = "sc",
+                                                data.type = data.type,
                                                 sample = NA)
                              
                              return(list("BestHit" = CA))
