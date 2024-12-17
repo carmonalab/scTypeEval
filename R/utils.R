@@ -132,6 +132,11 @@ consistency.helper <- function(mat,
    
 }
 
+rm0 <- function(value){
+   value[value < 0] <- 0
+   return(value)
+}
+
 
 # Function to scale any value to the range [0, 1]
 minmax_norm <- function(value, min_value, max_value, inverse = FALSE) {
@@ -148,16 +153,10 @@ normalize_metric <- function(value, metric) {
    # Normalize all metrics to the range [0, 1]
    scaled_metric <- switch(metric,
                            
-                           # Normalize silhouette from [-1, 1] to [0, 1]
-                           "silhouette" = minmax_norm(value,
-                                                      min_value = -1,
-                                                      max_value = 1,
-                                                      inverse = FALSE),
-                           # Normalize modularity from [-1, 1] to [0, 1]
-                           "modularity" = minmax_norm(value,
-                                                      min_value = -1,
-                                                      max_value = 1,
-                                                      inverse = FALSE),
+                           # remove negative values
+                           "silhouette" = rm0(value),
+                           # remove negative values
+                           "modularity" = rm0(value),
                            "modularity_pct" = minmax_norm(value,
                                                       min_value = -1,
                                                       max_value = 1,
