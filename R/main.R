@@ -216,10 +216,11 @@ Run.Consistency <- function(scTypeEval,
                             normalization.method = c("Log1p", "CLR", "pearson"),
                             gene.list = NULL,
                             distance.method = "euclidean",
-                            IntVal.metric = c("silhouette", "NeighborhoodPurity", "ward",
-                                              "inertia", "Xie-Beni", "S_Dbw", "I",
+                            IntVal.metric = c("silhouette", "NeighborhoodPurity",
+                                              "ward",
                                               "modularity"),
-                            data.type = c("sc", "pseudobulk", "pseudobulk_1vsall"),
+                            data.type = c("sc", "pseudobulk",
+                                          "pseudobulk_1vsall"),
                             min.samples = 5,
                             min.cells = 10,
                             KNNGraph_k = 5,
@@ -418,6 +419,7 @@ Run.Consistency <- function(scTypeEval,
 Run.BestHit <- function(scTypeEval,
                         ident = NULL,
                         ident_GroundTruth = NULL,
+                        method = c("Mutual.Score", "Mutual.Match"),
                         sample = NULL,
                         data.type = "sc",
                         gene.list = NULL,
@@ -486,6 +488,16 @@ Run.BestHit <- function(scTypeEval,
       black.list <- scTypeEval@black.list
    }
    
+   # set methods
+   if(any(!method %in% mutual_method)){
+      stop("Not supported consistency metrics, please provide both or either: ", mutual_method)
+   }
+   
+   if(data.type == "sc" && "Mutual.Match" %in% method){
+      warning("Mutual.Match consistency only supported for pseudobulk data.type, not running")
+      method <- method[method != "Mutual.Match"]
+   }
+   
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
@@ -507,6 +519,7 @@ Run.BestHit <- function(scTypeEval,
                                                     ident_GroundTruth = ident_GroundTruth,
                                                     sample = sample,
                                                     data.type = data.type,
+                                                    method = method,
                                                     min.cells = min.cells,
                                                     min.samples = min.samples,
                                                     bparam = param)
