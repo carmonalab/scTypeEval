@@ -1,3 +1,5 @@
+mutual_method <-  c("Mutual.Score", "Mutual.Match")
+
 # code to perform a best-hit classifier based on singleR
 singleR.helper <- function(test,
                            ref,
@@ -8,12 +10,16 @@ singleR.helper <- function(test,
       labels = ref$ident,
       BPPARAM = bparam
    ) |> 
-      as.data.frame() |> 
-      dplyr::select(dplyr::starts_with("score"))
-   pred$cellid <- rownames(pred)
-   pred <- pred |>  
-      dplyr::mutate(true = test$ident) |>
-      tidyr::pivot_longer(-c(cellid, true),
+      as.data.frame() 
+   return(pred)
+}
+
+singleR.score.tidy <- function(pred,
+                               .true){
+   pred <- pred |>
+      dplyr::select(dplyr::starts_with("score")) |>  
+      dplyr::mutate(true = .true) |>
+      tidyr::pivot_longer(-c(true),
                           names_to = "celltype",
                           values_to = "score") |>
       dplyr::filter(true == gsub("scores[.]", "", celltype)) |>
@@ -21,7 +27,48 @@ singleR.helper <- function(test,
       dplyr::summarize(score = mean(score))
    
    return(pred)
+}
+
+singleR.score <- function(pred1, true1,
+                          pred2, true2){
    
+   pred1 <- singleR.score.tidy(pred1, true1)
+   pred2 <- singleR.score.tidy(pred2, true2)
+   
+   pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
+      dplyr::mutate(score = score.x * score.y) |>
+      dplyr::select(true, score) |>
+      dplyr::rename("celltype" = "true")
+   
+   return(pred)
+}
+
+singleR.match.tidy <- function(pred, .true){
+   pred <- pred |>
+      dplyr::select("pruned.labels") |>
+      dplyr::mutate(true = .true,
+                    score = ifelse(true == pruned.labels,
+                                   1, 0))
+   
+   return(pred)
+}
+
+
+singleR.match <- function(pred1, pred2,
+                          true1, true2){
+   
+   pred1 <- singleR.match.tidy(pred1, true1)
+   pred2 <- singleR.match.tidy(pred2, true2)
+   
+   pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
+      dplyr::group_by(true) |>
+      dplyr::mutate(score = score.x * score.y,
+                    score = sum(score[score == 1])/dplyr::n()) |>
+      dplyr::select(true, score) |>
+      dplyr::rename("celltype" = "true")
+      
+   
+   return(pred)
 }
 
 get.MutualMatrix <- function(mat,
@@ -68,7 +115,7 @@ get.SCE <-  function(m){
       assays = list(counts = m@matrix),
       colData = data.frame(ident = m@ident)
    )
-   sce <- sce[,colSums(SingleCellExperiment::counts(sce)) > 0] # Remove libraries with no counts.
+   sce <- sce[,Matrix::colSums(SingleCellExperiment::counts(sce)) > 0] # Remove libraries with no counts.
    sce <- scuttle::logNormCounts(sce)
    return(sce)
 }
@@ -77,13 +124,14 @@ bestHit.SingleR <- function(mat,
                             ident,
                             ident_GroundTruth = NULL,
                             sample,
+                            method = "Mutual.Score",
                             data.type = "sc",
                             min.cells = 10,
                             min.samples = 5,
                             sep = "_",
                             ncores = 1,
                             bparam = NULL,
-                            progressbar = FALSE){
+                            progressbar = TRUE){
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
@@ -133,29 +181,53 @@ bestHit.SingleR <- function(mat,
       
       # if reference consist of only one cell, singleR do not return score
       # but all cells are classified as this unique cell with score of 1
-      nc <- lapply(sce.list[c(a,b)],
+      nc <- lapply(sce.listGT[c(a,b)],
                    function(x){length(unique(x$ident))})
       if(any(nc < 2)){ next }
       
       pred1 <- singleR.helper(sce.list[[a]],sce.listGT[[b]],bparam = param)
       pred2 <- singleR.helper(sce.list[[b]],sce.listGT[[a]], bparam = param)
       
-      pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
-         dplyr::mutate(score = score.x * score.y,
-                       comp = paste(a, b, sep = "_vs_")) |>
-         dplyr::select(true, score, comp) |>
-         dplyr::rename("celltype" = "true")
+      # original annotations to compare with predictions
+      true1 <- sce.list[[a]]$ident
+      true2 <- sce.list[[b]]$ident
       
-      df.tmp[[paste(a, b, sep = "_vs_")]] <- pred
+      results <- BiocParallel::bplapply(method,
+                                        BPPARAM = param,
+                                        function(meth){
+      
+       r <- switch(meth,
+                   "Mutual.Score" = singleR.score(pred1 = pred1,
+                                                  pred2 = pred2,
+                                                  true1 = true1,
+                                                  true2 = true2),
+                   "Mutual.Match" = singleR.match(pred1 = pred1,
+                                                  pred2 = pred2,
+                                                  true1 = true1,
+                                                  true2 = true2),
+                   stop(meth, " is not a supported Mutual Besthit method."))
+       return(r)
+                                        })
+      names(results) <- method
+
+      
+      df.tmp[[paste(a, b, sep = "_vs_")]] <- results
    }
    
-   res <- do.call(rbind, df.tmp)
-   # summarize results per cell type
-   res <- res |>
-      dplyr::group_by(celltype) |>
-      dplyr::summarize(score = mean(score)) |>
-      dplyr::pull(score, name = celltype)
+   # join results by method
+   resli <- lapply(method, function(m)
+   {
+      res <- do.call(rbind, lapply(df.tmp, function(x) x[[m]]))
+      # summarize results per cell type
+      res <- res |>
+         dplyr::group_by(celltype) |>
+         dplyr::summarize(score = mean(score)) |>
+         dplyr::pull(score, name = celltype)
+      return(res)
+   }
+   )
+   names(resli) <- method
    
-   return(res)
+   return(resli)
    
 }

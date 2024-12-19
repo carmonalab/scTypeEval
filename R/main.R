@@ -526,17 +526,32 @@ Run.BestHit <- function(scTypeEval,
                              
                              # accommodte to ConsistencyAssay
                              
-                             CA <- methods::new("ConsistencyAssay",
-                                                measure = con,
-                                                consistency.metric = "BestHit",
-                                                dist.method = NA,
-                                                gene.list = t,
-                                                black.list = black.list,
-                                                ident = ident.name,
-                                                data.type = data.type,
-                                                sample = NA)
+                             CA <- lapply(names(con),
+                                          function(cc){
+                                             
+                                             methods::new("ConsistencyAssay",
+                                                          measure = con[[cc]],
+                                                          consistency.metric = paste("BestHit", cc, sep = "-"),
+                                                          dist.method = NA,
+                                                          gene.list = t,
+                                                          black.list = black.list,
+                                                          ident = ident.name,
+                                                          data.type = data.type,
+                                                          sample = NA)
+                                             
+                                          })
                              
-                             return(list("BestHit" = CA))
+                             # name consistency assays
+                             names(CA) <- lapply(seq_along(CA),
+                                                 function(ca){
+                                                    v <- na.omit(c(CA[[ca]]@data.type,
+                                                                   CA[[ca]]@consistency.metric))
+                                                    paste(v,
+                                                          collapse = "_")
+                                                 })
+                             
+                             
+                             return(CA)
                           })
    
    names(consist.list) <- names(gene.list)
