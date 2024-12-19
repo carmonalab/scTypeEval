@@ -164,7 +164,8 @@ normalize_metric <- function(value, metric) {
                            # Ward, neighborhood purity and BestHit are already in [0, 1],
                            # no need to scale
                            "NeighborhoodPurity" = value,
-                           "ward" = value,
+                           "ward.PropMatch" = rm0(value),
+                           "Leiden.PropMatch" = rm0(value),
                            "BestHit" = value,
                            
                            # Normalize inertia to [0, 1] (higher is worse, hence inverse = TRUE)

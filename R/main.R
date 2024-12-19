@@ -217,7 +217,7 @@ Run.Consistency <- function(scTypeEval,
                             gene.list = NULL,
                             distance.method = "euclidean",
                             IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                              "ward",
+                                              "ward.PropMatch", "Leiden.PropMatch",
                                               "modularity"),
                             data.type = c("sc", "pseudobulk",
                                           "pseudobulk_1vsall"),
@@ -282,7 +282,7 @@ Run.Consistency <- function(scTypeEval,
    
    
    if(!all(IntVal.metric %in% IntVal_metric)){
-      stop(IntVal.metric, "at least one internal validation metrics(s) method not supported.
+      stop("at least one internal validation metrics(s) method not supported.
            Pick up one, some or all out of: ", 
            paste(IntVal_metric, collapse = ", "))
    }
@@ -338,9 +338,7 @@ Run.Consistency <- function(scTypeEval,
       }
    }
    
-
-   
-
+  
    # loop over each gene.list
    consist.list <- BiocParallel::bplapply(names(gene.list),
                                           BPPARAM = param1,

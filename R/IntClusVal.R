@@ -1,11 +1,11 @@
-IntVal_metric <- c("silhouette", "NeighborhoodPurity", "ward",
-                  "inertia", "Xie-Beni", "S_Dbw", "I",
+IntVal_metric <- c("silhouette", "NeighborhoodPurity", "ward.PropMatch",
+                  "inertia", "Xie-Beni", "S_Dbw", "I", "Leiden.PropMatch",
                   "modularity")
 
-dist.need <- c("silhouette", "NeighborhoodPurity", "ward",
-               "modularity")
+dist.need <- c("silhouette", "NeighborhoodPurity", "ward.PropMatch",
+               "modularity", "Leiden.PropMatch")
 
-knn.need <- c( "NeighborhoodPurity", "modularity")
+knn.need <- c( "NeighborhoodPurity", "modularity", "Leiden.PropMatch")
 
 
 # Helper function to compute centroids for each cluster
@@ -170,6 +170,40 @@ compute_NeighborhoodPurity <- function(dist,
    return(aggregate_scores)
 }
 
+
+custom_PropMatch <- function(ident, clusters){
+   # Unique cell types
+   idents <- unique(ident)
+   scores <- numeric(length(idents))
+   names(scores) <- idents
+   
+   
+   prop.ident <- table(ident) 
+   prop.ident.table <- prop.ident |> prop.table()
+   
+   for (ct in idents) {
+      # Subset cells belonging to the current ident
+      subset_cells <- ident == ct
+      subset_clusters <- clusters[subset_cells]
+      
+      # Count occurrences of each cluster within this ident
+      cluster_counts <- table(subset_clusters)
+      major_cluster <- names(which.max(cluster_counts))
+      
+      # Observed proportion in the dominant cluster and normalize for the expected proportion
+      score <- (cluster_counts[major_cluster] / prop.ident[ct]) 
+      
+      score <- minmax_norm(score,
+                           min_value = prop.ident.table[ct],
+                           max_value = 1,
+                           inverse = F)
+      scores[ct] <- score
+   }
+   
+   return(scores)
+}
+
+
 # Ward's Method ARI Calculation
 compute_ward <- function(dist,
                          ident,
@@ -178,31 +212,50 @@ compute_ward <- function(dist,
    hclust_result <- stats::hclust(dist,
                                   method = method)
    clusters <- stats::cutree(hclust_result, k = length(unique(ident)))
-   # Total cells
-   total_cells <- length(ident)
+   scores <- custom_PropMatch(ident, clusters)
+   return(scores)
+}
+
+
+compute_leiden <- function(dist,
+                           ident,
+                           KNNGraph_k = 5,
+                           knn = NULL,
+                           initial_resolution = 1e-3,
+                           max_iter = 500) {
    
-   # Proportion of each ident globally
-   global_proportion <- table(ident) / total_cells
-   
-   # Unique cell types
-   idents <- unique(ident)
-   ward_scores <- numeric(length(idents))
-   names(ward_scores) <- idents
-   
-   for (cluster in idents) {
-      # Subset cells belonging to the current ident
-      subset_cells <- ident == cluster
-      subset_clusters <- clusters[subset_cells]
+   target_clusters <- nlevels(ident)
+
+   g <- compute_snn_graph(dist = dist,
+                          KNNGraph_k = KNNGraph_k,
+                          knn = knn)
+
+   # Adjust resolution to match the target number of clusters
+   resolution <- initial_resolution
+   for (i in seq_len(max_iter)) {
+      leiden <- igraph::cluster_leiden(g, resolution = resolution)
+      clusters <- igraph::membership(leiden)
       
-      # Count occurrences of each cluster within this ident
-      cluster_counts <- table(subset_clusters)
+      num_clusters <- length(unique(clusters))
+      if (num_clusters == target_clusters) {
+         break
+      }
       
-      # Observed proportion in the dominant cluster
-      ward_scores[cluster] <- max(cluster_counts) / sum(cluster_counts)
+      # Dynamically adjust resolution (simple heuristic)
+      if (num_clusters != target_clusters) {
+         resolution <- resolution * (num_clusters/target_clusters)
+      } 
    }
    
-   return(ward_scores)
+   if (num_clusters != target_clusters){
+      stop("Leiden could not find expected numbrer of clusters, change KNNGraph_k")
+   }
+   
+   # Step 4: Compute probability match
+   scores <- custom_PropMatch(ident, clusters)
+   return(scores)
 }
+
 
 # Helper function to compute inertia (sum of squared distances)
 # Inertia Calculation
@@ -396,7 +449,7 @@ calculate_IntVal_metric <- function(mat = NULL,
                                     dist = NULL, 
                                     centroids = NULL, 
                                     inertia = NULL, 
-                                    KNNGraph_k = 3, 
+                                    KNNGraph_k = 5, 
                                     hclust.method = "ward.D2",
                                     verbose = T) {
    
@@ -415,6 +468,7 @@ calculate_IntVal_metric <- function(mat = NULL,
    }
    
    if(any(metrics %in% knn.need)){
+      # set KNNGraph_k
       knn <- compute_KNN(dist, KNNGraph_k = KNNGraph_k)
    }
    
@@ -441,7 +495,8 @@ calculate_IntVal_metric <- function(mat = NULL,
                                   "silhouette" = compute_silhouette(dist, ident),
                                   "NeighborhoodPurity" = compute_NeighborhoodPurity(dist, ident, KNNGraph_k, knn),
                                   "modularity" = compute_modularity_global(dist, ident, KNNGraph_k, knn),
-                                  "ward" = compute_ward(dist, ident, hclust.method),
+                                  "ward.PropMatch" = compute_ward(dist, ident, hclust.method),
+                                  "Leiden.PropMatch" = compute_leiden(dist, ident, KNNGraph_k, knn),
                                   "inertia" = inertia, 
                                   "Xie-Beni" = compute_xie_beni(norm.mat, ident, centroids, inertia),
                                   "S_Dbw" = compute_s_dbw(norm.mat, ident, centroids),
