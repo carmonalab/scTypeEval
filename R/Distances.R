@@ -33,8 +33,8 @@ compute_fast_euclidean <- function(norm.mat) {
 
 
 # Define sub-functions for specific distance methods
-compute_stat_dist <- function(norm.mat, dist.method) {
-   stats::dist(norm.mat, method = dist.method)
+compute_stat_dist <- function(norm.mat, distance.method) {
+   stats::dist(norm.mat, method = distance.method)
 }
 
 compute_jaccard <- function(mat) {
@@ -89,7 +89,7 @@ compute_pearson <- function(norm.mat) {
 get.distance <- function(mat = NULL,
                          norm.mat = NULL,
                          transpose = TRUE,
-                         dist.method = "euclidean") {
+                         distance.method = "euclidean") {
    # Handle transposition
    if (transpose) {
       if(!is.null(mat)){mat <- Matrix::t(mat)}
@@ -98,13 +98,13 @@ get.distance <- function(mat = NULL,
    
    # Dispatcher to call the appropriate function
    dist <- switch(
-      dist.method,
+      distance.method,
       "euclidean" = compute_fast_euclidean(norm.mat),
-      "maximum" = compute_stat_dist(norm.mat, dist.method),
-      "manhattan" = compute_stat_dist(norm.mat, dist.method),
-      "canberra" = compute_stat_dist(norm.mat, dist.method),
-      "binary" = compute_stat_dist(norm.mat, dist.method),
-      "minkowski" = compute_stat_dist(norm.mat, dist.method),
+      "maximum" = compute_stat_dist(norm.mat, distance.method),
+      "manhattan" = compute_stat_dist(norm.mat, distance.method),
+      "canberra" = compute_stat_dist(norm.mat, distance.method),
+      "binary" = compute_stat_dist(norm.mat, distance.method),
+      "minkowski" = compute_stat_dist(norm.mat, distance.method),
       "Jaccard" = compute_jaccard(mat),
       "Weighted_Jaccard" = compute_weighted_jaccard(norm.mat),
       "gower" = compute_gower(mat, norm.mat),
@@ -112,7 +112,7 @@ get.distance <- function(mat = NULL,
       "cosine" = compute_cosine(norm.mat),
       "pearson" = compute_pearson(norm.mat),
       
-      stop(dist.method, " is not a supported distance method.")
+      stop(distance.method, " is not a supported distance method.")
    )
    
    return(dist)

@@ -103,7 +103,7 @@ consistency.helper <- function(mat,
                                         con <- calculate_IntVal_metric(mat = red.mat@matrix,
                                                                        norm.mat = norm.mat,
                                                                        metrics = IntVal.metric,
-                                                                       dist.method = distance.method,
+                                                                       distance.method = distance.method,
                                                                        ident = red.mat@ident,
                                                                        KNNGraph_k = KNNGraph_k)
                                         return(con)

@@ -41,7 +41,7 @@ methods::setClass("ConsistencyAssay",
                   slots = c(
                      measure = "numeric",
                      consistency.metric = "character",
-                     dist.method = "ANY",
+                     distance.method = "ANY",
                      gene.list = "character",
                      black.list = "character",
                      ident = "character",

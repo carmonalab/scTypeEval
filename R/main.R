@@ -374,7 +374,7 @@ Run.Consistency <- function(scTypeEval,
                                                                        methods::new("ConsistencyAssay",
                                                                                     measure = con.list[[cc]][[y]],
                                                                                     consistency.metric = y,
-                                                                                    dist.method = distance.method,
+                                                                                    distance.method = distance.method,
                                                                                     gene.list = t,
                                                                                     black.list = black.list,
                                                                                     ident = ident.name,
@@ -392,7 +392,7 @@ Run.Consistency <- function(scTypeEval,
                                                                  function(ca){
                                                                     v <- na.omit(c(CA[[ca]]@sample,
                                                                                    CA[[ca]]@data.type,
-                                                                                   CA[[ca]]@dist.method,
+                                                                                   CA[[ca]]@distance.method,
                                                                                    CA[[ca]]@consistency.metric))
                                                                     paste(v,
                                                                           collapse = "_")
@@ -530,7 +530,7 @@ Run.BestHit <- function(scTypeEval,
                                              methods::new("ConsistencyAssay",
                                                           measure = con[[cc]],
                                                           consistency.metric = paste("BestHit", cc, sep = "-"),
-                                                          dist.method = NA,
+                                                          distance.method = NA,
                                                           gene.list = t,
                                                           black.list = black.list,
                                                           ident = ident.name,
@@ -568,7 +568,7 @@ Run.BestHit <- function(scTypeEval,
 get.ConsistencyData <- function(scTypeEval,
                                 gene.list = NULL,
                                 consistency.metric = NULL,
-                                dist.method = NULL,
+                                distance.method = NULL,
                                 data.type = NULL
 )
 {
@@ -595,7 +595,7 @@ get.ConsistencyData <- function(scTypeEval,
       if (!is.null(gene.list) && length(intersect(gene.list, assay@gene.list)) == 0) next
       # For other parameters, check if they are NULL or match any value in the corresponding vector
       if (!is.null(consistency.metric) && !assay@consistency.metric %in% consistency.metric) next
-      if (!is.null(dist.method) && !identical(assay@dist.method, dist.method)) next
+      if (!is.null(distance.method) && !identical(assay@distance.method, distance.method)) next
       if (!is.null(data.type) && !assay@data.type %in% data.type) next
       
       cm <- assay@consistency.metric
@@ -611,7 +611,7 @@ get.ConsistencyData <- function(scTypeEval,
          measure = assay@measure,
          scaled_measure = scaled_measure,
          consistency.metric = cm,
-         dist.method = if (is.null(assay@dist.method)) NA else assay@dist.method,
+         distance.method = if (is.null(assay@distance.method)) NA else assay@distance.method,
          gene.list = paste(assay@gene.list, collapse = ", "),
          ident = assay@ident,
          data.type = assay@data.type,
