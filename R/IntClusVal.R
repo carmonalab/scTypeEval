@@ -147,18 +147,25 @@ compute_NeighborhoodPurity <- function(dist,
       knn <- compute_KNN(dist = dist, KNNGraph_k = KNNGraph_k)
    }
    
+   # Normalize by expected proportion
+   prop.ident.table <- prop.ident |> prop.table()
    # Initialize a vector to store consistency scores for each cell
    modularities <- numeric(length(ident))
    
    for (i in seq_along(ident)) {
       # Count how many neighbors share the same ident as the current cell
       neighbors <- knn[i, ]
-      modularities[i] <- sum(ident[neighbors] == ident[i])
+      score <- sum(ident[neighbors] == ident[i]) / KNNGraph_k
+      # normalize by random chance
+      score <- minmax_norm(score,
+                           min_value = prop.ident.table[ident[i]],
+                           max_value = 1,
+                           inverse = F)
+      
+      modularities[i] <- score
    }
    
-   # Normalize by KNNGraph_k to get a proportion
-   modularities <- modularities / KNNGraph_k
-   
+   # compute mean per cell type
    aggregate_scores <- tapply(modularities, ident, mean) 
    aggregate_scores <- aggregate_scores[!is.na(aggregate_scores)]
    
@@ -192,7 +199,7 @@ custom_PropMatch <- function(ident, clusters){
       
       # Observed proportion in the dominant cluster and normalize for the expected proportion
       score <- (cluster_counts[major_cluster] / prop.ident[ct]) 
-      
+      # normalize by random chance
       score <- minmax_norm(score,
                            min_value = prop.ident.table[ct],
                            max_value = 1,
@@ -204,7 +211,7 @@ custom_PropMatch <- function(ident, clusters){
 }
 
 
-# Ward's Method ARI Calculation
+# Ward's Method proportion matching
 compute_ward <- function(dist,
                          ident,
                          method = "ward.D2") {
@@ -216,45 +223,69 @@ compute_ward <- function(dist,
    return(scores)
 }
 
-
+# compute leiden proportion matching
 compute_leiden <- function(dist,
                            ident,
                            KNNGraph_k = 5,
                            knn = NULL,
                            initial_resolution = 1e-3,
-                           max_iter = 500) {
+                           resolution_range = c(1e-4, 10),
+                           tolerance = 0,
+                           max_iter = 500,
+                           debug = FALSE) {
    
-   target_clusters <- nlevels(ident)
-
+   # Step 1: Determine the target number of clusters
+   target_clusters <- nlevels(as.factor(ident))
+   
+   # Step 2: Compute SNN graph
    g <- compute_snn_graph(dist = dist,
                           KNNGraph_k = KNNGraph_k,
                           knn = knn)
-
-   # Adjust resolution to match the target number of clusters
+   
+   # Step 3: Initialize resolution search range
+   low <- resolution_range[1]
+   high <- resolution_range[2]
    resolution <- initial_resolution
+   
    for (i in seq_len(max_iter)) {
-      leiden <- igraph::cluster_leiden(g, resolution = resolution)
+      # Perform Leiden clustering
+      leiden <- igraph::cluster_leiden(g,
+                                       resolution = resolution,
+                                       objective_function = "modularity",
+                                       initial_membership = as.numeric(factor(ident)),
+                                       n_iterations = 10)
       clusters <- igraph::membership(leiden)
-      
       num_clusters <- length(unique(clusters))
-      if (num_clusters == target_clusters) {
+      
+      # Debugging output
+      if (debug) {
+         message(sprintf("Iteration %d: Resolution = %.6f, Found Clusters = %d", i, resolution, num_clusters))
+      }
+      
+      # Check if we have found the target number of clusters
+      if (abs(num_clusters - target_clusters) <= tolerance) {
          break
       }
       
-      # Dynamically adjust resolution (simple heuristic)
-      if (num_clusters != target_clusters) {
-         resolution <- resolution * (num_clusters/target_clusters)
-      } 
+      # Adjust resolution using binary search
+      if (num_clusters < target_clusters) {
+         low <- resolution
+      } else {
+         high <- resolution
+      }
+      resolution <- (low + high) / 2
    }
    
-   if (num_clusters != target_clusters){
-      stop("Leiden could not find expected numbrer of clusters, change KNNGraph_k")
+   # Step 4: Check for convergence
+   if (abs(num_clusters - target_clusters) > tolerance) {
+      stop("Leiden algorithm could not converge to the target number of clusters. Consider adjusting KNNGraph_k or resolution_range.")
    }
    
-   # Step 4: Compute probability match
+   # Step 5: Compute probability match
    scores <- custom_PropMatch(ident, clusters)
    return(scores)
 }
+
 
 
 # Helper function to compute inertia (sum of squared distances)
@@ -444,7 +475,7 @@ compute_i_index <- function(norm.mat,
 calculate_IntVal_metric <- function(mat = NULL,
                                     norm.mat = NULL,
                                     metrics,  # Accept a vector of metric names
-                                    dist.method = "euclidean",
+                                    distance.method = "euclidean",
                                     ident, 
                                     dist = NULL, 
                                     centroids = NULL, 
@@ -464,7 +495,7 @@ calculate_IntVal_metric <- function(mat = NULL,
       if(verbose){message("Computing distances...\n")}
       dist <- get.distance(mat = mat,
                            norm.mat = norm.mat,
-                           dist.method = dist.method)
+                           distance.method = distance.method)
    }
    
    if(any(metrics %in% knn.need)){
