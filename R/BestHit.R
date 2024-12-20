@@ -8,6 +8,7 @@ singleR.helper <- function(test,
       test = test,
       ref = ref,
       labels = ref$ident,
+      de.method = "wilcox",
       BPPARAM = bparam
    ) |> 
       as.data.frame() 
@@ -66,8 +67,7 @@ singleR.match <- function(pred1, pred2,
                     score = sum(score[score == 1])/dplyr::n()) |>
       dplyr::select(true, score) |>
       dplyr::rename("celltype" = "true")
-      
-   
+
    return(pred)
 }
 
@@ -223,6 +223,23 @@ bestHit.SingleR <- function(mat,
          dplyr::group_by(celltype) |>
          dplyr::summarize(score = mean(score)) |>
          dplyr::pull(score, name = celltype)
+      
+      if(method == "Mutual.Match"){
+         # normalize for BestHiT match
+         nident <- sapply(mat.split, function(mat) {length(mat@ident)})
+         # Generate all pairwise combinations of the samples
+         sample_combinations <- combn(nident, 2)
+         # Calculate pairwise probabilities (1 / (cell types in sample i * cell types in sample j))
+         probabilities <- apply(sample_combinations, 2, function(pair) {
+            1 / (pair[1] * pair[2])})
+         # Multiply all pairwise probabilities together
+         min.val <- mean(probabilities) 
+         res <- res |>
+            dplyr::mutate(score = minmax_norm(score,
+                                              min_value = min.val,
+                                              max.value = 1))
+      }
+      
       return(res)
    }
    )
