@@ -47,9 +47,15 @@ compute_silhouette <- function(dist, ident) {
 }
 
 compute_KNN <- function(dist, KNNGraph_k){
-   # Compute KNN
-   knn <- RANN::nn2(as.matrix(dist), k = KNNGraph_k + 1)$nn.idx
-   knn <- knn[, -1]  # Remove self-neighbor
+   # Convert distance object to a matrix (if necessary)
+   dist_matrix <- as.matrix(dist)
+   
+   # For each row, find the indices of the k nearest neighbors
+   knn <- apply(dist_matrix, 1, function(row) {
+      order(row)[1:(KNNGraph_k + 1)]  # Include self-neighbor
+   })
+   # Transpose the result and remove the first column (self-neighbor)
+   knn <- t(knn)[, -1]
    return(knn)
 }
 
