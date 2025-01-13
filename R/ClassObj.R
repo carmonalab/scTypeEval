@@ -50,13 +50,15 @@ methods::setClass("ConsistencyAssay",
                   )
 )
 
-methods::setClass("DimReduc",
+methods::setClass("DimRed",
                   slots = c(
-                     cell.embeddings = 'matrix',
+                     embeddings = 'matrix',
                      feature.loadings = 'matrix',
-                     feature.loadings.projected = 'matrix',
                      gene.list = "character",
                      black.list = "character",
+                     data.type = "character",
+                     sample = "ANY",
+                     ident = "factor",
                      key = "character" # type of reduction, PCA, UMAP...
                   )
 )
