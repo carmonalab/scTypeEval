@@ -230,7 +230,7 @@ get.matrix <- function(matrix,
                        sample,
                        min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
                        min.cells = 10, # Minimum cells per pseudobulk to be included 
-                       bparam = NULL){
+                       bparam = BiocParallel::SerialParam()){
    
    
    mat <- switch(data.type,
