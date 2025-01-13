@@ -506,6 +506,8 @@ calculate_IntVal_metric <- function(mat = NULL,
    
    if(any(metrics %in% knn.need)){
       # set KNNGraph_k
+      KNNGraph_k <- min(KNNGraph_k, max(table(ident)))
+      # produce KNN
       knn <- compute_KNN(dist, KNNGraph_k = KNNGraph_k)
    }
    
