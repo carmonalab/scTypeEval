@@ -14,6 +14,9 @@ fit.ReferenceLine <- function(x, y) {
    # Perform ANOVA comparison
    anova_result <- anova(model_null, model_full)
    p_value_anova <- anova_result$`Pr(>F)`[2]  # p-value for comparison
+   
+   if(is.na(p_value_anova)){p_value_anova <- 1}
+   
    # Return results
    ret <- list(
       "r.squared" = r_squared,         # R-squared value
