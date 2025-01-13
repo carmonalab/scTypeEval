@@ -154,6 +154,7 @@ compute_NeighborhoodPurity <- function(dist,
    }
    
    # Normalize by expected proportion
+   prop.ident <- table(ident) 
    prop.ident.table <- prop.ident |> prop.table()
    # Initialize a vector to store consistency scores for each cell
    modularities <- numeric(length(ident))
@@ -189,7 +190,6 @@ custom_PropMatch <- function(ident, clusters){
    idents <- unique(ident)
    scores <- numeric(length(idents))
    names(scores) <- idents
-   
    
    prop.ident <- table(ident) 
    prop.ident.table <- prop.ident |> prop.table()
@@ -236,7 +236,7 @@ compute_leiden <- function(dist,
                            knn = NULL,
                            initial_resolution = 1e-3,
                            resolution_range = c(1e-4, 10),
-                           tolerance = 0,
+                           tolerance = 1,
                            max_iter = 500,
                            debug = FALSE) {
    
