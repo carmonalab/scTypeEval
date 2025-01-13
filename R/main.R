@@ -634,3 +634,189 @@ get.ConsistencyData <- function(scTypeEval,
 
 
 
+# obtain PCA from a gene list
+add.PCA <- function(scTypeEval,
+                    ident = NULL,
+                    sample = NULL,
+                    normalization.method = c("Log1p", "CLR", "pearson"),
+                    gene.list = NULL,
+                    data.type = c("sc", "pseudobulk",
+                                  "pseudobulk_1vsall"),
+                    min.samples = 2,
+                    min.cells = 10,
+                    black.list = NULL,
+                    ndim = 50,
+                    ncores = 1,
+                    bparam = NULL,
+                    progressbar = TRUE,
+                    verbose = TRUE){
+   
+   if(is.null(ident)){
+      ident <- scTypeEval@active.ident
+   }
+   
+   if(!ident %in% names(scTypeEval@metadata)){
+      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
+   }
+   
+   data.type = data.type[1]
+   
+   # retrieve ident and convert to factor
+   ident.name <- ident
+   ident <- scTypeEval@metadata[[ident]]
+   ident <- gsub("_", ".", ident)
+   ident <- factor(ident)
+   
+   if(!is.null(sample)){
+      if(!sample %in% names(scTypeEval@metadata)){
+         stop("`sample` parameter not found in metadata colnames.")
+      }
+      # retrieve sample and convert to factor
+      sample.name <- sample
+      sample <- scTypeEval@metadata[[sample]]
+      sample <- gsub("_", ".", sample)
+      sample <- factor(sample)
+      
+   } else {
+      
+      if(data.type != "sc"){
+         stop("For pseudobulk provide a dataset with multiple samples,
+              and specifiy their respective column metadata in `sample` parameter")
+      } else {
+         if(verbose){message("Using dataset as a unique sample, computing PCA across cells.\n")}
+      }
+      sample.name <- NULL
+   }
+   
+   if(!data.type %in% data_type){
+      stop(data.type, " data type conversion method not supported. Pick up one of: ", 
+           paste(data_type, collapse = ", "))
+   }
+   
+   # set normalization method
+   normalization.method <- normalization.method[1]
+   
+   # set gene lists
+   if(is.null(gene.list)){
+      gene.list <- scTypeEval@gene.lists
+   } else {
+      if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
+         stop("Some gene list names not included in scTypeEval object")
+      }
+      gene.list <- scTypeEval@gene.lists[gene.list]
+   }
+   
+   if(is.null(black.list)){
+      black.list <- scTypeEval@black.list
+   }
+   
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   # loop over each gene.list
+   pca.list <- BiocParallel::bplapply(names(gene.list),
+                                          BPPARAM = param,
+                                          function(t){
+                                             
+                                             # get matrix
+                                             keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
+                                             mat <- scTypeEval@counts[keep,]
+                                             
+                                             # remove black list genes
+                                             mat <- mat[!rownames(mat) %in% black.list,]
+                                             
+                                             # compute PCA
+                                             pc.list <- get.PCA(mat,
+                                                                ident = ident,
+                                                                sample = sample,
+                                                                normalization.method = normalization.method,
+                                                                data.type = data.type,
+                                                                min.samples = min.samples,
+                                                                min.cells = min.cells)
+                                             
+                                             # accommodte to DimReduc
+                                             
+                                             pc.list <- lapply(seq_along(pc.list),
+                                                               function(cc){
+                                                                  pc.list[[cc]]@gene.list <- t
+                                                                  pc.list[[cc]]@black.list <- black.list
+                                                                  pc.list[[cc]]@sample <- names(pc.list)[[cc]]
+                                                                  return(pc.list[[cc]])
+                                                               })
+                                             
+                                             
+                                             
+                                             # name DimRed assays
+                                             names(pc.list) <- lapply(seq_along(pc.list),
+                                                                 function(ca){
+                                                                    v <- na.omit(c(pc.list[[ca]]@sample,
+                                                                                   pc.list[[ca]]@data.type))
+                                                                    paste(v,
+                                                                          collapse = "_")
+                                                                 })
+                                             
+                                             return(pc.list)
+                                          })
+   
+   names(pca.list) <- names(gene.list)
+   
+   # add to scTypeEval object
+   for(n in names(pca.list)){
+      for(m in names(pca.list[[n]]))
+         scTypeEval@reductions[[n]][[m]] <- pca.list[[n]][[m]]
+   }
+   
+   return(scTypeEval)
+   
+}
+
+
+
+plot.PCA <- function(scTypeEval,
+                     gene.list = NULL,
+                     data.type = NULL,
+                     dims = c(1,2),
+                     show.legend = F
+                     ){
+   
+   # Ensure the reductions slot is not empty
+   if (length(scTypeEval@reductions) == 0) {
+      stop("The 'reductions' slot in the 'scTypeEval' object is empty.")
+   }
+   
+   assays <- unlist(scTypeEval@reductions)
+   
+   # Loop through each ConsistencyAssay object in scTypeEval@consistency
+   pls <- lapply(names(assays),
+                 function(a) {
+                    assay <- assays[[a]]
+                    # Check for class validity
+                    if (!inherits(assay, "DimRed")) {
+                       stop(paste("Invalid object in reductions slot"))
+                    }
+                    
+                    # Apply filtering:
+                    # For `gene.list`, check if it is NULL or if the intersection with the assay's gene list is non-empty
+                    if (!is.null(gene.list) && length(intersect(gene.list, assay@gene.list)) == 0) next
+                    if (!is.null(data.type) && !assay@data.type %in% data.type) next
+                    
+                    
+                    df <- assay@embeddings[,dims] |>
+                       as.data.frame() |>
+                       dplyr::mutate(ident = assay@ident)
+                    labs <- paste0("PC", dims)
+                    
+                    pl <- helper.plot.PCA(df, show.legend = show.legend) +
+                       ggplot2::labs(x = labs[1],
+                                     y = labs[2],
+                                     title = a)
+                    
+                    return(pl)
+                 })
+   
+   names(pls) <- names(assays)
+   
+   return(pls)
+   
+}

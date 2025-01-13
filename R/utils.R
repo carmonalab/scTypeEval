@@ -197,3 +197,58 @@ normalize_metric <- function(value, metric) {
    return(scaled_metric)
 }
 
+
+
+get.PCA <- function(mat,
+                    ident,
+                    normalization.method,
+                    data.type,
+                    sample = NULL,
+                    min.samples = 5,
+                    min.cells = 10,
+                    bparam = BiocParallel::SerialParam(),
+                    ndim = 50)
+{
+   mats <- get.matrix(mat,
+                      data.type = data.type,
+                      ident = ident,
+                      sample = sample,
+                      min.samples = min.samples,
+                      min.cells = min.cells,
+                      bparam = bparam)
+   
+   if(!is.list(mats)){
+      mats <- list(mats)
+   }
+   
+   pcas <- BiocParallel::bplapply(mats,
+                                     BPPARAM = bparam,
+                                     function(red.mat){
+                                        
+                                        # normalized subetted matrix
+                                        norm.mat <- Normalize_data(red.mat@matrix,
+                                                                   method = normalization.method)
+                                        
+                                        # compute PCA
+                                        pr <- stats::prcomp(Matrix::t(norm.mat))
+                                        
+                                        ndim <- min(dim(pr$x)[2], ndim)
+                                        
+                                        rr <- methods::new("DimRed",
+                                                           embeddings = pr$x[,1:ndim],
+                                                           feature.loadings = pr$rotation[,1:ndim],
+                                                           gene.list = "tmp",
+                                                           black.list = "tmp",
+                                                           data.type = as.character(data.type),
+                                                           ident = red.mat@ident,
+                                                           key = "PCA")
+                                        
+                                        return(rr)
+                                        
+                                     })
+   
+   names(pcas) <- names(mats)
+   
+   return(pcas)
+   
+}
