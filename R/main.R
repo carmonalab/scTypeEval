@@ -292,12 +292,6 @@ Run.Consistency <- function(scTypeEval,
            paste(data_type, collapse = ", "))
    }
    
-   # if datatype == pseudobulk_1vsall do not run modularity_pct
-   if(data.type == "pseudobulk_1vsall"){
-      message("With datatype pseudobulk_1vsall, modularity contribution per cell type (modularity_pct) not supported. Not running...")
-      IntVal.metric <- IntVal.metric[IntVal.metric != "modularity_pct"]
-   }
-   
    # set normalization method
    normalization.method <- normalization.method[1]
    
