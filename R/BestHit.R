@@ -224,7 +224,7 @@ bestHit.SingleR <- function(mat,
          dplyr::summarize(score = mean(score)) |>
          dplyr::pull(score, name = celltype)
       
-      if(method == "Mutual.Match"){
+      if(m == "Mutual.Match"){
          # normalize for BestHiT match
          nident <- sapply(mat.split, function(mat) {length(mat@ident)})
          # Generate all pairwise combinations of the samples
