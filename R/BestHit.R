@@ -221,7 +221,7 @@ bestHit.SingleR <- function(mat,
       # summarize results per cell type
       res <- res |>
          dplyr::group_by(celltype) |>
-         dplyr::summarize(score = mean(score))
+         dplyr::summarize(score = mean(score, na.rm = T))
       
       if(m == "Mutual.Match"){
          # normalize for BestHiT match
