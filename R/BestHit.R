@@ -11,7 +11,13 @@ singleR.helper <- function(test,
       de.method = "classic",
       BPPARAM = bparam
    ) |> 
-      as.data.frame() 
+      as.data.frame() |>
+      # condition for when singleR return no results (no label)
+      mutate(pruned.labels = ifelse(is.na(pruned.labels),
+                                          "_nores_",
+                                          pruned.labels
+                                    )
+             )
    return(pred)
 }
 
@@ -49,7 +55,9 @@ singleR.match.tidy <- function(pred, .true){
       dplyr::select("pruned.labels") |>
       dplyr::mutate(true = .true,
                     score = ifelse(true == pruned.labels,
-                                   1, 0))
+                                   1, 0
+                    )
+      )
    
    return(pred)
 }
@@ -63,8 +71,7 @@ singleR.match <- function(pred1, pred2,
    
    pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
       dplyr::group_by(true) |>
-      dplyr::mutate(score = score.x * score.y,
-                    score = sum(score[score == 1])/dplyr::n()) |>
+      dplyr::mutate(score = score.x * score.y) |>
       dplyr::select(true, score) |>
       dplyr::rename("celltype" = "true")
 
