@@ -259,18 +259,6 @@ get.matrix <- function(matrix,
 
 
 
-# sketching 1 vs all at single-cel level
-
-get_PCA <- function(norm.mat,
-                      hgv,
-                      ndim = 30){
-   # compute PCA
-   pca <- prcomp(t(norm.mat[hgv,]),
-                 rank. = ndim)
-   return(pca)
-}
-
-
 # get_intra_SvB <- function(object,
 #                           colLabel,
 #                           celltype,
