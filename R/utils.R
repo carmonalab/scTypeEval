@@ -229,14 +229,16 @@ get.PCA <- function(mat,
                                         norm.mat <- Normalize_data(red.mat@matrix,
                                                                    method = normalization.method)
                                         
-                                        # compute PCA
-                                        pr <- stats::prcomp(Matrix::t(norm.mat))
+                                        # if ncol or nrow is below given ndim use this number
+                                        ndim <- min(dim(norm.mat), ndim)
                                         
-                                        ndim <- min(dim(pr$x)[2], ndim)
+                                        # compute PCA
+                                        pr <- stats::prcomp(Matrix::t(norm.mat),
+                                                            rank. = ndim)
                                         
                                         rr <- methods::new("DimRed",
-                                                           embeddings = pr$x[,1:ndim],
-                                                           feature.loadings = pr$rotation[,1:ndim],
+                                                           embeddings = pr$x,
+                                                           feature.loadings = pr$rotation,
                                                            gene.list = "tmp",
                                                            black.list = "tmp",
                                                            data.type = as.character(data.type),
