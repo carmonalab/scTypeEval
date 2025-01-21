@@ -355,7 +355,8 @@ Run.Consistency <- function(scTypeEval,
                                                                             bparam = param2,
                                                                             min.samples = min.samples,
                                                                             min.cells = min.cells,
-                                                                            KNNGraph_k = KNNGraph_k)
+                                                                            KNNGraph_k = KNNGraph_k,
+                                                                            verbose = verbose)
                                              
                                              # accommodte to ConsistencyAssay
                                              
@@ -595,12 +596,12 @@ Run.scTypeEval <- function(scTypeEval,
          k <- k.psblk
       }
       
-      if(verbose){message("------- Running Consistency for ", dt,  format(Sys.time()), "\n")}
+      if(verbose){message("\n------- Running Consistency for ", dt, " ",  format(Sys.time()), "\n")}
       
       sc.tmp <- Run.Consistency(scTypeEval,
                                 ident = ident,
                                 sample = spl,
-                                normalization.method = normalization,
+                                normalization.method = normalization.method,
                                 distance.method = distance.method,
                                 gene.list = gene.list,
                                 data.type =  dt,
@@ -610,24 +611,24 @@ Run.scTypeEval <- function(scTypeEval,
                                 ncores = ncores,
                                 KNNGraph_k = k,
                                 progressbar = progressbar,
-                                verbose = verbose)
+                                verbose = FALSE)
       
       if(dt != "pseudobulk_1vsall"){
          
-         if(verbose){message("------- Running BestHit for ", dt,  format(Sys.time()), "\n")}
+         if(verbose){message("------- Running BestHit for ", dt, " ",  format(Sys.time()), "\n")}
          sc.tmp <- Run.BestHit(sc.tmp,
                                data.type = dt,
                                ident = ident,
                                ident_GroundTruth = ident_GroundTruth,
                                method = BH.method,
                                gene.list = gene.list,
-                               sample = spl,
+                               sample = sample,
                                min.samples = min.samples,
                                min.cells = min.cells,
                                black.list = black.list,
                                ncores = ncores,
                                progressbar = progressbar,
-                               verbose = verbose)
+                               verbose = FALSE)
       }
       
       df <- get.ConsistencyData(sc.tmp)
@@ -635,7 +636,7 @@ Run.scTypeEval <- function(scTypeEval,
    }
    
    wdf <- do.call(rbind, df.res)
-
+   
    return(wdf)
 }
 
