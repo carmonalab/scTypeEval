@@ -558,6 +558,87 @@ Run.BestHit <- function(scTypeEval,
    
 }
 
+## wrapper of consistency metrics and BestHit
+
+Run.scTypeEval <- function(scTypeEval,
+                           ident = NULL,
+                           ident_GroundTruth = NULL,
+                           sample = NULL,
+                           normalization.method = c("Log1p", "CLR", "pearson"),
+                           gene.list = NULL,
+                           distance.method = "euclidean",
+                           IntVal.metric = c("silhouette", "NeighborhoodPurity",
+                                             "ward.PropMatch", "Leiden.PropMatch",
+                                             "modularity"),
+                           BH.method = c("Mutual.Score", "Mutual.Match"),
+                           data.type = c("sc", "pseudobulk",
+                                         "pseudobulk_1vsall"),
+                           min.samples = 5,
+                           min.cells = 10,
+                           k.sc = 20,
+                           k.psblk = 5,
+                           black.list = NULL,
+                           ncores = 1,
+                           bparam = NULL,
+                           progressbar = FALSE,
+                           verbose = TRUE){
+
+   
+   df.res <- list()
+   for(dt in data.type){
+      
+      if(dt == "sc"){
+         spl = NULL
+         k <- k.sc
+      } else {
+         spl = sample
+         k <- k.psblk
+      }
+      
+      if(verbose){message("------- Running Consistency for ", dt,  format(Sys.time()), "\n")}
+      
+      sc.tmp <- Run.Consistency(scTypeEval,
+                                ident = ident,
+                                sample = spl,
+                                normalization.method = normalization,
+                                distance.method = distance.method,
+                                gene.list = gene.list,
+                                data.type =  dt,
+                                min.samples = min.samples,
+                                min.cells = min.cells,
+                                black.list = black.list,
+                                ncores = ncores,
+                                KNNGraph_k = k,
+                                progressbar = progressbar,
+                                verbose = verbose)
+      
+      if(dt != "pseudobulk_1vsall"){
+         
+         if(verbose){message("------- Running BestHit for ", dt,  format(Sys.time()), "\n")}
+         sc.tmp <- Run.BestHit(sc.tmp,
+                               data.type = dt,
+                               ident = ident,
+                               ident_GroundTruth = ident_GroundTruth,
+                               method = BH.method,
+                               gene.list = gene.list,
+                               sample = spl,
+                               min.samples = min.samples,
+                               min.cells = min.cells,
+                               black.list = black.list,
+                               ncores = ncores,
+                               progressbar = progressbar,
+                               verbose = verbose)
+      }
+      
+      df <- get.ConsistencyData(sc.tmp)
+      df.res[[dt]] <- df
+   }
+   
+   wdf <- do.call(rbind, df.res)
+
+   return(wdf)
+}
+
 
 get.ConsistencyData <- function(scTypeEval,
                                 gene.list = NULL,
