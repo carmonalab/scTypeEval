@@ -76,7 +76,8 @@ consistency.helper <- function(mat,
                               bparam = BiocParallel::SerialParam(),
                               min.samples = 5,
                               min.cells = 10,
-                              KNNGraph_k = 5){
+                              KNNGraph_k = 5,
+                              verbose = TRUE){
    
    mats <- get.matrix(mat,
                      data.type = data.type,
@@ -105,7 +106,8 @@ consistency.helper <- function(mat,
                                                                        metrics = IntVal.metric,
                                                                        distance.method = distance.method,
                                                                        ident = red.mat@ident,
-                                                                       KNNGraph_k = KNNGraph_k)
+                                                                       KNNGraph_k = KNNGraph_k,
+                                                                       verbose = verbose)
                                         return(con)
                                         
                                      })
