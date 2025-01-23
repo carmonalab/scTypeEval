@@ -853,6 +853,7 @@ plot.PCA <- function(scTypeEval,
                      gene.list = NULL,
                      data.type = NULL,
                      dims = c(1,2),
+                     label = TRUE,
                      show.legend = F
                      ){
    
@@ -883,7 +884,9 @@ plot.PCA <- function(scTypeEval,
                        dplyr::mutate(ident = assay@ident)
                     labs <- paste0("PC", dims)
                     
-                    pl <- helper.plot.PCA(df, show.legend = show.legend) +
+                    pl <- helper.plot.PCA(df,
+                                          show.legend = show.legend,
+                                          label = label) +
                        ggplot2::labs(x = labs[1],
                                      y = labs[2],
                                      title = a)
