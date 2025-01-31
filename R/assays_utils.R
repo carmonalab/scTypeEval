@@ -3,8 +3,6 @@ fit.ReferenceLine <- function(x, y) {
    residuals <- y - x
    # Compute R-squared
    ss_residual <- sum(residuals^2)  # Residual sum of squares
-   ss_total <- sum((y - mean(y))^2)  # Total sum of squares
-   r_squared <- 1 - (ss_residual / ss_total)
    # Use ANOVA to compare the full model to the null hypothesis (y = x)
    # Full model: y ~ x (allowing slope and intercept to vary)
    model_full <- lm(y ~ x)
@@ -19,7 +17,7 @@ fit.ReferenceLine <- function(x, y) {
    
    # Return results
    ret <- list(
-      "r.squared" = r_squared,         # R-squared value
+      "r.squared" = ss_residual,         # R-squared value
       "p.value" = p_value_anova  # p-value from ANOVA
    )
    return(ret)
@@ -33,7 +31,7 @@ fit.Constant <- function(x, y) {
    # Extract residual
    residuals <- y - y_mean
    # Compute sum of squares (RSS)
-   rss <- 1 - sum(residuals^2)
+   rss <- sum(residuals^2)
    
    # Compute p-value for residuals (testing if mean residual = 0)
    p_value <- t.test(residuals, mu = 0)$p.value
