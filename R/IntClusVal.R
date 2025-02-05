@@ -69,7 +69,7 @@ compute_snn_graph <- function(dist, KNNGraph_k = 5, knn = NULL) {
    }
    
    # Initialize adjacency matrix
-   n <- nrow(as.matrix(dist))
+   n <- attr(dist, "Size")
    adj_matrix <- matrix(0, n, n)
    
    # Count shared neighbors
