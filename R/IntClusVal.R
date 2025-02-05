@@ -7,6 +7,8 @@ dist.need <- c("silhouette", "NeighborhoodPurity", "ward.PropMatch",
 
 knn.need <- c( "NeighborhoodPurity", "modularity", "Leiden.PropMatch")
 
+centroid.need <- c("inertia", "Xie-Beni", "S_Dbw", "I")
+
 
 # Helper function to compute centroids for each cluster
 compute_centroids <- function(norm.mat, ident) {
@@ -511,14 +513,14 @@ calculate_IntVal_metric <- function(mat = NULL,
       knn <- compute_KNN(dist, KNNGraph_k = KNNGraph_k)
    }
    
-   if(is.null(centroids) && any(!metrics %in% dist.need)){
+   if(is.null(centroids) && any(metrics %in% centroid.need)){
       if(verbose){message("Computing centroids...\n")}
       centroids <- compute_centroids(norm.mat, ident)
    }
    
    
    # Precompute inertia if needed
-   if ("inertia" %in% metrics && is.null(inertia)) {
+   if (any(c("inertia", "Xie-Beni") %in% metrics) && is.null(inertia)) {
       if(verbose){message("Computing inertia...\n")}
       inertia <- compute_inertia(norm.mat = norm.mat,
                                  ident = ident,
