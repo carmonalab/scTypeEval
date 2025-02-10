@@ -73,6 +73,8 @@ consistency.helper <- function(mat,
                               IntVal.metric,
                               data.type,
                               sample = NULL,
+                              pca = FALSE,
+                              ndim = 30,
                               bparam = BiocParallel::SerialParam(),
                               min.samples = 5,
                               min.cells = 10,
@@ -94,14 +96,19 @@ consistency.helper <- function(mat,
    consist <- BiocParallel::bplapply(mats,
                                      BPPARAM = bparam,
                                      function(red.mat){
-                                        
                                         # normalized subetted matrix
                                         norm.mat <- Normalize_data(red.mat@matrix,
                                                                    method = normalization.method)
-                                        
+                                        if(!pca){
+                                           mat <- red.mat@matrix
+                                        } else {
+                                           pr <- custom_prcomp(norm.mat, ndim)
+                                           mat <- NULL
+                                           norm.mat <- t(pr$x)
+                                        }
                                         
                                         # compute internal validation metrics
-                                        con <- calculate_IntVal_metric(mat = red.mat@matrix,
+                                        con <- calculate_IntVal_metric(mat = mat,
                                                                        norm.mat = norm.mat,
                                                                        metrics = IntVal.metric,
                                                                        distance.method = distance.method,
@@ -231,12 +238,7 @@ get.PCA <- function(mat,
                                         norm.mat <- Normalize_data(red.mat@matrix,
                                                                    method = normalization.method)
                                         
-                                        # if ncol or nrow is below given ndim use this number
-                                        ndim <- min(dim(norm.mat), ndim)
-                                        
-                                        # compute PCA
-                                        pr <- stats::prcomp(Matrix::t(norm.mat),
-                                                            rank. = ndim)
+                                        pr <- custom_prcomp(norm.mat, ndim)
                                         
                                         rr <- methods::new("DimRed",
                                                            embeddings = pr$x,
@@ -255,4 +257,15 @@ get.PCA <- function(mat,
    
    return(pcas)
    
+}
+
+custom_prcomp <- function(norm.mat,
+                          ndim){
+   # if ncol or nrow is below given ndim use this number
+   ndim <- min(dim(norm.mat), ndim)
+   
+   # compute PCA
+   pr <- stats::prcomp(Matrix::t(norm.mat),
+                       rank. = ndim)
+   return(pr)
 }

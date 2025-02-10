@@ -215,6 +215,8 @@ Run.Consistency <- function(scTypeEval,
                             sample = NULL,
                             normalization.method = c("Log1p", "CLR", "pearson"),
                             gene.list = NULL,
+                            pca = FALSE,
+                            ndim = 30,
                             distance.method = "euclidean",
                             IntVal.metric = c("silhouette", "NeighborhoodPurity",
                                               "ward.PropMatch", "Leiden.PropMatch",
@@ -345,7 +347,7 @@ Run.Consistency <- function(scTypeEval,
                                              # get matrix
                                              keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
                                              mat <- scTypeEval@counts[keep,]
-                                             
+
                                              # remove black list genes
                                              mat <- mat[!rownames(mat) %in% black.list,]
                                              
@@ -356,6 +358,8 @@ Run.Consistency <- function(scTypeEval,
                                                                             distance.method = distance.method,
                                                                             IntVal.metric = IntVal.metric,
                                                                             data.type = data.type,
+                                                                            pca = pca,
+                                                                            ndim = ndim,
                                                                             bparam = param2,
                                                                             min.samples = min.samples,
                                                                             min.cells = min.cells,
@@ -363,6 +367,9 @@ Run.Consistency <- function(scTypeEval,
                                                                             verbose = verbose)
                                              
                                              # accommodte to ConsistencyAssay
+                                             if(pca){
+                                                t <- paste(t, "PCA", sep = ".")
+                                             }
                                              
                                              CA <- lapply(seq_along(con.list),
                                                           function(cc){
@@ -399,8 +406,11 @@ Run.Consistency <- function(scTypeEval,
                                             
                                             return(CA)
                                           })
-   
-   names(consist.list) <- names(gene.list)
+   if(pca){
+      names(consist.list) <- paste(names(gene.list), "PCA", sep = ".")
+   } else {
+      names(consist.list) <- names(gene.list)
+   }
    
    # add to scTypeEval object
    for(n in names(consist.list)){
@@ -420,6 +430,8 @@ Run.BestHit <- function(scTypeEval,
                         sample = NULL,
                         data.type = "sc",
                         gene.list = NULL,
+                        pca = FALSE,
+                        ndim = 30,
                         black.list = NULL,
                         min.cells = 10,
                         min.samples = 5,
@@ -523,6 +535,8 @@ Run.BestHit <- function(scTypeEval,
                                                     method = method,
                                                     min.cells = min.cells,
                                                     min.samples = min.samples,
+                                                    pca = pca,
+                                                    ndim = ndim,
                                                     bparam = param)
                              
                              # accommodte to ConsistencyAssay
@@ -575,6 +589,8 @@ Run.scTypeEval <- function(scTypeEval,
                            sample = NULL,
                            normalization.method = c("Log1p", "CLR", "pearson"),
                            gene.list = NULL,
+                           pca = FALSE,
+                           ndim = 30,
                            distance.method = "euclidean",
                            IntVal.metric = c("silhouette", "NeighborhoodPurity",
                                              "ward.PropMatch", "Leiden.PropMatch",
