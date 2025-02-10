@@ -1,5 +1,6 @@
 distance_methods <- c(
    "euclidean",
+   "EMD",
    "maximum",
    "manhattan",
    "canberra",
@@ -28,6 +29,29 @@ compute_fast_euclidean <- function(norm.mat) {
    return(d)
 }
 
+#earth mover distance (emd)
+compute_emd <- function(norm.mat,
+                        dist = "euclidean") {
+   n <- nrow(norm.mat)
+   # Generate unique row pair combinations for distance computation
+   row_pairs <- combn(seq_len(n), 2)
+   # Compute EMD distances and store directly in a vector
+   emd_distances <- apply(row_pairs, 2, function(pair) {
+      emdist::emd2d(as.matrix(norm.mat[pair[1], , drop = FALSE]),
+                  as.matrix(norm.mat[pair[2], , drop = FALSE]),
+                  dist = dist)
+   })
+   # Convert the result into a `dist` object
+   # Correctly convert to `dist` object
+   dist_object <- structure(
+      emd_distances,
+      Size = n,
+      class = "dist",
+      Diag = FALSE,
+      Upper = FALSE
+   )
+   return(dist_object)
+}
 
 
 
@@ -100,6 +124,7 @@ get.distance <- function(mat = NULL,
    dist <- switch(
       distance.method,
       "euclidean" = compute_fast_euclidean(norm.mat),
+      "EMD" = compute_emd(norm.mat),
       "maximum" = compute_stat_dist(norm.mat, distance.method),
       "manhattan" = compute_stat_dist(norm.mat, distance.method),
       "canberra" = compute_stat_dist(norm.mat, distance.method),
