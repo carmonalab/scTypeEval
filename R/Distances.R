@@ -33,16 +33,23 @@ compute_fast_euclidean <- function(norm.mat) {
 compute_emd <- function(norm.mat,
                         dist = "euclidean") {
    n <- nrow(norm.mat)
-   # Generate unique row pair combinations for distance computation
-   row_pairs <- combn(seq_len(n), 2)
-   # Compute EMD distances and store directly in a vector
-   emd_distances <- apply(row_pairs, 2, function(pair) {
-      emdist::emd2d(as.matrix(norm.mat[pair[1], , drop = FALSE]),
-                  as.matrix(norm.mat[pair[2], , drop = FALSE]),
-                  dist = dist)
-   })
+   # Convert the matrix to dense if it's sparse
+   if (inherits(norm.mat, "dgCMatrix")) {
+      norm.mat <- as.matrix(norm.mat)
+   }
+   # Preallocate memory for the distance vector
+   emd_distances <- numeric(n * (n - 1) / 2)
+   idx <- 1
+   # Compute pairwise EMD directly in a nested loop
+   for (i in 1:(n - 1)) {
+      for (j in (i + 1):n) {
+         emd_distances[idx] <- emdist::emd2d(norm.mat[i, , drop = FALSE],
+                                             norm.mat[j, , drop = FALSE],
+                                             dist = dist)
+         idx <- idx + 1
+      }
+   }
    # Convert the result into a `dist` object
-   # Correctly convert to `dist` object
    dist_object <- structure(
       emd_distances,
       Size = n,
