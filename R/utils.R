@@ -209,7 +209,7 @@ get.PCA <- function(mat,
                     min.samples = 5,
                     min.cells = 10,
                     bparam = BiocParallel::SerialParam(),
-                    ndim = 50)
+                    ndim = 30)
 {
    mats <- get.matrix(mat,
                       data.type = data.type,
