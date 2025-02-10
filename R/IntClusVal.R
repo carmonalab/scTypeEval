@@ -1,11 +1,13 @@
 IntVal_metric <- c("silhouette", "NeighborhoodPurity", "ward.PropMatch",
                   "inertia", "Xie-Beni", "S_Dbw", "I", "Leiden.PropMatch",
-                  "modularity")
+                  "modularity", "ward.NMI", "ward.ARI", "Leiden.NMI",
+                  "Leiden.ARI", "GraphConnectivity")
 
-dist.need <- c("silhouette", "NeighborhoodPurity", "ward.PropMatch",
-               "modularity", "Leiden.PropMatch")
+dist.need <- "silhouette|NeighborhoodPurity|ward|Leiden|modularity|GraphConnectivity"
 
-knn.need <- c( "NeighborhoodPurity", "modularity", "Leiden.PropMatch")
+knn.need <- "NeighborhoodPurity|Leiden|modularity|GraphConnectivity"
+
+snn.need <- "Leiden|modularity|GraphConnectivity"
 
 centroid.need <- c("inertia", "Xie-Beni", "S_Dbw", "I")
 
@@ -93,14 +95,17 @@ compute_snn_graph <- function(dist, KNNGraph_k = 5, knn = NULL) {
 compute_modularity_global <- function(dist,
                                       ident,
                                       KNNGraph_k = 5,
-                                      knn = NULL) {
+                                      knn = NULL,
+                                      snn = NULL) {
    # Create a graph object
-   g <- compute_snn_graph(dist = dist,
-                          KNNGraph_k = KNNGraph_k,
-                          knn = knn)
+   if(is.null(snn)){
+      snn <- compute_snn_graph(dist = dist,
+                               KNNGraph_k = KNNGraph_k,
+                               knn = knn)
+   }
    
    # Compute modularity
-   modularity_score <- igraph::modularity(g, membership = as.numeric(factor(ident)))
+   modularity_score <- igraph::modularity(snn, membership = as.numeric(factor(ident)))
    names(modularity_score) <- "global"
    
    return(modularity_score)
@@ -115,14 +120,17 @@ compute_modularity_global <- function(dist,
 compute_modularity_pct <- function(dist,
                                    ident,
                                    KNNGraph_k = 5,
-                                   knn = NULL) {
+                                   knn = NULL,
+                                   snn = NULL) {
    # Create a graph object
-   g <- compute_snn_graph(dist = dist,
-                          KNNGraph_k = KNNGraph_k,
-                          knn = knn)
+   if(is.null(snn)){
+      snn <- compute_snn_graph(dist = dist,
+                               KNNGraph_k = KNNGraph_k,
+                               knn = knn)
+   }
    
    # Get the modularity matrix
-   mod_matrix <- igraph::modularity_matrix(g)
+   mod_matrix <- igraph::modularity_matrix(snn)
    
    # Compute modularity contributions per cell type
    cell_types <- unique(ident)
@@ -132,7 +140,7 @@ compute_modularity_pct <- function(dist,
       
       # Modularity contribution normalized by the number of type cells
       type_modularity <- (sum(mod_matrix[type_cells, type_cells]) / num_type_cells) /
-                           (2 * igraph::ecount(g))
+                           (2 * igraph::ecount(snn))
       return(type_modularity)
    })
    
@@ -152,7 +160,8 @@ compute_NeighborhoodPurity <- function(dist,
                                KNNGraph_k = 5,
                                knn = NULL) {
    if(is.null(knn)){
-      knn <- compute_KNN(dist = dist, KNNGraph_k = KNNGraph_k)
+      knn <- compute_KNN(dist = dist,
+                         KNNGraph_k = KNNGraph_k)
    }
    
    # Normalize by expected proportion
@@ -186,6 +195,40 @@ compute_NeighborhoodPurity <- function(dist,
    return(aggregate_scores)
 }
 
+compute_GraphConnectivity <- function(dist,
+                                      ident,
+                                      KNNGraph_k = 5,
+                                      knn = NULL,
+                                      snn = NULL) {
+   
+   # Create a graph object
+   if(is.null(snn)){
+      snn <- compute_snn_graph(dist = dist,
+                               KNNGraph_k = KNNGraph_k,
+                               knn = knn)
+   }
+   # Create a vector to store the graph connectivity scores
+   unique_labels <- unique(ident)
+   connectivity_scores <- numeric(length(unique_labels))
+   names(connectivity_scores) <- unique_labels
+   
+   for (label in unique_labels) {
+      # Subset the kNN graph to nodes with the same cell identity
+      label_nodes <- which(ident == label)
+      subgraph <- igraph::induced_subgraph(snn, label_nodes)
+      
+      # Find the largest connected component (LCC) size
+      components <- igraph::components(subgraph)
+      largest_component_size <- max(components$csize)
+      
+      # Compute graph connectivity score
+      connectivity_scores[label] <- largest_component_size / length(label_nodes)
+   }
+   
+   return(connectivity_scores)
+}
+
+
 
 custom_PropMatch <- function(ident, clusters){
    # Unique cell types
@@ -218,16 +261,39 @@ custom_PropMatch <- function(ident, clusters){
    return(scores)
 }
 
+compute_PropMatch <- function(ident,
+                              clusters,
+                              label.conservation = c("PropMatch", "NMI", "ARI")){
+   label.conservation <- label.conservation[1]
+   scores <- switch(label.conservation,
+                    "PropMatch" = custom_PropMatch(ident,
+                                                   clusters),
+                    "NMI" = aricode::NMI(factor(ident),
+                                         factor(clusters)),
+                    "ARI" = aricode::ARI(factor(ident),
+                                         factor(clusters)),
+                    stop(label.conservation, " is not a supported label conservation metrics.")
+   )
+   # change name if global score
+   if(label.conservation %in% c("NMI", "ARI")){
+      names(scores) <- "global"
+   }
+   return(scores)
+}
 
-# Ward's Method proportion matching
+# proportion matching
 compute_ward <- function(dist,
                          ident,
-                         method = "ward.D2") {
+                         method = "ward.D2",
+                         label.conservation = "PropMatch") {
    
    hclust_result <- stats::hclust(dist,
                                   method = method)
-   clusters <- stats::cutree(hclust_result, k = length(unique(ident)))
-   scores <- custom_PropMatch(ident, clusters)
+   clusters <- stats::cutree(hclust_result,
+                             k = length(unique(ident)))
+   scores <- compute_PropMatch(ident,
+                               clusters,
+                               label.conservation)
    return(scores)
 }
 
@@ -236,19 +302,24 @@ compute_leiden <- function(dist,
                            ident,
                            KNNGraph_k = 5,
                            knn = NULL,
+                           snn = NULL,
                            initial_resolution = 1e-3,
                            resolution_range = c(1e-4, 10),
                            tolerance = 1,
                            max_iter = 500,
-                           debug = FALSE) {
+                           debug = FALSE,
+                           label.conservation = "PropMatch") {
    
    # Step 1: Determine the target number of clusters
    target_clusters <- nlevels(as.factor(ident))
    
    # Step 2: Compute SNN graph
-   g <- compute_snn_graph(dist = dist,
-                          KNNGraph_k = KNNGraph_k,
-                          knn = knn)
+   # Create a graph object
+   if(is.null(snn)){
+      snn <- compute_snn_graph(dist = dist,
+                               KNNGraph_k = KNNGraph_k,
+                               knn = knn)
+   }
    
    # Step 3: Initialize resolution search range
    low <- resolution_range[1]
@@ -257,7 +328,7 @@ compute_leiden <- function(dist,
    
    for (i in seq_len(max_iter)) {
       # Perform Leiden clustering
-      leiden <- igraph::cluster_leiden(g,
+      leiden <- igraph::cluster_leiden(snn,
                                        resolution = resolution,
                                        objective_function = "modularity",
                                        initial_membership = as.numeric(factor(ident)),
@@ -290,7 +361,9 @@ compute_leiden <- function(dist,
    }
    
    # Step 5: Compute probability match
-   scores <- custom_PropMatch(ident, clusters)
+   scores <- compute_PropMatch(ident,
+                               clusters,
+                               label.conservation)
    return(scores)
 }
 
@@ -488,6 +561,8 @@ calculate_IntVal_metric <- function(mat = NULL,
                                     dist = NULL, 
                                     centroids = NULL, 
                                     inertia = NULL, 
+                                    knn = NULL,
+                                    snn = NULL,
                                     KNNGraph_k = 5, 
                                     hclust.method = "ward.D2",
                                     verbose = T) {
@@ -499,19 +574,27 @@ calculate_IntVal_metric <- function(mat = NULL,
    
    # Precompute distance if needed
    
-   if (is.null(dist) && any(metrics %in% dist.need)) {
+   if (is.null(dist) && any(grepl(dist.need, metrics))) {
       if(verbose){message("Computing distances...\n")}
       dist <- get.distance(mat = mat,
                            norm.mat = norm.mat,
                            distance.method = distance.method)
    }
    
-   if(any(metrics %in% knn.need)){
+   if(any(grepl(knn.need, metrics))){
       # set KNNGraph_k
       KNNGraph_k <- min(KNNGraph_k, max(table(ident)))
       # produce KNN
-      knn <- compute_KNN(dist, KNNGraph_k = KNNGraph_k)
+      knn <- compute_KNN(dist,
+                         KNNGraph_k = KNNGraph_k)
    }
+   
+   if(any(grepl(snn.need, metrics))){
+      snn <- compute_snn_graph(dist = dist,
+                               KNNGraph_k = KNNGraph_k,
+                               knn = knn)
+   }
+   
    
    if(is.null(centroids) && any(metrics %in% centroid.need)){
       if(verbose){message("Computing centroids...\n")}
@@ -535,9 +618,14 @@ calculate_IntVal_metric <- function(mat = NULL,
       results[[metric]] <- switch(metric,
                                   "silhouette" = compute_silhouette(dist, ident),
                                   "NeighborhoodPurity" = compute_NeighborhoodPurity(dist, ident, KNNGraph_k, knn),
-                                  "modularity" = compute_modularity_global(dist, ident, KNNGraph_k, knn),
-                                  "ward.PropMatch" = compute_ward(dist, ident, hclust.method),
-                                  "Leiden.PropMatch" = compute_leiden(dist, ident, KNNGraph_k, knn),
+                                  "GraphConnectivity" = compute_GraphConnectivity(dist,ident, KNNGraph_k, knn, snn),
+                                  "modularity" = compute_modularity_global(dist, ident, KNNGraph_k, knn, snn),
+                                  "ward.PropMatch" = compute_ward(dist, ident, hclust.method, label.conservation = "PropMatch"),
+                                  "Leiden.PropMatch" = compute_leiden(dist, ident, KNNGraph_k, knn, snn, label.conservation = "PropMatch"),
+                                  "ward.NMI" = compute_ward(dist, ident, hclust.method, label.conservation = "NMI"),
+                                  "Leiden.NMI" = compute_leiden(dist, ident, KNNGraph_k, knn, snn, label.conservation = "NMI"),
+                                  "ward.ARI" = compute_ward(dist, ident, hclust.method, label.conservation = "ARI"),
+                                  "Leiden.ARI" = compute_leiden(dist, ident, KNNGraph_k, knn, snn, label.conservation = "ARI"),
                                   "inertia" = inertia, 
                                   "Xie-Beni" = compute_xie_beni(norm.mat, ident, centroids, inertia),
                                   "S_Dbw" = compute_s_dbw(norm.mat, ident, centroids),
