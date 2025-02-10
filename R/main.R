@@ -375,7 +375,7 @@ Run.Consistency <- function(scTypeEval,
                                                           function(cc){
                                                              lapply(names(con.list[[cc]]),
                                                                     function(y){
-                                                                       if(!y %in% dist.need){distance.method <- NULL}
+                                                                       if(!grepl(dist.need, y)){distance.method <- NULL}
                                                                        
                                                                        methods::new("ConsistencyAssay",
                                                                                     measure = con.list[[cc]][[y]],
