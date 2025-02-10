@@ -164,17 +164,23 @@ normalize_metric <- function(value, metric) {
                            
                            # remove negative values
                            "silhouette" = rm0(value),
-                           # remove negative values
                            "modularity" = rm0(value),
-                           "modularity_pct" = minmax_norm(value,
-                                                      min_value = -1,
-                                                      max_value = 1,
-                                                      inverse = FALSE),
-                           # Ward, neighborhood purity and BestHit are already in [0, 1],
-                           # no need to scale
+                           "modularity_pct" = rm0(value),
+                           
                            "NeighborhoodPurity" = rm0(value),
                            "ward.PropMatch" = rm0(value),
                            "Leiden.PropMatch" = rm0(value),
+                           "ward.PropMatch" = rm0(value),
+                           "Leiden.PropMatch" = rm0(value),
+                           
+                           "ward.ARI" = rm0(value),
+                           "Leiden.ARI" = rm0(value),
+                           
+                           "GraphConnectivity" = value,
+                           
+                           "ward.NMI" = value,
+                           "Leiden.NMI" = value,
+                           
                            "BestHit-Mutual.Score" = value,
                            "BestHit-Mutual.Match" = rm0(value),
                            
