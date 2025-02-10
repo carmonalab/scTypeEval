@@ -298,6 +298,10 @@ Run.Consistency <- function(scTypeEval,
    # set gene lists
    if(is.null(gene.list)){
       gene.list <- scTypeEval@gene.lists
+      if(length(gene.list) == 0){
+         stop("No gene list found to run consistency metrics.\n
+              Add custom gene list or compute highly variable genes with add.HVG()\n")
+      }
    } else {
       if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
          stop("Some gene list names not included in scTypeEval object")
@@ -470,6 +474,10 @@ Run.BestHit <- function(scTypeEval,
    # set gene lists
    if(is.null(gene.list)){
       gene.list <- scTypeEval@gene.lists
+      if(length(gene.list) == 0){
+         stop("No gene list found to run consistency metrics.\n
+              Add custom gene list or compute highly variable genes with add.HVG()\n")
+      }
    } else {
       if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
          stop("Some gene list names not included in scTypeEval object")
@@ -775,6 +783,10 @@ add.PCA <- function(scTypeEval,
    # set gene lists
    if(is.null(gene.list)){
       gene.list <- scTypeEval@gene.lists
+      if(length(gene.list) == 0){
+         stop("No gene list found to run PCA.\n
+              Add custom gene list or compute highly variable genes with add.HVG()\n")
+      }
    } else {
       if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
          stop("Some gene list names not included in scTypeEval object")
