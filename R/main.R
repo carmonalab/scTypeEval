@@ -533,8 +533,6 @@ Run.BestHit <- function(scTypeEval,
                                                     method = method,
                                                     min.cells = min.cells,
                                                     min.samples = min.samples,
-                                                    pca = pca,
-                                                    ndim = ndim,
                                                     bparam = param)
                              
                              # accommodte to ConsistencyAssay
@@ -635,7 +633,7 @@ Run.scTypeEval <- function(scTypeEval,
                                 progressbar = progressbar,
                                 verbose = FALSE)
       
-      if(dt != "pseudobulk_1vsall"){
+      if(dt != "pseudobulk_1vsall" && any(BH.method %in% mutual_method)){
          
          if(verbose){message("------- Running BestHit for ", dt, " ",  format(Sys.time()), "\n")}
          sc.tmp <- Run.BestHit(sc.tmp,
