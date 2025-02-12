@@ -176,10 +176,10 @@ normalize_metric <- function(value, metric) {
                            "ward.ARI" = rm0(value),
                            "Leiden.ARI" = rm0(value),
                            
-                           "GraphConnectivity" = value,
+                           "GraphConnectivity" = rm0(value),
                            
-                           "ward.NMI" = value,
-                           "Leiden.NMI" = value,
+                           "ward.NMI" = rm0(value),
+                           "Leiden.NMI" = rm0(value),
                            
                            "BestHit-Mutual.Score" = value,
                            "BestHit-Mutual.Match" = rm0(value),
