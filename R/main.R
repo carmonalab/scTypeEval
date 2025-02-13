@@ -173,9 +173,11 @@ add.GeneMarkers <- function(scTypeEval,
                                                    ncores = ncores,
                                                    bparam = bparam,
                                                    progressbar = progressbar,
+                                                   black.list = black.list,
                                                    ...),
                      "gpsFISH" = get.gpsFISHMarkers(sc_count = mat,
-                                                    ident = ident
+                                                    ident = ident,
+                                                    black.list = black.list
                                                     )
                      )
    
