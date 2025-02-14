@@ -621,7 +621,7 @@ Run.scTypeEval <- function(scTypeEval,
       data.type <- data.type[data.type != "sc"]
    }
    
-   if(length(data.type) == 0 | is.null(data.typpe)){
+   if(length(data.type) == 0 | is.null(data.type)){
       stop("No data.type provided to run consistency.")
    }
    
