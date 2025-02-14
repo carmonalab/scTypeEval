@@ -282,7 +282,12 @@ Run.Consistency <- function(scTypeEval,
    if(!distance.method %in% distance_methods){
       stop(distance.method, " distance method not supported. Pick up one of: ", 
            paste(distance_methods, collapse = ", "))
-   } 
+   }
+   # only run EMD on pseudobulk data.type
+   if(distance.method == "EMD" && data.type == "sc"){
+      warning("Earth mover distance (EMD) for single-cell (sc) data.type is
+              highly computially expensive... not recommended, it will take long")
+   }
    
    
    if(!all(IntVal.metric %in% IntVal_metric)){
@@ -608,6 +613,18 @@ Run.scTypeEval <- function(scTypeEval,
 
    
    df.res <- list()
+   
+   # only run EMD on pseudobulk data.type
+   if(distance.method == "EMD" && "sc" %in% data.type){
+      warning("Earth mover distance (EMD) for single-cell (sc) data.type is
+              highly computially expensive... not running consistency for sc.\n")
+      data.type <- data.type[data.type != "sc"]
+   }
+   
+   if(length(data.type) == 0 | is.null(data.typpe)){
+      stop("No data.type provided to run consistency.")
+   }
+   
    for(dt in data.type){
       
       if(dt == "sc"){

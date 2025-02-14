@@ -31,28 +31,55 @@ compute_fast_euclidean <- function(norm.mat) {
 
 #earth mover distance (emd)
 compute_emd <- function(norm.mat,
-                        dist = "euclidean") {
-   n <- nrow(norm.mat)
+                        dist = "euclidean",
+                        bw = NULL,  # Set NULL to auto-calculate per pseudobulk
+                        grid_size = 100,
+                        max.iter = 1000) {
+   n <- nrow(norm.mat)  # Each row is a pseudobulk sample
+   
    # Convert the matrix to dense if it's sparse
    if (inherits(norm.mat, "dgCMatrix")) {
       norm.mat <- as.matrix(norm.mat)
    }
-   # Preallocate memory for the distance vector
+   
+   # Define a grid for KDE estimation
+   min_val <- min(norm.mat, na.rm = TRUE)
+   max_val <- max(norm.mat, na.rm = TRUE)
+   grid <- seq(min_val, max_val, length.out = grid_size)
+   
+   # Preallocate KDE matrix
+   kde_matrix <- matrix(0, nrow = grid_size, ncol = n)  
+   rownames(kde_matrix) <- paste0("KDE_", seq_len(grid_size))
+   colnames(kde_matrix) <- rownames(norm.mat)  # Retain original sample names
+   
+   # Compute KDE for each pseudobulk (each row)
+   for (i in 1:n) {
+      data_i <- as.numeric(norm.mat[i, ])  # Ensure it's numeric
+      h_i <- if (is.null(bw)) stats::bw.nrd0(data_i) else bw  # Compute bandwidth if needed
+      kde <- ks::kde(data_i, h = h_i, eval.points = grid)  
+      kde_matrix[, i] <- kde$estimate / sum(kde$estimate)  # Normalize
+   }
+   
+   # Preallocate distance vector
    emd_distances <- numeric(n * (n - 1) / 2)
    idx <- 1
-   # Compute pairwise EMD directly in a nested loop
+   
+   # Compute pairwise EMD
    for (i in 1:(n - 1)) {
       for (j in (i + 1):n) {
-         emd_distances[idx] <- emdist::emd2d(norm.mat[i, , drop = FALSE],
-                                             norm.mat[j, , drop = FALSE],
-                                             dist = dist)
+         emd_distances[idx] <- emdist::emd2d(kde_matrix[, i, drop = F],
+                                           kde_matrix[, j, drop = F],
+                                           dist = dist,
+                                           max.iter = max.iter)
          idx <- idx + 1
       }
    }
-   # Convert the result into a `dist` object
+   
+   # Convert to `dist` object with rownames
    dist_object <- structure(
       emd_distances,
       Size = n,
+      Labels = rownames(norm.mat),  # Keep original rownames
       class = "dist",
       Diag = FALSE,
       Upper = FALSE
