@@ -138,7 +138,23 @@ compute_cosine <- function(norm.mat) {
 }
 
 compute_pearson <- function(norm.mat) {
-   corr <- stats::cor(t(norm.mat), method = "pearson")
+   # Compute row means
+   row_means <- Matrix::rowMeans(norm.mat)
+   
+   # Center the matrix (subtract row means)
+   norm.mat_centered <- norm.mat - row_means
+   norm.mat_centered <- Matrix::drop0(norm.mat_centered)  # Keep sparsity
+   
+   # Compute covariance matrix
+   cov_mat <- Matrix::tcrossprod(norm.mat_centered) / (ncol(norm.mat) - 1)
+   
+   # Compute standard deviations
+   std_dev <- sqrt(Matrix::diag(cov_mat))
+   
+   # Normalize to Pearson correlation matrix
+   corr <- cov_mat / (Matrix::tcrossprod(std_dev) + 1e-9)  # Avoid division by zero
+   
+   # Convert to distance matrix
    as.dist(1 - corr)
 }
 
