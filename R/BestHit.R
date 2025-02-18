@@ -106,17 +106,13 @@ get.MutualMatrix <- function(mat,
    
    mat.split <- lapply(mats,
                        function(mat){
-                          if(ncol(mat@matrix) != 0){
                              get.matrix(mat@matrix,
                                         data.type = data.type,
                                         ident = mat@ident,
                                         sample = NULL, # now is pseudobulk per cell type per invidividual sample
                                         min.cells = min.cells,
                                         bparam = bparam)
-                          }
                        })
-   # filter NULLs
-   mat.split <- Filter(Negate(is.null), mat.split)
    
    return(mat.split)
 }

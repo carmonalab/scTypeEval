@@ -42,7 +42,7 @@ split.matrix <- function(mat,
    }
    
    # Get the unique sample groups
-   unique_samples <- levels(sample)
+   unique_samples <- unique(sample)
    
    # Initialize an empty list to store matrices
    split_list <- list()
