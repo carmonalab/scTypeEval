@@ -149,12 +149,13 @@ rm0 <- function(value){
 
 # Function to scale any value to the range [0, 1]
 minmax_norm <- function(value, min_value, max_value, inverse = FALSE) {
+   norm_value <- (value - min_value) / (max_value - min_value)
+   norm_value <- pmax(0, pmin(1, norm_value))  # Clip values to [0,1]
+   
    if (inverse) {
-      # For values where higher means worse clustering, scale to [0, 1] (inverted)
-      return(1 - ((value - min_value) / (max_value - min_value)))
+      return(1 - norm_value)
    } else {
-      # For values where higher means better clustering, scale to [0, 1]
-      return((value - min_value) / (max_value - min_value))
+      return(norm_value)
    }
 }
 
