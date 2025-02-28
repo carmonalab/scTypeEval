@@ -276,3 +276,8 @@ custom_prcomp <- function(norm.mat,
                        rank. = ndim)
    return(pr)
 }
+
+# function to purge sample and annotation names
+purge_label <- function(label){
+   gsub(" |_|[+]", ".", label)
+}

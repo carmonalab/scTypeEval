@@ -75,7 +75,7 @@ add.HVG <- function(scTypeEval,
       # retrieve sample and convert to factor
       sample.name <- sample
       sample <- scTypeEval@metadata[[sample]]
-      sample <- gsub(" |_|[+]", ".", sample)
+      sample <- purge_label(sample)
       sample <- factor(sample)
    }
    
@@ -146,7 +146,7 @@ add.GeneMarkers <- function(scTypeEval,
    # retrieve ident and convert to factor
    ident.name <- ident
    ident <- scTypeEval@metadata[[ident]]
-   ident <- gsub(" |_|[+]", ".", ident)
+   ident <- purge_label(ident)
    ident <- factor(ident)
    
    if(!is.null(sample)){
@@ -155,7 +155,7 @@ add.GeneMarkers <- function(scTypeEval,
       }
       # retrieve sample and convert to factor
       sample <- scTypeEval@metadata[[sample]]
-      sample <- gsub(" |_|[+]", ".", sample)
+      sample <- purge_label(sample)
       sample <- factor(sample)
    }
    
@@ -249,7 +249,7 @@ Run.Consistency <- function(scTypeEval,
    # retrieve ident and convert to factor
    ident.name <- ident
    ident <- scTypeEval@metadata[[ident]]
-   ident <- gsub(" |_|[+]", ".", ident)
+   ident <- purge_label(ident)
    ident <- factor(ident)
    
    if(!is.null(sample)){
@@ -259,7 +259,7 @@ Run.Consistency <- function(scTypeEval,
       # retrieve sample and convert to factor
       sample.name <- sample
       sample <- scTypeEval@metadata[[sample]]
-      sample <- gsub(" |_|[+]", ".", sample)
+      sample <- purge_label(sample)
       sample <- factor(sample)
       
       if(min.samples < 2){
@@ -466,12 +466,12 @@ Run.BestHit <- function(scTypeEval,
    # retrieve ident and convert to factor
    ident.name <- ident
    ident <- scTypeEval@metadata[[ident]]
-   ident <- gsub(" |_|[+]", ".", ident)
+   ident <- purge_label(ident)
    ident <- factor(ident)
    
    if(!is.null(ident_GroundTruth)){
       ident_GroundTruth <- scTypeEval@metadata[[ident_GroundTruth]]
-      ident_GroundTruth <- gsub(" |_|[+]", ".", ident_GroundTruth)
+      ident_GroundTruth <- purge_label(ident_GroundTruth)
       ident_GroundTruth <- factor(ident_GroundTruth)
    }
    
@@ -482,7 +482,7 @@ Run.BestHit <- function(scTypeEval,
       # retrieve sample and convert to factor
       sample.name <- sample
       sample <- scTypeEval@metadata[[sample]]
-      sample <- gsub(" |_|[+]", ".", sample)
+      sample <- purge_label(sample)
       sample <- factor(sample)
    } else {
       stop("BestHit consistency requires multiple samples and specify it in `sample` parameter.")
@@ -782,7 +782,7 @@ add.PCA <- function(scTypeEval,
    # retrieve ident and convert to factor
    ident.name <- ident
    ident <- scTypeEval@metadata[[ident]]
-   ident <- gsub(" |_|[+]", ".", ident)
+   ident <- purge_label(ident)
    ident <- factor(ident)
    
    if(!is.null(sample)){
@@ -792,7 +792,7 @@ add.PCA <- function(scTypeEval,
       # retrieve sample and convert to factor
       sample.name <- sample
       sample <- scTypeEval@metadata[[sample]]
-      sample <- gsub(" |_|[+]", ".", sample)
+      sample <- purge_label(sample)
       sample <- factor(sample)
       
    } else {
