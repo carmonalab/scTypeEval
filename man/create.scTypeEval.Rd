@@ -10,7 +10,7 @@ create.scTypeEval(
   gene.lists = list(),
   black.list = character(),
   active.ident = NULL,
-  version = ""
+  version = "1.0.0"
 )
 }
 \arguments{
@@ -50,7 +50,11 @@ aligned and validates input types before proceeding.
 }
 \examples{
 \dontrun{
-sceval <- create.scTypeEval(count_matrix, metadata = metadata)
+# From count matrix and metadata dataframe
+sceval <- create.scTypeEval(matrix = count_matrix, metadata = metadata)
+
+# From Seurat object
+sceval <- create.scTypeEval(seurat_obj)
 }
 
 }

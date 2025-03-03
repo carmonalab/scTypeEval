@@ -22,7 +22,7 @@ add.PCA(
 )
 }
 \arguments{
-\item{scTypeEval}{An \code{scTypeEval} object containing single-cell expression data.}
+\item{scTypeEval}{A \code{scTypeEval} object containing single-cell expression data.}
 
 \item{ident}{Character. Metadata column name used to group cells (e.g., cell type annotation).
 If \code{NULL}, the active identity from \code{scTypeEval} is used.}
@@ -65,7 +65,7 @@ and stores the results in the \code{reductions} slot of a scTypeEval object.
 }
 \examples{
 \dontrun{
-sceval <- add.PCA(sceval,
+sceval <- add.PCA(sceval, # scTypeEval object
                  ident = "cell_type",
                  sample = "patient_id",
                  data.type = "pseudobulk")

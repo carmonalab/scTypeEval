@@ -15,7 +15,7 @@ get.ConsistencyData(
 \arguments{
 \item{scTypeEval}{An \code{scTypeEval} object containing consistency analysis results.}
 
-\item{gene.list}{A character vector of gene names to filter the results. Default is \code{NULL} (no filtering by genes).}
+\item{gene.list}{A character vector of gene.lists names to filter the results. Default is \code{NULL} (no filtering by gene.lists).}
 
 \item{consistency.metric}{A character vector specifying which consistency metric(s) to retrieve. Default is \code{NULL} (no filtering by metric).}
 

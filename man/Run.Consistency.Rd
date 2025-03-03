@@ -35,13 +35,14 @@ If \code{NULL}, defaults to \code{scTypeEval@active.ident}.}
 \item{sample}{Character. Name of the column in \code{scTypeEval@metadata} containing sample identifiers.
 Required for pseudobulk analyses.}
 
-\item{normalization.method}{Character. Method for normalizing the expression data. See \link[add.HVG]{add.HVG} for more details.
+\item{normalization.method}{Character. Method for normalizing the expression data. See \link[scTypeEval]{add.HVG} for more details.
 Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"}. Default: \code{"Log1p"}.}
 
 \item{gene.list}{List. A list of gene sets to compute consistency metrics on.
 By default, each of the gene lists stored in \code{scTypeEval} are used recursively to compute consitency metrics.}
 
 \item{pca}{Logical. Whether to perform PCA before computing metrics. Default: \code{FALSE}.
+
 \code{FALSE} will build consistency metrics directly on the genes within \code{gene.list}, while \code{TRUE} will do it on their principal components.}
 
 \item{ndim}{Integer. Number of PCA dimensions to use to compute metrics if \code{pca = TRUE}. Default: \code{30}.}
@@ -49,7 +50,7 @@ By default, each of the gene lists stored in \code{scTypeEval} are used recursiv
 \item{distance.method}{Character. Distance metric to use. Must be one of the predefined methods. Default: \code{"euclidean"}.
 Supported options:
 \itemize{
-\item \code{"euclidean"}: Standard Euclidean distance, commonly used for measuring dissimilarity in high-dimensional spaces.
+\item \code{"euclidean"}: Euclidean distance, commonly used for measuring dissimilarity in high-dimensional spaces.
 \item \code{"EMD"}: Earth Mover's Distance, computationally expensive but useful for comparing distributions (only recommended for pseudobulk data).
 \item \code{"maximum"}: Chebyshev distance, considers the largest absolute difference across dimensions.
 \item \code{"manhattan"}: Sum of absolute differences, often preferred when dealing with sparse data.
@@ -66,6 +67,7 @@ Supported options:
 
 \item{IntVal.metric}{Character vector. Internal validation metrics to compute. By default, the following metrics will be run:
 \code{"silhouette"}, \code{"NeighborhoodPurity"}, \code{"ward.PropMatch"}, \code{"Leiden.PropMatch"}, \code{"modularity"}.
+
 All available options:
 \itemize{
 \item \code{"silhouette"}: Contrast intra-cluster tightness with inter-cluster separation. (Distance-based, Mean silhouette width per cell type)

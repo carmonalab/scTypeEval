@@ -50,32 +50,31 @@ normalization and variance calculation methods. The identified genes are stored 
 }
 \details{
 The function first normalizes the expression matrix using the specified method:
+\itemize{
+\item \code{"Log1p"}: Applies log(x+1) transformation to stabilize variance in the count matrix.
+\item \code{"CLR"}: Performs centered log-ratio normalization, where each gene’s expression
+is divided by the geometric mean across all genes in a given cell.
+\item \code{"pearson"}: Computes Pearson residuals from a negative binomial model
+fitted to the count data. This method is commonly used to reduce technical noise
+while preserving biological signal.
+}
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{     - `"Log1p"`: Applies log(x+1) transformation to stabilize variance in the count matrix.  
-
-     - `"CLR"`: Performs centered log-ratio normalization, where each gene’s expression  
-       is divided by the geometric mean across all genes in a given cell.  
-
-     - `"pearson"`: Computes Pearson residuals from a negative binomial model  
-       fitted to the count data. This method is commonly used to reduce technical noise  
-       while preserving biological signal.  
-
-     After normalization, HVGs are computed using one of the following approaches:  
-
-     - `"scran"`: Uses the **scran** package’s \link[scran]\{modelGeneVar\} function to identify highly variable genes (HVGs).  
-       This approach applies model-based variance decomposition to detect genes with significant biological variation  
-       while accounting for technical noise, sample, and batch effects.  
-
-     - `"basic"`: A simpler method based on the variance-to-mean ratio. It ranks genes  
-       by their coefficient of variation (CV) and selects the most variable ones.  
-       This approach is computationally efficient but lacks statistical modeling.  
-
-     Any genes in the `black.list` are removed before HVG selection.
-}\if{html}{\out{</div>}}
+After normalization, HVGs are computed using one of the following approaches:
+\itemize{
+\item \code{"scran"}: Uses the \strong{scran} package’s \link[scran]{modelGeneVar} function to identify highly variable genes (HVGs).
+This approach applies model-based variance decomposition to detect genes with significant biological variation
+while accounting for technical noise, sample, and batch effects.
+\item \code{"basic"}: A simpler method based on the variance-to-mean ratio. It ranks genes
+by their coefficient of variation (CV) and selects the most variable ones.
+This approach is computationally efficient but lacks statistical modeling.
+Any genes in the \code{black.list} is removed before HVG selection.
+}
 }
 \examples{
 \dontrun{
+# create scTypeEval object
 sceval <- create.scTypeEval(count_matrix, metadata = metadata)
+# Compute and add HVG
 sceval <- add.HVG(sceval)
 }
 

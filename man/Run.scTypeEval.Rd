@@ -91,13 +91,13 @@ Defaults to \code{scTypeEval@black.list}.}
 A data frame containing consistency evaluation results for each consistency parameter.
 }
 \description{
-This function serves as a wrapper to compute internal validation metrics (\link[Run.Consistency]{Run.Consistency})
-and Mutual Best Hit consistency (\link[Run.BestHit]{Run.BestHit}) evaluations for cell type annotations.
+This function serves as a wrapper to compute internal validation metrics (\link[scTypeEval]{Run.Consistency})
+and Mutual Best Hit consistency (\link[scTypeEval]{Run.BestHit}) evaluations for cell type annotations.
 It supports multiple data types in the same run, including single-cell and pseudobulk data.
 }
 \details{
-This function applies sequentially internal validation metrics (\link[Run.Consistency]{Run.Consistency})
-and Mutual Best Hit consistency (\link[Run.BestHit]{Run.BestHit}) on scTypeEval object to assess the consistency of cell type annotations.
+This function applies sequentially internal validation metrics (\link[scTypeEval]{Run.Consistency})
+and Mutual Best Hit consistency (\link[scTypeEval]{Run.BestHit}) on scTypeEval object to assess the consistency of cell type annotations.
 Finally, it returns a data frame with the consistency results for each consistency paramter.
 }
 \examples{
@@ -113,5 +113,5 @@ consistency_df <- Run.scTypeEval(scTypeEval = sceval,
 
 }
 \seealso{
-\link[Run.Consistency]{Run.Consistency}, \link[Run.BestHit]{Run.BestHit}, \link[get.ConsistencyData]{get.ConsistencyData}
+\link{Run.Consistency}, \link{Run.BestHit}, \link{get.ConsistencyData}
 }

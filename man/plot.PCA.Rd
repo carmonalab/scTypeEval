@@ -16,7 +16,7 @@
 \arguments{
 \item{scTypeEval}{An \code{scTypeEval} object containing PCA results in the \code{reductions} slot.}
 
-\item{gene.list}{Character vector. A subset of genes to filter PCA plots. If \code{NULL}, all available PCA results are plotted.}
+\item{gene.list}{Character vector. gene.list names to filter PCA plots. If \code{NULL}, all available PCA results are plotted.}
 
 \item{data.type}{Character vector. Specifies which data types to include in the plots (e.g., \code{"sc"}, \code{"pseudobulk"}).
 If \code{NULL}, all data types are included.}
