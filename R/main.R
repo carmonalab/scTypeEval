@@ -954,16 +954,16 @@ Run.BestHit <- function(scTypeEval,
 #' @return A data frame containing consistency evaluation results for each consistency parameter.
 #'
 #' @examples
-#'\dontrun{
+#' \dontrun{
 #' consistency_df <- Run.scTypeEval(scTypeEval = sceval,
 #'                                 ident = "cell_type",
 #'                                 sample = "sample_id",
 #'                                 IntVal.metric = c("silhouette", "NeighborhoodPurity"), # specificy one or multiple internal validation metrics
-#'                                 BH.method = c("), # specificy Run.BestHit methods
+#'                                 BH.method = c("Mutual.Score","Mutual.Match"), # specificy Run.BestHit methods
 #'                                 data.type = c("sc", "pseudobulk"), # multiples data types will be run sequentially
 #'                                 ncores = 4)
-#'}
-#'
+#' }
+#' 
 #' @seealso \link[Run.Consistency]{Run.Consistency}, \link[Run.BestHit]{Run.BestHit}, \link[get.ConsistencyData]{get.ConsistencyData}
 #'
 #' @export Run.scTypeEval
