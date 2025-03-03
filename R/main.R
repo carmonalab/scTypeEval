@@ -32,6 +32,8 @@
 #' \dontrun{
 #' sceval <- create.scTypeEval(count_matrix, metadata = metadata)
 #' }
+#' 
+#' @importClassesFrom Matrix dgCMatrix
 #'
 #' @export create.scTypeEval
 
@@ -472,6 +474,8 @@ add.GeneList <- function(scTypeEval,
 #'   ncores = 2
 #' )
 #' }
+#' 
+#' @importClassesFrom Matrix dgCMatrix
 #'
 #' @export Run.Consistency
 
@@ -746,6 +750,8 @@ Run.Consistency <- function(scTypeEval,
 #'                       data.type = "pseudobulk", 
 #'                       ncores = 4)
 #' }
+#' 
+#' @importClassesFrom Matrix dgCMatrix
 #'
 #' @export Run.BestHit
 
@@ -1391,8 +1397,7 @@ plot.PCA <- function(scTypeEval,
                      data.type = NULL,
                      dims = c(1,2),
                      label = TRUE,
-                     show.legend = F
-                     ){
+                     show.legend = FALSE) {
    
    # Ensure the reductions slot is not empty
    if (length(scTypeEval@reductions) == 0) {
@@ -1400,39 +1405,37 @@ plot.PCA <- function(scTypeEval,
    }
    
    assays <- unlist(scTypeEval@reductions)
+   pls <- list()  # Initialize an empty list to store plots
    
-   # Loop through each ConsistencyAssay object in scTypeEval@consistency
-   pls <- lapply(names(assays),
-                 function(a) {
-                    assay <- assays[[a]]
-                    # Check for class validity
-                    if (!inherits(assay, "DimRed")) {
-                       stop(paste("Invalid object in reductions slot"))
-                    }
-                    
-                    # Apply filtering:
-                    # For `gene.list`, check if it is NULL or if the intersection with the assay's gene list is non-empty
-                    if (!is.null(gene.list) && length(intersect(gene.list, assay@gene.list)) == 0) next
-                    if (!is.null(data.type) && !assay@data.type %in% data.type) next
-                    
-                    
-                    df <- assay@embeddings[,dims] |>
-                       as.data.frame() |>
-                       dplyr::mutate(ident = assay@ident)
-                    labs <- paste0("PC", dims)
-                    
-                    pl <- helper.plot.PCA(df,
-                                          show.legend = show.legend,
-                                          label = label) +
-                       ggplot2::labs(x = labs[1],
-                                     y = labs[2],
-                                     title = a)
-                    
-                    return(pl)
-                 })
-   
-   names(pls) <- names(assays)
+   # Loop through each ConsistencyAssay object in scTypeEval@reductions
+   for (a in names(assays)) {
+      assay <- assays[[a]]
+      
+      # Check for class validity
+      if (!inherits(assay, "DimRed")) {
+         stop(paste("Invalid object in reductions slot"))
+      }
+      
+      # Apply filtering
+      if (!is.null(gene.list) && length(intersect(gene.list, assay@gene.list)) == 0) next
+      if (!is.null(data.type) && !assay@data.type %in% data.type) next
+      
+      df <- assay@embeddings[, dims] |>
+         as.data.frame() |>
+         dplyr::mutate(ident = assay@ident)
+      
+      labs <- paste0("PC", dims)
+      
+      pl <- helper.plot.PCA(df,
+                            show.legend = show.legend,
+                            label = label) +
+         ggplot2::labs(x = labs[1],
+                       y = labs[2],
+                       title = a)
+      
+      pls[[a]] <- pl  # Store plot in the list
+   }
    
    return(pls)
-   
 }
+

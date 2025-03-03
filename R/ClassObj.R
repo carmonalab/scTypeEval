@@ -1,7 +1,7 @@
 # S4 class object
 methods::setClass("scTypeEval",
                   slots = c(
-                     counts = "dgCMatrix", # raw counts
+                     counts = "matrix", # raw counts
                      metadata = "data.frame", # data.frame with metadata
                      consistency = "list", # actual consistency results assays
                      gene.lists = "list", # list of either HGV, markers
