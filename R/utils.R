@@ -32,7 +32,7 @@ set_parallel_params <- function(ncores = NULL,
 }
 
 
-split.matrix <- function(mat,
+split_matrix <- function(mat,
                          ident,
                          sample = NULL,
                          min.cells = 10,

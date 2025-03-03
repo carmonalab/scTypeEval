@@ -98,7 +98,7 @@ get.MutualMatrix <- function(mat,
 
    mat <- mat[, valid_indices, drop = FALSE]
    
-   mats <- split.matrix(mat,
+   mats <- split_matrix(mat,
                         ident = ident[valid_indices],
                         sample = sample[valid_indices],
                         min.cells = min.cells,
