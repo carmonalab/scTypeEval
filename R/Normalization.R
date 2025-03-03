@@ -149,6 +149,21 @@ residual_transform <- function(data,
                                verbose = FALSE,
                                ...){
    
+   # Check and install required packages if missing
+   required_packages <- c("transformGamPoi", "glmGamPoi")
+   missing_packages <- required_packages[!sapply(required_packages,
+                                                 requireNamespace,
+                                                 quietly = TRUE)]
+   if (length(missing_packages) > 0) {
+      message("Installing missing packages for pearson residuals normalization: ",
+              paste(missing_packages, collapse = ", "))
+      if (!requireNamespace("BiocManager", quietly = TRUE)) {
+         message("Installing BiocManager...\n")
+         install.packages("BiocManager")
+      }
+      BiocManager::install(missing_packages)
+   }
+
    # tuned intput of size factors
    cell.ids <- colnames(data)
    if(!all(cell.ids %in% names(size_factors))){

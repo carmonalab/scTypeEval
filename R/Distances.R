@@ -35,6 +35,18 @@ compute_emd <- function(norm.mat,
                         bw = NULL,  # Set NULL to auto-calculate per pseudobulk
                         grid_size = 100,
                         max.iter = 1000) {
+   
+   # Check and install required packages if missing
+   required_packages <- c("ks", "emdist")
+   missing_packages <- required_packages[!sapply(required_packages,
+                                                 requireNamespace,
+                                                 quietly = TRUE)]
+   if (length(missing_packages) > 0) {
+      message("Installing missing packages for EMD distance: ",
+              paste(missing_packages, collapse = ", "))
+      install.packages(missing_packages)
+   }
+   
    n <- nrow(norm.mat)  # Each row is a pseudobulk sample
    
    # Convert the matrix to dense if it's sparse

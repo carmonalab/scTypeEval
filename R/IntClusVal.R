@@ -572,6 +572,14 @@ calculate_IntVal_metric <- function(mat = NULL,
       stop("One or more requested metrics are not supported.")
    }
    
+   # install dependencies if required
+   if (any(grepl("NMI|ARI", metrics))) {
+      if(!requireNamespace("aricode", quietly = TRUE)){
+         message("Installing missing packages: aricode\n")
+         install.packages("aricode")
+      }
+   }
+   
    # Precompute distance if needed
    
    if (is.null(dist) && any(grepl(dist.need, metrics))) {

@@ -163,6 +163,13 @@ get.gpsFISHMarkers <- function(sc_count,
                                black.list = NULL,
                                seed = 22,
                                ncores = 1){
+   # Check if gpsFISH is installed
+   if (!requireNamespace("gpsFISH", quietly = TRUE)) {
+      stop("The 'gpsFISH' package is required but not installed. Install it with: 
+         remotes::install_github('kharchenkolab/gpsFISH') OR
+         devtools::install_github('kharchenkolab/gpsFISH')  ")
+   }
+   
    #https://htmlpreview.github.io/?https://github.com/kharchenkolab/gpsFISH/blob/main/doc/gene_panel_selection.html
    simulation_params <- gpsFISH::simulation_params
    
