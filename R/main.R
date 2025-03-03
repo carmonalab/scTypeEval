@@ -286,7 +286,7 @@ add.GeneMarkers <- function(scTypeEval,
    
    method <- method[1]
    if(!method %in% c("scran.findMarkers", "gpsFISH")){
-      stop("Current gene markes definitions are either `scran.findMarkers` and `gpsFISH`")
+      stop("Supported gene markes definitions are either `scran.findMarkers` and `gpsFISH`")
    }
    
    if(is.null(ident)){
