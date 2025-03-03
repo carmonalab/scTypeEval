@@ -18,7 +18,7 @@ add.GeneMarkers(
 )
 }
 \arguments{
-\item{scTypeEval}{A scTypeEval object.}
+\item{scTypeEval}{An scTypeEval object.}
 
 \item{ident}{A character string specifying the column name in \code{scTypeEval@metadata} that contains cell type or annotation labels.
 If NULL, the function defaults to \code{scTypeEval@active.ident}.}

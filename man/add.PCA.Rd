@@ -30,7 +30,7 @@ If \code{NULL}, the active identity from \code{scTypeEval} is used.}
 \item{sample}{Character. Metadata column name specifying sample identity for pseudobulk analysis.
 Required for pseudobulk and \code{pseudobulk_1vsall} data types.}
 
-\item{normalization.method}{Character. Method for normalizing gene expression before PCA. See \link[add.HVG]{add.HVG} for more details.
+\item{normalization.method}{Character. Method for normalizing gene expression before PCA. See \link[scTypeEval]{add.HVG} for more details.
 Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"} (default: \code{"Log1p"}).}
 
 \item{gene.list}{Named list of character vectors. Each element is a set of genes for PCA analysis.
@@ -60,8 +60,8 @@ the blacklist stored in \code{scTypeEval}.}
 The modified \code{scTypeEval} object with PCA results stored in \code{reductions} slot.
 }
 \description{
-This function computes Principal Component Analysis (PCA) based on a specified gene list
-and stores the results in the \code{reductions} slot of a scTypeEval object.
+This function computes Principal Component Analysis (PCA) based on an specified gene list
+and stores the results in the \code{reductions} slot of an scTypeEval object.
 }
 \examples{
 \dontrun{
@@ -71,4 +71,7 @@ sceval <- add.PCA(sceval, # scTypeEval object
                  data.type = "pseudobulk")
 }
 
+}
+\seealso{
+\link{add.HVG}
 }

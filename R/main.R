@@ -237,7 +237,7 @@ add.HVG <- function(scTypeEval,
 #' @description This function identifies and assigns gene markers for cell types in a single-cell dataset 
 #' using either `scran.findMarkers` or `gpsFISH` methods.
 #'
-#' @param scTypeEval A scTypeEval object.
+#' @param scTypeEval An scTypeEval object.
 #' @param ident A character string specifying the column name in `scTypeEval@metadata` that contains cell type or annotation labels. 
 #'   If NULL, the function defaults to `scTypeEval@active.ident`.
 #' @param sample Optional. A character string specifying the column name in `scTypeEval@metadata` that contains sample identifiers.
@@ -392,7 +392,7 @@ add.GeneList <- function(scTypeEval,
 #' in single-cell RNA-seq datasets. This function evaluates the robustness of annotations
 #' using various distance metrics, normalization methods, and gene sets.
 #'
-#' @param scTypeEval A scTypeEval object containing single-cell expression data, metadata, and gene lists.
+#' @param scTypeEval An scTypeEval object containing single-cell expression data, metadata, and gene lists.
 #' @param ident Character. Name of the column in `scTypeEval@metadata` containing the cell type labels.
 #'   If `NULL`, defaults to `scTypeEval@active.ident`.
 #' @param sample Character. Name of the column in `scTypeEval@metadata` containing sample identifiers.
@@ -706,7 +706,7 @@ Run.Consistency <- function(scTypeEval,
 #' using a Mutual Best Hit approach. It applies a classifier bidirectionally between 
 #' sample pairs to assess inter-sample reciprocal similarity.
 #'
-#' @param scTypeEval A scTypeEval object containing single-cell expression data, metadata, and gene lists.
+#' @param scTypeEval An scTypeEval object containing single-cell expression data, metadata, and gene lists.
 #' @param ident A character string specifying the metadata column containing the cell type 
 #' annotations. Default is `NULL`, which uses the active identity in `scTypeEval`.
 #' @param ident_GroundTruth (Optional) A character string specifying the metadata column 
@@ -920,7 +920,7 @@ Run.BestHit <- function(scTypeEval,
 #' and Mutual Best Hit consistency (\link[scTypeEval]{Run.BestHit}) evaluations for cell type annotations.
 #' It supports multiple data types in the same run, including single-cell and pseudobulk data.
 #'
-#' @param scTypeEval A scTypeEval object containing single-cell expression data, metadata, and gene lists.
+#' @param scTypeEval An scTypeEval object containing single-cell expression data, metadata, and gene lists.
 #' @param ident A character string specifying the metadata column containing the cell type annotations.
 #'   Default is `NULL`, which uses the active identity in `scTypeEval`.
 #' @param ident_GroundTruth (Optional) A character string specifying the metadata column containing the
@@ -1184,15 +1184,15 @@ get.ConsistencyData <- function(scTypeEval,
 
 #' @title Perform PCA on a Gene List and Store Results in scTypeEval object
 #'
-#' @description This function computes Principal Component Analysis (PCA) based on a specified gene list
-#' and stores the results in the \code{reductions} slot of a scTypeEval object.
+#' @description This function computes Principal Component Analysis (PCA) based on an specified gene list
+#' and stores the results in the \code{reductions} slot of an scTypeEval object.
 #'
 #' @param scTypeEval A \code{scTypeEval} object containing single-cell expression data.
 #' @param ident Character. Metadata column name used to group cells (e.g., cell type annotation).
 #' If \code{NULL}, the active identity from \code{scTypeEval} is used.
 #' @param sample Character. Metadata column name specifying sample identity for pseudobulk analysis.
 #' Required for pseudobulk and \code{pseudobulk_1vsall} data types.
-#' @param normalization.method Character. Method for normalizing gene expression before PCA. See \link[add.HVG]{add.HVG} for more details.
+#' @param normalization.method Character. Method for normalizing gene expression before PCA. See \link[scTypeEval]{add.HVG} for more details.
 #' Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"} (default: \code{"Log1p"}).
 #' @param gene.list Named list of character vectors. Each element is a set of genes for PCA analysis.
 #' If \code{NULL}, all pre-defined gene lists in \code{scTypeEval} are used recursively.
@@ -1218,6 +1218,8 @@ get.ConsistencyData <- function(scTypeEval,
 #'                  sample = "patient_id",
 #'                  data.type = "pseudobulk")
 #' }
+#' 
+#' @seealso \link{add.HVG}
 #'
 #' @export add.PCA
 
@@ -1365,7 +1367,7 @@ add.PCA <- function(scTypeEval,
 
 #' Plot PCA Results from scTypeEval Object
 #'
-#' This function visualizes Principal Component Analysis (PCA) results stored in the \code{reductions} slot of a scTypeEval object.
+#' This function visualizes Principal Component Analysis (PCA) results stored in the \code{reductions} slot of an scTypeEval object.
 #'
 #' @param scTypeEval An \code{scTypeEval} object containing PCA results in the \code{reductions} slot.
 #' @param gene.list Character vector. gene.list names to filter PCA plots. If \code{NULL}, all available PCA results are plotted.
@@ -1376,7 +1378,7 @@ add.PCA <- function(scTypeEval,
 #' @param show.legend Logical. Whether to display a legend (default: \code{FALSE}).
 #'
 #' @return A named list of PCA plots (\link{ggplot2} objects) corresponding to different PCA analyses stored in
-#'  \code{reductions} slot of a scTypeEval object by \link{add.PCA}.
+#'  \code{reductions} slot of an scTypeEval object by \link{add.PCA}.
 #'
 #' @seealso \link{add.PCA}
 #' 

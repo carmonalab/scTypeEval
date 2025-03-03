@@ -27,7 +27,7 @@ Run.Consistency(
 )
 }
 \arguments{
-\item{scTypeEval}{A scTypeEval object containing single-cell expression data, metadata, and gene lists.}
+\item{scTypeEval}{An scTypeEval object containing single-cell expression data, metadata, and gene lists.}
 
 \item{ident}{Character. Name of the column in \code{scTypeEval@metadata} containing the cell type labels.
 If \code{NULL}, defaults to \code{scTypeEval@active.ident}.}

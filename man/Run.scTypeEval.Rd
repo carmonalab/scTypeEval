@@ -30,7 +30,7 @@ Run.scTypeEval(
 )
 }
 \arguments{
-\item{scTypeEval}{A scTypeEval object containing single-cell expression data, metadata, and gene lists.}
+\item{scTypeEval}{An scTypeEval object containing single-cell expression data, metadata, and gene lists.}
 
 \item{ident}{A character string specifying the metadata column containing the cell type annotations.
 Default is \code{NULL}, which uses the active identity in \code{scTypeEval}.}

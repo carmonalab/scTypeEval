@@ -29,10 +29,10 @@ If \code{NULL}, all data types are included.}
 }
 \value{
 A named list of PCA plots (\link{ggplot2} objects) corresponding to different PCA analyses stored in
-\code{reductions} slot of a scTypeEval object by \link{add.PCA}.
+\code{reductions} slot of an scTypeEval object by \link{add.PCA}.
 }
 \description{
-This function visualizes Principal Component Analysis (PCA) results stored in the \code{reductions} slot of a scTypeEval object.
+This function visualizes Principal Component Analysis (PCA) results stored in the \code{reductions} slot of an scTypeEval object.
 }
 \examples{
 \dontrun{
