@@ -30,7 +30,11 @@
 #'
 #' @examples
 #' \dontrun{
-#' sceval <- create.scTypeEval(count_matrix, metadata = metadata)
+#' # From count matrix and metadata dataframe
+#' sceval <- create.scTypeEval(matrix = count_matrix, metadata = metadata)
+#' 
+#' # From Seurat object
+#' sceval <- create.scTypeEval(seurat_obj)
 #' }
 #' 
 #' @importClassesFrom Matrix dgCMatrix
@@ -43,7 +47,7 @@ create.scTypeEval <- function(matrix,
                               gene.lists = list(), 
                               black.list = character(), 
                               active.ident = NULL,
-                              version = "") {
+                              version = "1.0.0") {
    
    # Check input type
    if (inherits(matrix, "Seurat")) {
@@ -138,31 +142,27 @@ set.activeIdent <- function(scTypeEval,
 #' @return The modified `scTypeEval` object with HVGs added to `scTypeEval@gene.lists[["HVG"]]`.
 #'
 #' @details The function first normalizes the expression matrix using the specified method:  
-#'
-#'          - `"Log1p"`: Applies log(x+1) transformation to stabilize variance in the count matrix.  
-#'
-#'          - `"CLR"`: Performs centered log-ratio normalization, where each gene’s expression  
+#' - `"Log1p"`: Applies log(x+1) transformation to stabilize variance in the count matrix.  
+#' - `"CLR"`: Performs centered log-ratio normalization, where each gene’s expression  
 #'            is divided by the geometric mean across all genes in a given cell.  
-#'
-#'          - `"pearson"`: Computes Pearson residuals from a negative binomial model  
+#' - `"pearson"`: Computes Pearson residuals from a negative binomial model  
 #'            fitted to the count data. This method is commonly used to reduce technical noise  
 #'            while preserving biological signal.  
 #'
-#'          After normalization, HVGs are computed using one of the following approaches:  
-#'
-#'          - `"scran"`: Uses the **scran** package’s \link[scran]{modelGeneVar} function to identify highly variable genes (HVGs).  
+#' After normalization, HVGs are computed using one of the following approaches:  
+#' - `"scran"`: Uses the **scran** package’s \link[scran]{modelGeneVar} function to identify highly variable genes (HVGs).  
 #'            This approach applies model-based variance decomposition to detect genes with significant biological variation  
 #'            while accounting for technical noise, sample, and batch effects.  
-#'
-#'          - `"basic"`: A simpler method based on the variance-to-mean ratio. It ranks genes  
+#'  - `"basic"`: A simpler method based on the variance-to-mean ratio. It ranks genes  
 #'            by their coefficient of variation (CV) and selects the most variable ones.  
 #'            This approach is computationally efficient but lacks statistical modeling.  
-#'
-#'          Any genes in the `black.list` are removed before HVG selection.
+#' Any genes in the `black.list` is removed before HVG selection.
 #'
 #' @examples
 #' \dontrun{
+#' # create scTypeEval object
 #' sceval <- create.scTypeEval(count_matrix, metadata = metadata)
+#' # Compute and add HVG
 #' sceval <- add.HVG(sceval)
 #' }
 #'
@@ -397,16 +397,17 @@ add.GeneList <- function(scTypeEval,
 #'   If `NULL`, defaults to `scTypeEval@active.ident`.
 #' @param sample Character. Name of the column in `scTypeEval@metadata` containing sample identifiers.
 #'   Required for pseudobulk analyses.
-#' @param normalization.method Character. Method for normalizing the expression data. See \link[add.HVG]{add.HVG} for more details.
+#' @param normalization.method Character. Method for normalizing the expression data. See \link[scTypeEval]{add.HVG} for more details.
 #'   Options: `"Log1p"`, `"CLR"`, `"pearson"`. Default: `"Log1p"`. 
 #' @param gene.list List. A list of gene sets to compute consistency metrics on.
 #'    By default, each of the gene lists stored in `scTypeEval` are used recursively to compute consitency metrics.
 #' @param pca Logical. Whether to perform PCA before computing metrics. Default: `FALSE`. 
+#' 
 #'    `FALSE` will build consistency metrics directly on the genes within `gene.list`, while `TRUE` will do it on their principal components.
 #' @param ndim Integer. Number of PCA dimensions to use to compute metrics if `pca = TRUE`. Default: `30`.
 #' @param distance.method Character. Distance metric to use. Must be one of the predefined methods. Default: `"euclidean"`.
 #'   Supported options:
-#'   - `"euclidean"`: Standard Euclidean distance, commonly used for measuring dissimilarity in high-dimensional spaces.
+#'   - `"euclidean"`: Euclidean distance, commonly used for measuring dissimilarity in high-dimensional spaces.
 #'   - `"EMD"`: Earth Mover's Distance, computationally expensive but useful for comparing distributions (only recommended for pseudobulk data).
 #'   - `"maximum"`: Chebyshev distance, considers the largest absolute difference across dimensions.
 #'   - `"manhattan"`: Sum of absolute differences, often preferred when dealing with sparse data.
@@ -420,7 +421,8 @@ add.GeneList <- function(scTypeEval,
 #'   - `"cosine"`: Measures the cosine of the angle between two vectors.
 #'   - `"pearson"`: Pearson correlation distance (1 - correlation coefficient).
 #' @param IntVal.metric Character vector. Internal validation metrics to compute. By default, the following metrics will be run:
-#'   `"silhouette"`, `"NeighborhoodPurity"`, `"ward.PropMatch"`, `"Leiden.PropMatch"`, `"modularity"`.  
+#'   `"silhouette"`, `"NeighborhoodPurity"`, `"ward.PropMatch"`, `"Leiden.PropMatch"`, `"modularity"`.
+#'     
 #'   All available options:
 #'   - `"silhouette"`: Contrast intra-cluster tightness with inter-cluster separation. (Distance-based, Mean silhouette width per cell type)
 #'   - `"modularity"`: Strength of intra-community density compared to random expectation in a network. (Graph structure, Global modularity score and per-cell-type modularity contribution)
@@ -460,6 +462,7 @@ add.GeneList <- function(scTypeEval,
 #' network modularity, and nearest-neighbor-based purity measures. Users can specify a gene set  
 #' for evaluation and optionally apply PCA before computing consistency metrics.  
 #' Parallel processing is enabled when `ncores > 1`, using BiocParallel for efficiency. 
+#' 
 #' 
 #' @examples
 #' \dontrun{
@@ -913,8 +916,8 @@ Run.BestHit <- function(scTypeEval,
 ## wrapper of consistency metrics and BestHit
 #' @title Wrapper for Consistency Metrics and BestHit Evaluation for multiple data.type inputs.
 #'
-#' @description This function serves as a wrapper to compute internal validation metrics (\link[Run.Consistency]{Run.Consistency})
-#' and Mutual Best Hit consistency (\link[Run.BestHit]{Run.BestHit}) evaluations for cell type annotations.
+#' @description This function serves as a wrapper to compute internal validation metrics (\link[scTypeEval]{Run.Consistency})
+#' and Mutual Best Hit consistency (\link[scTypeEval]{Run.BestHit}) evaluations for cell type annotations.
 #' It supports multiple data types in the same run, including single-cell and pseudobulk data.
 #'
 #' @param scTypeEval A scTypeEval object containing single-cell expression data, metadata, and gene lists.
@@ -953,8 +956,8 @@ Run.BestHit <- function(scTypeEval,
 #' @param verbose Logical. Whether to print messages during execution. Default: `TRUE`.
 #'
 #' @details
-#' This function applies sequentially internal validation metrics (\link[Run.Consistency]{Run.Consistency})
-#' and Mutual Best Hit consistency (\link[Run.BestHit]{Run.BestHit}) on scTypeEval object to assess the consistency of cell type annotations.
+#' This function applies sequentially internal validation metrics (\link[scTypeEval]{Run.Consistency})
+#' and Mutual Best Hit consistency (\link[scTypeEval]{Run.BestHit}) on scTypeEval object to assess the consistency of cell type annotations.
 #' Finally, it returns a data frame with the consistency results for each consistency paramter.
 #'
 #' @return A data frame containing consistency evaluation results for each consistency parameter.
@@ -970,7 +973,7 @@ Run.BestHit <- function(scTypeEval,
 #'                                 ncores = 4)
 #' }
 #' 
-#' @seealso \link[Run.Consistency]{Run.Consistency}, \link[Run.BestHit]{Run.BestHit}, \link[get.ConsistencyData]{get.ConsistencyData}
+#' @seealso \link{Run.Consistency}, \link{Run.BestHit}, \link{get.ConsistencyData}
 #'
 #' @export Run.scTypeEval
 
@@ -1077,7 +1080,7 @@ Run.scTypeEval <- function(scTypeEval,
 #' based on specified criteria.
 #'
 #' @param scTypeEval An `scTypeEval` object containing consistency analysis results.
-#' @param gene.list A character vector of gene names to filter the results. Default is `NULL` (no filtering by genes).
+#' @param gene.list A character vector of gene.lists names to filter the results. Default is `NULL` (no filtering by gene.lists).
 #' @param consistency.metric A character vector specifying which consistency metric(s) to retrieve. Default is `NULL` (no filtering by metric).
 #' @param distance.method A character string specifying the distance method to filter by. Default is `NULL` (no filtering by distance method).
 #' @param data.type A character vector specifying the type of data to filter by. Default is `NULL` (no filtering by data type).
@@ -1184,7 +1187,7 @@ get.ConsistencyData <- function(scTypeEval,
 #' @description This function computes Principal Component Analysis (PCA) based on a specified gene list
 #' and stores the results in the \code{reductions} slot of a scTypeEval object.
 #'
-#' @param scTypeEval An \code{scTypeEval} object containing single-cell expression data.
+#' @param scTypeEval A \code{scTypeEval} object containing single-cell expression data.
 #' @param ident Character. Metadata column name used to group cells (e.g., cell type annotation).
 #' If \code{NULL}, the active identity from \code{scTypeEval} is used.
 #' @param sample Character. Metadata column name specifying sample identity for pseudobulk analysis.
@@ -1210,7 +1213,7 @@ get.ConsistencyData <- function(scTypeEval,
 #'
 #' @examples
 #' \dontrun{
-#' sceval <- add.PCA(sceval,
+#' sceval <- add.PCA(sceval, # scTypeEval object
 #'                  ident = "cell_type",
 #'                  sample = "patient_id",
 #'                  data.type = "pseudobulk")
@@ -1365,7 +1368,7 @@ add.PCA <- function(scTypeEval,
 #' This function visualizes Principal Component Analysis (PCA) results stored in the \code{reductions} slot of a scTypeEval object.
 #'
 #' @param scTypeEval An \code{scTypeEval} object containing PCA results in the \code{reductions} slot.
-#' @param gene.list Character vector. A subset of genes to filter PCA plots. If \code{NULL}, all available PCA results are plotted.
+#' @param gene.list Character vector. gene.list names to filter PCA plots. If \code{NULL}, all available PCA results are plotted.
 #' @param data.type Character vector. Specifies which data types to include in the plots (e.g., \code{"sc"}, \code{"pseudobulk"}).
 #' If \code{NULL}, all data types are included.
 #' @param dims Integer vector of length 2. The principal component (PC) dimensions to plot (default: \code{c(1,2)}).
