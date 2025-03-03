@@ -24,7 +24,7 @@ compute_centroids <- function(norm.mat, ident) {
 
 
 # min distance between centroids
-min.distance_centroids <- function(centroids){
+min_distance_centroids <- function(centroids){
    # Compute pairwise distance matrix between centroids
    centroid_distances <- as.matrix(dist(t(centroids)))
    # Set the diagonal (distance between centroid and itself) to Inf
