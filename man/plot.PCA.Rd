@@ -10,7 +10,7 @@
   data.type = NULL,
   dims = c(1, 2),
   label = TRUE,
-  show.legend = F
+  show.legend = FALSE
 )
 }
 \arguments{
