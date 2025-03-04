@@ -712,9 +712,9 @@ Run.Consistency <- function(scTypeEval,
 #' @param ident_GroundTruth (Optional) A character string specifying the metadata column 
 #' containing the ground truth annotations. Default is `NULL`, meaning `ident` is used.
 #' @param method A character vector specifying which Mutual Best Hit method(s) to use. 
-#'   Supported options, by default both are run if possible.:
+#'   Supported options, by default both are run if possible:
 #'   - `"Mutual.Score"`: Computes the product of reciprocal prediction scores from classifier per cell type.
-#'   - `"Mutual.Match"`: Calculates the normalized proportion of reciprocal matches 
+#'   - `"Mutual.Match"`: Calculates the normalized proportion of reciprocal matches. 
 #'   between the two sample classifications per cell type. Only supported by `"pseudobulk"` data.type.
 #' @param sample A character string specifying the metadata column that identifies sample IDs. 
 #' This is required for consistency evaluation.
