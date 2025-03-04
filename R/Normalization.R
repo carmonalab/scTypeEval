@@ -68,7 +68,7 @@ get.GeomMean <- function(mat,
 get.Normalization_params <- function(mat,
                                      method = c("Log1p", "CLR", "pearson"),
                                      margin = 2L,
-                                     size_factors = TRUE){
+                                     size.factors = TRUE){
    if(method[1] == "pearson"){
       if (!requireNamespace("glmGamPoi", quietly = TRUE)) {
          message("Installing missing packages for pearson residuals normalization: glmGamPoi")
@@ -88,7 +88,7 @@ get.Normalization_params <- function(mat,
    norm_params <- switch(method[1],
                          "Log1p" = get.SumCounts(mat, margin),
                          "CLR" = get.GeomMean(mat, margin),
-                         "pearson" = transformGamPoi:::.handle_size_factors(size_factors, Y = mat),
+                         "pearson" = transformGamPoi:::.handle_size_factors(size.factors, Y = mat),
                          stop(method, " is not a supported normalization method.")
    )
    
@@ -253,7 +253,7 @@ Normalize_data <- function(mat,
                            method = c("Log1p", "CLR", "pearson"),
                            margin = 2L,
                            scale.factor = 1e4,
-                           size_factors = TRUE,
+                           size.factors = TRUE,
                            norm.params = NULL,
                            residual_type = "pearson",
                            ...){
@@ -268,7 +268,7 @@ Normalize_data <- function(mat,
    norm.params <- get.Normalization_params(mat,
                                            method = method,
                                            margin = margin,
-                                           size_factors = size_factors)
+                                           size_factors = size.factors)
    }
    
    norm.mat <- switch(method,
