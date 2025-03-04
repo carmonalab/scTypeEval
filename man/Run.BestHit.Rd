@@ -31,10 +31,10 @@ annotations. Default is \code{NULL}, which uses the active identity in \code{scT
 containing the ground truth annotations. Default is \code{NULL}, meaning \code{ident} is used.}
 
 \item{method}{A character vector specifying which Mutual Best Hit method(s) to use.
-Supported options, by default both are run if possible.:
+Supported options, by default both are run if possible:
 \itemize{
 \item \code{"Mutual.Score"}: Computes the product of reciprocal prediction scores from classifier per cell type.
-\item \code{"Mutual.Match"}: Calculates the normalized proportion of reciprocal matches
+\item \code{"Mutual.Match"}: Calculates the normalized proportion of reciprocal matches.
 between the two sample classifications per cell type. Only supported by \code{"pseudobulk"} data.type.
 }}
 
