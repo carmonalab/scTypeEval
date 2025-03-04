@@ -67,7 +67,7 @@ and stores the results in the \code{reductions} slot of an scTypeEval object.
 \dontrun{
 sceval <- add.PCA(sceval, # scTypeEval object
                  ident = "cell_type",
-                 sample = "patient_id",
+                 sample = "sample_id",
                  data.type = "pseudobulk")
 }
 

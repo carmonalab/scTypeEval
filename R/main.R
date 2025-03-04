@@ -142,12 +142,12 @@ set.activeIdent <- function(scTypeEval,
 #' @return The modified `scTypeEval` object with HVGs added to `scTypeEval@gene.lists[["HVG"]]`.
 #'
 #' @details The function first normalizes the expression matrix using the specified method:  
-#' - `"Log1p"`: Applies log(x+1) transformation to stabilize variance in the count matrix.  
+#' - `"Log1p"`: Applies log(x+1) transformation to stabilize variance in the count matrix. Recommended for scran `modelGeneVar`.
 #' - `"CLR"`: Performs centered log-ratio normalization, where each gene’s expression  
 #'            is divided by the geometric mean across all genes in a given cell.  
 #' - `"pearson"`: Computes Pearson residuals from a negative binomial model  
 #'            fitted to the count data. This method is commonly used to reduce technical noise  
-#'            while preserving biological signal.  
+#'            while preserving biological signal. Not recommended to get HVG, as variance stabilization may suppress variability.
 #'
 #' After normalization, HVGs are computed using one of the following approaches:  
 #' - `"scran"`: Uses the **scran** package’s \link[scran]{modelGeneVar} function to identify highly variable genes (HVGs).  
@@ -465,7 +465,7 @@ add.GeneList <- function(scTypeEval,
 #' sceval <- Run.Consistency(
 #'   scTypeEval = sceval,
 #'   ident = "cell_type",
-#'   sample = "patient_id",
+#'   sample = "sample_id",
 #'   normalization.method = "Log1p",
 #'   IntVal.metric = c("silhouette", "modularity"),
 #'   data.type = "pseudobulk",
@@ -1210,7 +1210,7 @@ get.ConsistencyData <- function(scTypeEval,
 #' \dontrun{
 #' sceval <- add.PCA(sceval, # scTypeEval object
 #'                  ident = "cell_type",
-#'                  sample = "patient_id",
+#'                  sample = "sample_id",
 #'                  data.type = "pseudobulk")
 #' }
 #' 

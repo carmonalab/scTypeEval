@@ -51,12 +51,12 @@ normalization and variance calculation methods. The identified genes are stored 
 \details{
 The function first normalizes the expression matrix using the specified method:
 \itemize{
-\item \code{"Log1p"}: Applies log(x+1) transformation to stabilize variance in the count matrix.
+\item \code{"Log1p"}: Applies log(x+1) transformation to stabilize variance in the count matrix. Recommended for scran \code{modelGeneVar}.
 \item \code{"CLR"}: Performs centered log-ratio normalization, where each gene’s expression
 is divided by the geometric mean across all genes in a given cell.
 \item \code{"pearson"}: Computes Pearson residuals from a negative binomial model
 fitted to the count data. This method is commonly used to reduce technical noise
-while preserving biological signal.
+while preserving biological signal. Not recommended to get HVG, as variance stabilization may suppress variability.
 }
 
 After normalization, HVGs are computed using one of the following approaches:

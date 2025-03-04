@@ -133,7 +133,7 @@ Parallel processing is enabled when \code{ncores > 1}, using BiocParallel for ef
 sceval <- Run.Consistency(
   scTypeEval = sceval,
   ident = "cell_type",
-  sample = "patient_id",
+  sample = "sample_id",
   normalization.method = "Log1p",
   IntVal.metric = c("silhouette", "modularity"),
   data.type = "pseudobulk",
