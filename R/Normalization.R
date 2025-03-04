@@ -81,6 +81,11 @@ get.Normalization_params <- function(mat,
                          stop(method, " is not a supported normalization method.")
    )
    
+   # Assign names if missing
+   if (is.null(names(norm_params))) {
+      names(norm_params) <- if (margin == 2L) colnames(mat) else rownames(mat)
+   }
+   
    return(norm_params)
 }
 
