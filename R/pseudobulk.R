@@ -212,7 +212,7 @@ get.sc <- function(mat,
                       ident = ident,
                       min.cells = min.cells)
    } else {
-      ret <- split.matrix(mat = mat,
+      ret <- split_matrix(mat = mat,
                           ident = ident,
                           sample = sample,
                           bparam = bparam)
