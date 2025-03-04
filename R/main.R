@@ -235,7 +235,7 @@ add.HVG <- function(scTypeEval,
 #' @title Add Gene Markers to Single-Cell Evaluation Object
 #'
 #' @description This function identifies and assigns gene markers for cell types in a single-cell dataset 
-#' using either `scran.findMarkers` or `gpsFISH` methods.
+#' using either `scran.findMarkers` method.
 #'
 #' @param scTypeEval An scTypeEval object.
 #' @param ident A character string specifying the column name in `scTypeEval@metadata` that contains cell type or annotation labels. 
@@ -245,9 +245,7 @@ add.HVG <- function(scTypeEval,
 #' @param method A character string specifying the marker gene identification method. Options are:
 #'   \itemize{
 #'     \item `"scran.findMarkers"` - Uses Scran's \link[scran]{findMarkers} to find differentially expressed genes .
-#'     \item `"gpsFISH"` - Uses \link[gpsFISH]{gpsFISH}-based marker selection.
 #'   }
-#'   Default is `"scran.findMarkers"`.
 #' @param ngenes.total Integer specifying the total number of marker genes to retain (default: 500).
 #' @param ngenes.celltype Integer specifying the number of marker genes per cell type (default: 50).
 #' @param ncores Integer specifying the number of cores to use for parallel processing (default: 1).
@@ -260,16 +258,13 @@ add.HVG <- function(scTypeEval,
 #' @details 
 #' - If `ident` is NULL, the function uses `scTypeEval@active.ident` as the grouping factor.
 #' - If `sample` is provided, it is used as a blocking factor to adjust for batch effects.
-#' - The function selects marker genes using either `scran.findMarkers` or `gpsFISH`, depending on the `method` argument.
+#' - The function selects marker genes using `scran.findMarkers`.
 #' - The identified markers are stored in `scTypeEval@gene.lists[[method]]`.
 #'
 #' @examples
 #' \dontrun{
 #'   # Example usage with scran.findMarkers
 #'   sceval <- add.GeneMarkers(sceval, ident = "cell_type", method = "scran.findMarkers")
-#'
-#'   # Example usage with gpsFISH
-#'   sceval <- add.GeneMarkers(sceval, ident = "cell_type", method = "gpsFISH")
 #' }
 #'
 #' @export add.GeneMarkers
@@ -278,7 +273,7 @@ add.HVG <- function(scTypeEval,
 add.GeneMarkers <- function(scTypeEval,
                             ident = NULL,
                             sample = NULL,
-                            method = c("scran.findMarkers", "gpsFISH"),
+                            method = c("scran.findMarkers"),
                             ngenes.total = 500,
                             ngenes.celltype = 50,
                             ncores = 1,
@@ -288,7 +283,7 @@ add.GeneMarkers <- function(scTypeEval,
    
    method <- method[1]
    if(!method %in% c("scran.findMarkers", "gpsFISH")){
-      stop("Supported gene markes definitions are either `scran.findMarkers` and `gpsFISH`")
+      stop("Supported gene markes definitions is `scran.findMarkers`")
    }
    
    if(is.null(ident)){
