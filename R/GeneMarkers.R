@@ -175,6 +175,7 @@ get.gpsFISHMarkers <- function(sc_count,
    
    # remove black listed genes
    sc_count <- sc_count[!rownames(sc_count) %in% black.list,]
+   sc_count <- as.matrix(sc_count)
    
    # relative expression
    unique_cluster_label <- as.character(unique(ident))#unique cell type labels
