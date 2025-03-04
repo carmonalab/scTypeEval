@@ -666,7 +666,7 @@ Run.Consistency <- function(scTypeEval,
                                                                        
                                                                     })
                                                              
-                                                          }) %>% unlist()
+                                                          }) |> unlist()
                                             
                                     
                                              
