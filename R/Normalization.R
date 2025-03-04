@@ -154,14 +154,18 @@ residual_transform <- function(data,
    missing_packages <- required_packages[!sapply(required_packages,
                                                  requireNamespace,
                                                  quietly = TRUE)]
-   if (length(missing_packages) > 0) {
-      message("Installing missing packages for pearson residuals normalization: ",
-              paste(missing_packages, collapse = ", "))
+   if (!requireNamespace("glmGamPoi", quietly = TRUE)) {
+      message("Installing missing packages for pearson residuals normalization: glmGamPoi")
       if (!requireNamespace("BiocManager", quietly = TRUE)) {
          message("Installing BiocManager...\n")
          install.packages("BiocManager")
       }
       BiocManager::install(missing_packages)
+   }
+   
+   if (!requireNamespace("transformGamPoi", quietly = TRUE)) {
+      stop("The 'transformGamPoi' package is required for pearson residuals normalization but not installed. Install it with: 
+         devtools::install_github('const-ae/transformGamPoi')")
    }
 
    # tuned intput of size factors
