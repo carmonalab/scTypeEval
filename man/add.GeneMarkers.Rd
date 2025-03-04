@@ -8,7 +8,7 @@ add.GeneMarkers(
   scTypeEval,
   ident = NULL,
   sample = NULL,
-  method = c("scran.findMarkers", "gpsFISH"),
+  method = c("scran.findMarkers"),
   ngenes.total = 500,
   ngenes.celltype = 50,
   ncores = 1,
@@ -29,9 +29,7 @@ If provided, it is used as a blocking factor for differential expression analysi
 \item{method}{A character string specifying the marker gene identification method. Options are:
 \itemize{
 \item \code{"scran.findMarkers"} - Uses Scran's \link[scran]{findMarkers} to find differentially expressed genes .
-\item \code{"gpsFISH"} - Uses \link[gpsFISH]{gpsFISH}-based marker selection.
-}
-Default is \code{"scran.findMarkers"}.}
+}}
 
 \item{ngenes.total}{Integer specifying the total number of marker genes to retain (default: 500).}
 
@@ -50,13 +48,13 @@ The modified \code{scTypeEval} object with gene markers added to \code{scTypeEva
 }
 \description{
 This function identifies and assigns gene markers for cell types in a single-cell dataset
-using either \code{scran.findMarkers} or \code{gpsFISH} methods.
+using either \code{scran.findMarkers} method.
 }
 \details{
 \itemize{
 \item If \code{ident} is NULL, the function uses \code{scTypeEval@active.ident} as the grouping factor.
 \item If \code{sample} is provided, it is used as a blocking factor to adjust for batch effects.
-\item The function selects marker genes using either \code{scran.findMarkers} or \code{gpsFISH}, depending on the \code{method} argument.
+\item The function selects marker genes using \code{scran.findMarkers}.
 \item The identified markers are stored in \code{scTypeEval@gene.lists[[method]]}.
 }
 }
@@ -64,9 +62,6 @@ using either \code{scran.findMarkers} or \code{gpsFISH} methods.
 \dontrun{
   # Example usage with scran.findMarkers
   sceval <- add.GeneMarkers(sceval, ident = "cell_type", method = "scran.findMarkers")
-
-  # Example usage with gpsFISH
-  sceval <- add.GeneMarkers(sceval, ident = "cell_type", method = "gpsFISH")
 }
 
 }
