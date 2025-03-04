@@ -84,7 +84,7 @@ See [Data types inputs](#data-types-inputs) and [Consistency metrics](#consisten
 ``` r
 sceval <- Run.Consistency(scTypeEval = sceval,
                           ident = "cell_type", # annotation method to evaluate
-                          sample = "patient_id", # if inter-sample consistency want to be captured
+                          sample = "sample_id", # if inter-sample consistency want to be captured
                           IntVal.metric = c("silhouette", "NeighborhoodPurity"), # specificy one or multiple internal validation metrics
                           data.type = "pseudobulk") # one of "sc" (single-cell), "pseudobulk" or "pseudobulk_1vsall"
 ```
