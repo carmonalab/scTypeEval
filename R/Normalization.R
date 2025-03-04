@@ -155,7 +155,7 @@ residual_transform <- function(data,
          message("Installing BiocManager...\n")
          install.packages("BiocManager")
       }
-      BiocManager::install(missing_packages)
+      BiocManager::install("glmGamPoi")
    }
    
    if (!requireNamespace("transformGamPoi", quietly = TRUE)) {
