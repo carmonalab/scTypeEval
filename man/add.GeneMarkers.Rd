@@ -48,7 +48,7 @@ The modified \code{scTypeEval} object with gene markers added to \code{scTypeEva
 }
 \description{
 This function identifies and assigns gene markers for cell types in a single-cell dataset
-using either \code{scran.findMarkers} method.
+using \code{scran.findMarkers} method.
 }
 \details{
 \itemize{

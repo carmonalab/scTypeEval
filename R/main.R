@@ -235,7 +235,7 @@ add.HVG <- function(scTypeEval,
 #' @title Add Gene Markers to Single-Cell Evaluation Object
 #'
 #' @description This function identifies and assigns gene markers for cell types in a single-cell dataset 
-#' using either `scran.findMarkers` method.
+#' using `scran.findMarkers` method.
 #'
 #' @param scTypeEval An scTypeEval object.
 #' @param ident A character string specifying the column name in `scTypeEval@metadata` that contains cell type or annotation labels. 
