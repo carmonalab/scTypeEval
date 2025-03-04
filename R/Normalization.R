@@ -69,7 +69,7 @@ get.Normalization_params <- function(mat,
                                      method = c("Log1p", "CLR", "pearson"),
                                      margin = 2L,
                                      size_factors = TRUE){
-   if(method == "pearson"){
+   if(method[1] == "pearson"){
       if (!requireNamespace("glmGamPoi", quietly = TRUE)) {
          message("Installing missing packages for pearson residuals normalization: glmGamPoi")
          if (!requireNamespace("BiocManager", quietly = TRUE)) {
