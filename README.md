@@ -79,7 +79,7 @@ sceval <- add.GeneList(sceval, gene.list = list("cytokines" = c("IL10", "IL6", "
 
 Computes internal validation consistency metrics for cell type annotations. By default, the following metrics will be run: `"silhouette"`, `"NeighborhoodPurity"`, `"ward.PropMatch"`, `"Leiden.PropMatch"`, and `"modularity"`.
 
-See [Data types inputs](#data-types-inputs) and [Main consistency metrics](#main-consistency-metrics) for more details on the different consistency metrics and data type inputs.
+See [Data types inputs](#data-types-inputs) and [Main consistency metrics](#main-consistency-metrics) for more details on the data type inputs and different consistency metrics based on internal validation metrics.
 
 ``` r
 sceval <- Run.Consistency(scTypeEval = sceval,
