@@ -69,19 +69,20 @@ get.Normalization_params <- function(mat,
                                      method = c("Log1p", "CLR", "pearson"),
                                      margin = 2L,
                                      size_factors = TRUE){
-   
-   if (!requireNamespace("glmGamPoi", quietly = TRUE)) {
-      message("Installing missing packages for pearson residuals normalization: glmGamPoi")
-      if (!requireNamespace("BiocManager", quietly = TRUE)) {
-         message("Installing BiocManager...\n")
-         install.packages("BiocManager")
+   if(method == "pearson"){
+      if (!requireNamespace("glmGamPoi", quietly = TRUE)) {
+         message("Installing missing packages for pearson residuals normalization: glmGamPoi")
+         if (!requireNamespace("BiocManager", quietly = TRUE)) {
+            message("Installing BiocManager...\n")
+            install.packages("BiocManager")
+         }
+         BiocManager::install("glmGamPoi")
       }
-      BiocManager::install("glmGamPoi")
-   }
-   
-   if (!requireNamespace("transformGamPoi", quietly = TRUE)) {
-      stop("The 'transformGamPoi' package is required for pearson residuals normalization but not installed. Install it with: 
+      
+      if (!requireNamespace("transformGamPoi", quietly = TRUE)) {
+         stop("The 'transformGamPoi' package is required for pearson residuals normalization but not installed. Install it with: 
          devtools::install_github('const-ae/transformGamPoi')")
+      }
    }
    # Run the requested methods
    norm_params <- switch(method[1],
