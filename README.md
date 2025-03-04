@@ -99,8 +99,8 @@ This method evaluates the consistency of cell type annotations across multiple s
 
 Supported options, by default both are run if possible:
 
-* `"Mutual.Score"`: Computes the product of reciprocal prediction scores from classifier per cell type.
-* `"Mutual.Match"`: Calculates the normalized proportion of reciprocal matches. 
+* `"Mutual.Score"`: Mean of the product of reciprocal prediction scores from classifier per cell type.
+* `"Mutual.Match"`: Calculates the normalized proportion of reciprocal prediction matches between samples. 
 
 ``` r
 sceval <- Run.BestHit(scTypeEval = sceval, 
