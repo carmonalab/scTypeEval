@@ -17,7 +17,7 @@ scTypeEval addresses these challenges by using internal validation metrics to as
 ### Key features of scTypeEval
 
 1. **Internal validation metrics**: Assess the quality of cell type annotations without requiring ground truth labels.
-2. **Benchmarking across datasets**: Evaluate annotation performance across different samples and any classification scenarios (manual annotation, automatic classifiers or clustering).
+2. **Benchmarking across datasets**: Evaluate annotation performance across different samples and any classification scenarios (manual annotation, automatic classifiers, or clustering).
 3. **Customizable framework**: Support for user-defined different gene lists, normalization methods, and metrics parameters.
 4. **Robust evaluation**: Identify misclassifications and compare classification methods using diverse metrics.
 
@@ -79,7 +79,7 @@ sceval <- add.GeneList(sceval, gene.list = list("cytokines" = c("IL10", "IL6", "
 
 Computes internal validation consistency metrics for cell type annotations. By default, the following metrics will be run: `"silhouette"`, `"NeighborhoodPurity"`, `"ward.PropMatch"`, `"Leiden.PropMatch"`, and `"modularity"`.
 
-See [Data types inputs](#data-types-inputs) and [Main consistency metrics](#main-consistency-metrics) for more details on the data type inputs and different consistency metrics based on internal validation metrics.
+See [Data types inputs](#data-types-inputs) and [Consistency metrics](#consistency-metrics) for more details on the data type inputs and different consistency metrics based on internal validation metrics.
 
 ``` r
 sceval <- Run.Consistency(scTypeEval = sceval,
@@ -172,9 +172,9 @@ When computing consistency metrics, data can be structured in the following ways
 </details>
 
 
-<a name="main-consistency-metrics"></a>
+<a name="consistency-metrics"></a>
 <details>
-<summary><strong>2. Main Consistency Metrics</strong></summary>
+<summary><strong>2. Consistency Metrics</strong></summary>
 
 `scTypeEval` provides a range of **internal validation metrics** to assess the quality of cell type annotations without requiring external ground truth. These metrics evaluate consistency based on different properties such as **distance**, **clustering**, and **graph structure**.
 
