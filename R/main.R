@@ -55,7 +55,7 @@ create.scTypeEval <- function(matrix,
       metadata <- as.data.frame(matrix@meta.data)
    } else if (inherits(matrix, "SingleCellExperiment")) {
       counts <- as(SummarizedExperiment::assay(matrix, "counts"), "dgCMatrix")
-      metadata <- as.data.frame(colData(matrix))
+      metadata <- as.data.frame(SummarizedExperiment::colData(matrix))
    } else if (inherits(matrix, "matrix") || inherits(matrix, "dgCMatrix")) {
       counts <- as(matrix, "dgCMatrix")
       if (is.null(metadata)) {
