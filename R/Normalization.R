@@ -268,7 +268,7 @@ Normalize_data <- function(mat,
    norm.params <- get.Normalization_params(mat,
                                            method = method,
                                            margin = margin,
-                                           size_factors = size.factors)
+                                           size.factors = size.factors)
    }
    
    norm.mat <- switch(method,
