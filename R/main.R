@@ -54,7 +54,7 @@ create.scTypeEval <- function(matrix,
       counts <- as(matrix@assays$RNA@counts, "dgCMatrix")
       metadata <- as.data.frame(matrix@meta.data)
    } else if (inherits(matrix, "SingleCellExperiment")) {
-      counts <- as(assay(matrix, "counts"), "dgCMatrix")
+      counts <- as(SummarizedExperiment::assay(matrix, "counts"), "dgCMatrix")
       metadata <- as.data.frame(colData(matrix))
    } else if (inherits(matrix, "matrix") || inherits(matrix, "dgCMatrix")) {
       counts <- as(matrix, "dgCMatrix")
