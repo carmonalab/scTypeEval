@@ -149,11 +149,6 @@ residual_transform <- function(data,
                                verbose = FALSE,
                                ...){
    
-   # Check and install required packages if missing
-   required_packages <- c("transformGamPoi", "glmGamPoi")
-   missing_packages <- required_packages[!sapply(required_packages,
-                                                 requireNamespace,
-                                                 quietly = TRUE)]
    if (!requireNamespace("glmGamPoi", quietly = TRUE)) {
       message("Installing missing packages for pearson residuals normalization: glmGamPoi")
       if (!requireNamespace("BiocManager", quietly = TRUE)) {
