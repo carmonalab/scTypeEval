@@ -13,7 +13,7 @@ singleR.helper <- function(test,
    ) |> 
       as.data.frame() |>
       # condition for when singleR return no results (no label)
-      mutate(pruned.labels = ifelse(is.na(pruned.labels),
+      dplyr::mutate(pruned.labels = ifelse(is.na(pruned.labels),
                                           "_nores_",
                                           pruned.labels
                                     )
