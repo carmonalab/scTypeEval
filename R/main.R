@@ -1625,7 +1625,49 @@ get.hierarchy <- function(scTypeEval,
    return(hier.list)
 }
 
-
+#' Compute K-Nearest Neighbors (KNN) Graph on scRNA-seq Data
+#'
+#' This function computes a KNN graph based on single-cell RNA sequencing (scRNA-seq) data,
+#' allowing for consistency analysis within and across cell types. The analysis can be performed
+#' on single-cell or pseudobulk data.
+#'
+#' @param scTypeEval An object containing scRNA-seq expression data, metadata, and gene lists.
+#' @param ident A character string specifying the metadata column used to group cells (e.g., cell type or annotation).
+#' @param sample An optional character string specifying the metadata column for sample identification (required for pseudobulk analysis).
+#' @param normalization.method A character vector specifying the normalization method. Options: `"Log1p"`, `"CLR"`, `"pearson"` (default: `"Log1p"`).
+#' @param gene.list A named list of gene sets to be used for clustering. If `NULL`, the gene lists stored in `scTypeEval` are used.
+#' @param pca Logical; if `TRUE`, performs PCA dimensionality reduction before computing distances (default: `FALSE`).
+#' @param ndim Integer; number of principal components to retain if `pca = TRUE` (default: `30`).
+#' @param distance.method A character string specifying the distance metric for computing the KNN graph (default: `"euclidean"`).
+#' @param KNNGraph_k Integer; the number of neighbors to consider in the KNN graph (default: `5`).
+#' @param data.type A character string indicating whether to use `"pseudobulk"` (aggregated samples) or `"sc"` (single-cell) data (default: `"pseudobulk"`).
+#' @param min.samples Integer; minimum number of samples required for pseudobulk analysis (default: `5`).
+#' @param min.cells Integer; minimum number of cells required per group for inclusion in the analysis (default: `10`).
+#' @param black.list A vector of gene names to exclude from analysis. If `NULL`, uses the blacklist stored in `scTypeEval`.
+#' @param ncores Integer; number of CPU cores to use for parallel processing (default: `1`).
+#' @param bparam An optional `BiocParallelParam` object for controlling parallel execution.
+#' @param progressbar Logical; if `TRUE`, displays a progress bar during computation (default: `TRUE`).
+#' @param verbose Logical; if `TRUE`, prints messages about progress and warnings (default: `TRUE`).
+#'
+#' @return A list containing KNN graph-based consistency metrics for each gene list.
+#'
+#' @details This function constructs a KNN graph from scRNA-seq expression data using a chosen
+#' distance metric. It normalizes gene expression, applies optional PCA, and computes KNN relationships
+#' based on cell or pseudobulk similarities. The function assesses cell type consistency within the graph.
+#'
+#' @examples
+#' 
+#' \dontrun{
+#' result <- get.NN(scTypeEval = sceval, 
+#'                  ident = "celltype",
+#'                  sample = "sample_id",
+#'                  normalization.method = "Log1p",
+#'                  data.type = "pseudobulk",
+#'                  distance.method = "euclidean",
+#'                  KNNGraph_k = 5)
+#' }
+#'
+#' @export get.NN
 
 get.NN <- function(scTypeEval,
                    ident,
