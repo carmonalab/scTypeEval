@@ -133,13 +133,13 @@ dx.singleR.score <- function(pred1, true1,
 }
 
 dx.singleR.match <- function(pred1, pred2,
-                          true1, true2){
+                             true1, true2){
    
    pred1 <- singleR.match.tidy(pred1, true1)
    pred2 <- singleR.match.tidy(pred2, true2)
    
    pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
-      dplyr::group_by(true,) |>
+      dplyr::group_by(true) |>
       dplyr::mutate(score = score.x * score.y) |>
       dplyr::rename("celltype" = "true")
    
@@ -210,9 +210,9 @@ dx.bestHit.SingleR <- function(mat,
                                                                                          true1 = true1,
                                                                                          true2 = true2),
                                                        "Mutual.Match" = dx.singleR.match(pred1 = pred1,
-                                                                                      pred2 = pred2,
-                                                                                      true1 = true1,
-                                                                                      true2 = true2),
+                                                                                         pred2 = pred2,
+                                                                                         true1 = true1,
+                                                                                         true2 = true2),
                                                        stop(meth, " is not a supported Mutual Besthit method."))
                                            return(r)
                                         })
@@ -228,9 +228,9 @@ dx.bestHit.SingleR <- function(mat,
       res <- do.call(rbind, lapply(df.tmp, function(x) x[[m]]))
       # summarize results per cell type
       if(m == "Mutual.Score"){
-      res <- res |>
-         dplyr::group_by(true, celltype) |>
-         dplyr::summarize(score = mean(score, na.rm = T))
+         res <- res |>
+            dplyr::group_by(true, celltype) |>
+            dplyr::summarize(score = mean(score, na.rm = T))
       } else if (m == "Mutual.Match"){
          res <- res |>
             dplyr::group_by(true) |>
@@ -249,7 +249,7 @@ dx.bestHit.SingleR <- function(mat,
                                               min_value = min.val,
                                               max_value = 1))
       }
-
+      
       return(res)
    }
    )
