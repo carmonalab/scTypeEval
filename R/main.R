@@ -1439,6 +1439,50 @@ plot.PCA <- function(scTypeEval,
    return(pls)
 }
 
+#' Perform Hierarchical Clustering on scRNA-seq Data
+#'
+#' This function performs hierarchical clustering on single-cell RNA sequencing (scRNA-seq) data 
+#' using specified normalization, distance, and clustering methods. It allows for analysis at 
+#' both the single-cell and pseudobulk levels.
+#'
+#' @param scTypeEval An object containing the scRNA-seq data, metadata, and gene lists.
+#' @param ident A character string specifying the metadata column used to group cells (e.g., cell type or annotation).
+#' @param sample An optional character string specifying the metadata column for sample identification (required for pseudobulk analysis).
+#' @param normalization.method A character vector specifying the normalization method. Options: `"Log1p"`, `"CLR"`, `"pearson"` (default: `"Log1p"`).
+#' @param gene.list A named list of gene sets to be used for clustering. If `NULL`, gene lists stored in `scTypeEval` are used.
+#' @param pca Logical; if `TRUE`, performs PCA dimensionality reduction before clustering (default: `FALSE`).
+#' @param ndim Integer; number of principal components to retain if `pca = TRUE` (default: `30`).
+#' @param distance.method A character string specifying the distance metric for clustering (default: `"euclidean"`).
+#' @param hirearchy.method A character string specifying the hierarchical clustering method. Default is `"ward.D2"`. For more option see \link[stats]{hclust}.
+#' @param data.type A character string indicating whether to use `"pseudobulk"` (aggregated samples) or `"sc"` (single-cell) data (default: `"pseudobulk"`).
+#' @param min.samples Integer; minimum number of samples required for pseudobulk analysis (default: `5`).
+#' @param min.cells Integer; minimum number of cells required per group for inclusion in the analysis (default: `10`).
+#' @param black.list A vector of gene names to exclude from clustering. If `NULL`, uses the blacklist stored in `scTypeEval`.
+#' @param ncores Integer; number of CPU cores to use for parallel processing (default: `1`).
+#' @param bparam An optional `BiocParallelParam` object for controlling parallel execution. If provided, overrides ncores.
+#' @param progressbar Logical; if `TRUE`, displays a progress bar during computation (default: `TRUE`).
+#' @param verbose Logical; if `TRUE`, prints messages about progress and warnings (default: `TRUE`).
+#'
+#' @return A list of hierarchical clustering results, where each element corresponds to a different gene list.
+#'
+#' @details The function retrieves expression data for specified gene lists, applies normalization, 
+#' and performs hierarchical clustering using the chosen distance metric and clustering method.
+#' If `pca = TRUE`, PCA is performed before clustering to reduce dimensionality.
+#'
+#' @examples
+#' \dontrun{
+#' result <- get.hirearchy(scTypeEval = scval, 
+#'                         ident = "celltype",
+#'                         sample = "sample_id",
+#'                         normalization.method = "Log1p",
+#'                         data.type = "pseudobulk",
+#'                         distance.method = "euclidean",
+#'                         hirearchy.method = "ward.D2")
+#' # explore results
+#' clusters <- stats::cutree(result[[HVG]], k = length(cell_types))
+#' }
+#'
+#' @export get.hirearchy
 
 get.hirearchy <- function(scTypeEval,
                           ident,

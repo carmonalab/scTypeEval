@@ -72,7 +72,7 @@ All available options:
 \itemize{
 \item \code{"silhouette"}: Contrast intra-cluster tightness with inter-cluster separation. (Distance-based, Mean silhouette width per cell type)
 \item \code{"modularity"}: Strength of intra-community density compared to random expectation in a network. (Graph structure, Global modularity score and per-cell-type modularity contribution)
-\item \code{"ward.PropMatch"}: Normalized proportion of reference labels in the dominant cluster by Ward (Clustering-based, Proportion match of dominant labels within hierarchical clusters)
+\item \code{"ward.PropMatch"}: Normalized proportion of reference labels in the dominant cluster by Ward (Clustering-based, Proportion match of dominant labels within hirearchical clusters)
 \item \code{"ward.NMI"}: Normalized shared information between Ward clusters and reference labels. (Global level metric)
 \item \code{"ward.ARI"}: Adjusted Rand Index for Ward clustering. (Global level metric)
 \item \code{"Leiden.PropMatch"}: Normalized proportion of reference labels in the dominant Leiden clustering. (Clustering-based, Local agreement)
