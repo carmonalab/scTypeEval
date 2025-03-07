@@ -215,16 +215,16 @@ add.HVG <- function(scTypeEval,
    # get highly variable genes
    hgv <- switch(var.method,
                  "basic" = get.HVG(norm.mat,
-                                    ngenes = ngenes,
-                                    sample = sample,
-                                    bparam = param),
+                                   ngenes = ngenes,
+                                   sample = sample,
+                                   bparam = param),
                  "scran" = get.GeneVar(norm.mat = norm.mat,
                                        sample = sample,
                                        ngenes = ngenes,
                                        bparam = param),
                  stop(var.method, " not supported for getting variable genes.")
-                 )
-
+   )
+   
    
    scTypeEval@gene.lists[["HVG"]] <- hgv
    
@@ -329,8 +329,8 @@ add.GeneMarkers <- function(scTypeEval,
                      "gpsFISH" = get.gpsFISHMarkers(sc_count = mat,
                                                     ident = ident,
                                                     black.list = black.list
-                                                    )
                      )
+   )
    
    scTypeEval@gene.lists[[method]] <- markers
    
@@ -543,7 +543,7 @@ Run.Consistency <- function(scTypeEval,
       sample.name <- NULL
    }
    
-
+   
    if(!distance.method %in% distance_methods){
       stop(distance.method, " distance method not supported. Pick up one of: ", 
            paste(distance_methods, collapse = ", "))
@@ -610,7 +610,7 @@ Run.Consistency <- function(scTypeEval,
       }
    }
    
-  
+   
    # loop over each gene.list
    consist.list <- BiocParallel::bplapply(names(gene.list),
                                           BPPARAM = param1,
@@ -619,7 +619,7 @@ Run.Consistency <- function(scTypeEval,
                                              # get matrix
                                              keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
                                              mat <- scTypeEval@counts[keep,]
-
+                                             
                                              # remove black list genes
                                              mat <- mat[!rownames(mat) %in% black.list,]
                                              
@@ -662,8 +662,8 @@ Run.Consistency <- function(scTypeEval,
                                                                     })
                                                              
                                                           }) |> unlist()
-                                            
-                                    
+                                             
+                                             
                                              
                                              # name consistency assays
                                              names(CA) <- lapply(seq_along(CA),
@@ -675,8 +675,8 @@ Run.Consistency <- function(scTypeEval,
                                                                     paste(v,
                                                                           collapse = "_")
                                                                  })
-                                            
-                                            return(CA)
+                                             
+                                             return(CA)
                                           })
    if(pca){
       names(consist.list) <- paste(names(gene.list), "PCA", sep = ".")
@@ -691,7 +691,7 @@ Run.Consistency <- function(scTypeEval,
    }
    
    return(scTypeEval)
-
+   
 }
 
 
@@ -768,7 +768,7 @@ Run.BestHit <- function(scTypeEval,
                         bparam = NULL,
                         progressbar = TRUE,
                         verbose = TRUE
-                            
+                        
 ){
    
    if(!data.type %in% data_type){
@@ -785,7 +785,7 @@ Run.BestHit <- function(scTypeEval,
    if(!ident %in% names(scTypeEval@metadata)){
       stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
    }
-
+   
    # retrieve ident and convert to factor
    ident.name <- ident
    ident <- scTypeEval@metadata[[ident]]
@@ -810,7 +810,7 @@ Run.BestHit <- function(scTypeEval,
    } else {
       stop("BestHit consistency requires multiple samples and specify it in `sample` parameter.")
    }
-
+   
    # set gene lists
    if(is.null(gene.list)){
       gene.list <- scTypeEval@gene.lists
@@ -843,7 +843,7 @@ Run.BestHit <- function(scTypeEval,
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
-
+   
    # loop over each gene.list
    consist.list <- lapply(names(gene.list),
                           function(t){
@@ -996,7 +996,7 @@ Run.scTypeEval <- function(scTypeEval,
                            bparam = NULL,
                            progressbar = FALSE,
                            verbose = TRUE){
-
+   
    
    df.res <- list()
    
@@ -1148,7 +1148,7 @@ get.ConsistencyData <- function(scTypeEval,
       # scale if needed, convert to all metric to a -1 to 1 scale
       scaled_measure <- normalize_metric(value = assay@measure,
                                          metric = cm)
-     
+      
       
       # Extract relevant information into a named list
       filtered_data[[a]] <- data.frame(
@@ -1170,7 +1170,7 @@ get.ConsistencyData <- function(scTypeEval,
    }
    
    result <- do.call(rbind, filtered_data)
-
+   
    
    return(result)
    
@@ -1305,48 +1305,48 @@ add.PCA <- function(scTypeEval,
    
    # loop over each gene.list
    pca.list <- BiocParallel::bplapply(names(gene.list),
-                                          BPPARAM = param,
-                                          function(t){
-                                             
-                                             # get matrix
-                                             keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
-                                             mat <- scTypeEval@counts[keep,]
-                                             
-                                             # remove black list genes
-                                             mat <- mat[!rownames(mat) %in% black.list,]
-                                             
-                                             # compute PCA
-                                             pc.list <- get.PCA(mat,
-                                                                ident = ident,
-                                                                sample = sample,
-                                                                normalization.method = normalization.method,
-                                                                data.type = data.type,
-                                                                min.samples = min.samples,
-                                                                min.cells = min.cells)
-                                             
-                                             # accommodte to DimReduc
-                                             
-                                             pc.list <- lapply(seq_along(pc.list),
-                                                               function(cc){
-                                                                  pc.list[[cc]]@gene.list <- t
-                                                                  pc.list[[cc]]@black.list <- black.list
-                                                                  pc.list[[cc]]@sample <- names(pc.list)[[cc]]
-                                                                  return(pc.list[[cc]])
-                                                               })
-                                             
-                                             
-                                             
-                                             # name DimRed assays
-                                             names(pc.list) <- lapply(seq_along(pc.list),
-                                                                 function(ca){
-                                                                    v <- na.omit(c(pc.list[[ca]]@sample,
-                                                                                   pc.list[[ca]]@data.type))
-                                                                    paste(v,
-                                                                          collapse = "_")
-                                                                 })
-                                             
-                                             return(pc.list)
-                                          })
+                                      BPPARAM = param,
+                                      function(t){
+                                         
+                                         # get matrix
+                                         keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
+                                         mat <- scTypeEval@counts[keep,]
+                                         
+                                         # remove black list genes
+                                         mat <- mat[!rownames(mat) %in% black.list,]
+                                         
+                                         # compute PCA
+                                         pc.list <- get.PCA(mat,
+                                                            ident = ident,
+                                                            sample = sample,
+                                                            normalization.method = normalization.method,
+                                                            data.type = data.type,
+                                                            min.samples = min.samples,
+                                                            min.cells = min.cells)
+                                         
+                                         # accommodte to DimReduc
+                                         
+                                         pc.list <- lapply(seq_along(pc.list),
+                                                           function(cc){
+                                                              pc.list[[cc]]@gene.list <- t
+                                                              pc.list[[cc]]@black.list <- black.list
+                                                              pc.list[[cc]]@sample <- names(pc.list)[[cc]]
+                                                              return(pc.list[[cc]])
+                                                           })
+                                         
+                                         
+                                         
+                                         # name DimRed assays
+                                         names(pc.list) <- lapply(seq_along(pc.list),
+                                                                  function(ca){
+                                                                     v <- na.omit(c(pc.list[[ca]]@sample,
+                                                                                    pc.list[[ca]]@data.type))
+                                                                     paste(v,
+                                                                           collapse = "_")
+                                                                  })
+                                         
+                                         return(pc.list)
+                                      })
    
    names(pca.list) <- names(gene.list)
    
@@ -1514,7 +1514,7 @@ get.hirearchy <- function(scTypeEval,
       warning("Earth mover distance (EMD) for single-cell (sc) data.type is
               highly computially expensive... not recommended, it will take long")
    }
-
+   
    if(!data.type %in% data_type){
       stop(data.type, " data type conversion method not supported. Pick up one of: ", 
            paste(data_type, collapse = ", "))
@@ -1558,17 +1558,17 @@ get.hirearchy <- function(scTypeEval,
                                           mat <- mat[!rownames(mat) %in% black.list,]
                                           
                                           hire <- hirearchy.helper(mat,
-                                                                  ident = ident,
-                                                                  sample = sample,
-                                                                  normalization.method = normalization.method,
-                                                                  distance.method = distance.method,
-                                                                  hirearchy.method = hirearchy.method,
-                                                                  data.type = data.type,
-                                                                  pca = pca,
-                                                                  ndim = ndim,
-                                                                  min.samples = min.samples,
-                                                                  min.cells = min.cells,
-                                                                  verbose = verbose)
+                                                                   ident = ident,
+                                                                   sample = sample,
+                                                                   normalization.method = normalization.method,
+                                                                   distance.method = distance.method,
+                                                                   hirearchy.method = hirearchy.method,
+                                                                   data.type = data.type,
+                                                                   pca = pca,
+                                                                   ndim = ndim,
+                                                                   min.samples = min.samples,
+                                                                   min.cells = min.cells,
+                                                                   verbose = verbose)
                                           return(hire)
                                        })
    
@@ -1689,30 +1689,30 @@ get.NN <- function(scTypeEval,
    
    # loop over each gene.list
    nn.list <- BiocParallel::bplapply(names(gene.list),
-                                       BPPARAM = param,
-                                       function(t){
-                                          
-                                          # get matrix
-                                          keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
-                                          mat <- scTypeEval@counts[keep,]
-                                          
-                                          # remove black list genes
-                                          mat <- mat[!rownames(mat) %in% black.list,]
-                                          
-                                          nn <- nn.helper(mat,
-                                                          ident = ident,
-                                                          sample = sample,
-                                                          normalization.method = normalization.method,
-                                                          distance.method = distance.method,
-                                                          KNNGraph_k = KNNGraph_k,
-                                                          data.type = data.type,
-                                                          pca = pca,
-                                                          ndim = ndim,
-                                                          min.samples = min.samples,
-                                                          min.cells = min.cells,
-                                                          verbose = verbose)
-                                          return(nn)
-                                       })
+                                     BPPARAM = param,
+                                     function(t){
+                                        
+                                        # get matrix
+                                        keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
+                                        mat <- scTypeEval@counts[keep,]
+                                        
+                                        # remove black list genes
+                                        mat <- mat[!rownames(mat) %in% black.list,]
+                                        
+                                        nn <- nn.helper(mat,
+                                                        ident = ident,
+                                                        sample = sample,
+                                                        normalization.method = normalization.method,
+                                                        distance.method = distance.method,
+                                                        KNNGraph_k = KNNGraph_k,
+                                                        data.type = data.type,
+                                                        pca = pca,
+                                                        ndim = ndim,
+                                                        min.samples = min.samples,
+                                                        min.cells = min.cells,
+                                                        verbose = verbose)
+                                        return(nn)
+                                     })
    
    if(pca){
       names(nn.list) <- paste(names(gene.list), "PCA", sep = ".")
@@ -1724,3 +1724,115 @@ get.NN <- function(scTypeEval,
 }
 
 
+
+dx.BestHit <- function(scTypeEval,
+                       ident = NULL,
+                       method = c("Mutual.Score", "Mutual.Match"),
+                       sample = NULL,
+                       data.type = c("pseudobulk, sc"),
+                       gene.list = NULL,
+                       black.list = NULL,
+                       min.cells = 10,
+                       min.samples = 5,
+                       ncores = 1,
+                       bparam = NULL,
+                       progressbar = TRUE,
+                       verbose = TRUE
+                       
+){
+   
+   data.type <- data.type[1]
+   if(!data.type %in% data_type){
+      stop(data.type, " data type conversion method not supported. Pick up one of: ", 
+           paste(data_type[1:2], collapse = ", "))
+   } else if(data.type == "pseudobulk_1vsall"){
+      stop("pseudobulk_1vsall not supported for mutual BestHit.") 
+   }
+   
+   if(is.null(ident)){
+      ident <- scTypeEval@active.ident
+   }
+   
+   if(!ident %in% names(scTypeEval@metadata)){
+      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
+   }
+   
+   # retrieve ident and convert to factor
+   ident.name <- ident
+   ident <- scTypeEval@metadata[[ident]]
+   ident <- purge_label(ident)
+   ident <- factor(ident)
+   
+   if(!is.null(sample)){
+      if(!sample %in% names(scTypeEval@metadata)){
+         stop("`sample` parameter not found in metadata colnames.")
+      }
+      # retrieve sample and convert to factor
+      sample.name <- sample
+      sample <- scTypeEval@metadata[[sample]]
+      sample <- purge_label(sample)
+      sample <- factor(sample)
+   } else {
+      stop("BestHit consistency requires multiple samples and specify it in `sample` parameter.")
+   }
+   
+   # set gene lists
+   if(is.null(gene.list)){
+      gene.list <- scTypeEval@gene.lists
+      if(length(gene.list) == 0){
+         stop("No gene list found to run consistency metrics.\n
+              Add custom gene list or compute highly variable genes with add.HVG()\n")
+      }
+   } else {
+      if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
+         stop("Some gene list names not included in scTypeEval object")
+      }
+      gene.list <- scTypeEval@gene.lists[gene.list]
+   }
+   
+   if(is.null(black.list)){
+      black.list <- scTypeEval@black.list
+   }
+   
+   # set methods
+   if(any(!method %in% mutual_method)){
+      stop("Not supported consistency metrics, please provide both or either: ", mutual_method)
+   }
+   
+   if(data.type == "sc" && "Mutual.Match" %in% method){
+      warning("Mutual.Match consistency only supported for pseudobulk data.type, not running")
+      method <- method[method != "Mutual.Match"]
+   }
+   
+   
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   # loop over each gene.list
+   dx.list <- lapply(names(gene.list),
+                     function(t){
+                        
+                        # get matrix
+                        keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
+                        mat <- scTypeEval@counts[keep,]
+                        
+                        # remove black list genes
+                        mat <- mat[!rownames(mat) %in% black.list,]
+                        
+                        con <- dx.bestHit.SingleR(mat = mat,
+                                                  ident = ident,
+                                                  sample = sample,
+                                                  data.type = data.type,
+                                                  method = method,
+                                                  min.cells = min.cells,
+                                                  min.samples = min.samples,
+                                                  bparam = param)
+                        return(con)
+                     })
+   
+   names(dx.list) <- names(gene.list)
+   
+   
+   return(dx.list)
+}

@@ -22,17 +22,21 @@ singleR.helper <- function(test,
 }
 
 singleR.score.tidy <- function(pred,
-                               .true){
+                               .true,
+                               filter = TRUE){
    pred <- pred |>
       dplyr::select(dplyr::starts_with("score")) |>  
       dplyr::mutate(true = .true) |>
       tidyr::pivot_longer(-c(true),
                           names_to = "celltype",
-                          values_to = "score") |>
-      dplyr::filter(true == gsub("scores[.]", "", celltype)) |>
-      dplyr::group_by(true) |>
+                          values_to = "score") 
+   if (filter) {
+      pred <- pred |> 
+         dplyr::filter(true == gsub("scores[.]", "", celltype))
+   }
+   pred <- pred |> 
+      dplyr::group_by(true) |> 
       dplyr::summarize(score = mean(score))
-   
    return(pred)
 }
 
