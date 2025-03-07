@@ -421,7 +421,7 @@ add.GeneList <- function(scTypeEval,
 #'   All available options:
 #'   - `"silhouette"`: Contrast intra-cluster tightness with inter-cluster separation. (Distance-based, Mean silhouette width per cell type)
 #'   - `"modularity"`: Strength of intra-community density compared to random expectation in a network. (Graph structure, Global modularity score and per-cell-type modularity contribution)
-#'   - `"ward.PropMatch"`: Normalized proportion of reference labels in the dominant cluster by Ward (Clustering-based, Proportion match of dominant labels within hirearchical clusters)
+#'   - `"ward.PropMatch"`: Normalized proportion of reference labels in the dominant cluster by Ward (Clustering-based, Proportion match of dominant labels within hierarchical clusters)
 #'   - `"ward.NMI"`: Normalized shared information between Ward clusters and reference labels. (Global level metric)
 #'   - `"ward.ARI"`: Adjusted Rand Index for Ward clustering. (Global level metric)
 #'   - `"Leiden.PropMatch"`: Normalized proportion of reference labels in the dominant Leiden clustering. (Clustering-based, Local agreement)
@@ -1453,7 +1453,7 @@ plot.PCA <- function(scTypeEval,
 #' @param pca Logical; if `TRUE`, performs PCA dimensionality reduction before clustering (default: `FALSE`).
 #' @param ndim Integer; number of principal components to retain if `pca = TRUE` (default: `30`).
 #' @param distance.method A character string specifying the distance metric for clustering (default: `"euclidean"`).
-#' @param hirearchy.method A character string specifying the hierarchical clustering method. Default is `"ward.D2"`. For more option see \link[stats]{hclust}.
+#' @param hierarchy.method A character string specifying the hierarchical clustering method. Default is `"ward.D2"`. For more option see \link[stats]{hclust}.
 #' @param data.type A character string indicating whether to use `"pseudobulk"` (aggregated samples) or `"sc"` (single-cell) data (default: `"pseudobulk"`).
 #' @param min.samples Integer; minimum number of samples required for pseudobulk analysis (default: `5`).
 #' @param min.cells Integer; minimum number of cells required per group for inclusion in the analysis (default: `10`).
@@ -1471,20 +1471,20 @@ plot.PCA <- function(scTypeEval,
 #'
 #' @examples
 #' \dontrun{
-#' result <- get.hirearchy(scTypeEval = scval, 
+#' result <- get.hierarchy(scTypeEval = sceval, 
 #'                         ident = "celltype",
 #'                         sample = "sample_id",
 #'                         normalization.method = "Log1p",
 #'                         data.type = "pseudobulk",
 #'                         distance.method = "euclidean",
-#'                         hirearchy.method = "ward.D2")
+#'                         hierarchy.method = "ward.D2")
 #' # explore results
 #' clusters <- stats::cutree(result[[HVG]], k = length(cell_types))
 #' }
 #'
-#' @export get.hirearchy
+#' @export get.hierarchy
 
-get.hirearchy <- function(scTypeEval,
+get.hierarchy <- function(scTypeEval,
                           ident,
                           sample,
                           normalization.method = c("Log1p", "CLR", "pearson"),
@@ -1492,7 +1492,7 @@ get.hirearchy <- function(scTypeEval,
                           pca = FALSE,
                           ndim = 30,
                           distance.method = "euclidean",
-                          hirearchy.method = "ward.D2",
+                          hierarchy.method = "ward.D2",
                           data.type = c("pseudobulk", "sc"),
                           min.samples = 5,
                           min.cells = 10,
@@ -1590,7 +1590,7 @@ get.hirearchy <- function(scTypeEval,
                                 progressbar = progressbar)
    
    # loop over each gene.list
-   hire.list <- BiocParallel::bplapply(names(gene.list),
+   hier.list <- BiocParallel::bplapply(names(gene.list),
                                        BPPARAM = param,
                                        function(t){
                                           
@@ -1601,29 +1601,30 @@ get.hirearchy <- function(scTypeEval,
                                           # remove black list genes
                                           mat <- mat[!rownames(mat) %in% black.list,]
                                           
-                                          hire <- hirearchy.helper(mat,
+                                          hier <- hierarchy.helper(mat,
                                                                    ident = ident,
                                                                    sample = sample,
                                                                    normalization.method = normalization.method,
                                                                    distance.method = distance.method,
-                                                                   hirearchy.method = hirearchy.method,
+                                                                   hierarchy.method = hierarchy.method,
                                                                    data.type = data.type,
                                                                    pca = pca,
                                                                    ndim = ndim,
                                                                    min.samples = min.samples,
                                                                    min.cells = min.cells,
                                                                    verbose = verbose)
-                                          return(hire)
+                                          return(hier)
                                        })
    
    if(pca){
-      names(hire.list) <- paste(names(gene.list), "PCA", sep = ".")
+      names(hier.list) <- paste(names(gene.list), "PCA", sep = ".")
    } else {
-      names(hire.list) <- names(gene.list)
+      names(hier.list) <- names(gene.list)
    }
    
-   return(hire.list)
+   return(hier.list)
 }
+
 
 
 get.NN <- function(scTypeEval,

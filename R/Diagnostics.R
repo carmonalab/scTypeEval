@@ -1,8 +1,8 @@
-hirearchy.helper <- function(mat,
+hierarchy.helper <- function(mat,
                              ident,
                              normalization.method,
                              distance.method = "euclidean",
-                             hirearchy.method = "ward.D2",
+                             hierarchy.method = "ward.D2",
                              data.type = "pseudobulk",
                              sample = NULL,
                              pca = FALSE,
@@ -32,7 +32,7 @@ hirearchy.helper <- function(mat,
                         norm.mat = norm.mat,
                         distance.method = distance.method)
    hclust_result <- stats::hclust(dist,
-                                  method = hirearchy.method)
+                                  method = hierarchy.method)
    
    return(hclust_result)
    
