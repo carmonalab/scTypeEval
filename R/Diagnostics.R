@@ -233,7 +233,7 @@ dx.bestHit.SingleR <- function(mat,
             dplyr::summarize(score = mean(score, na.rm = T))
       } else if (m == "Mutual.Match"){
          res <- res |>
-            dplyr::group_by(true) |>
+            dplyr::group_by(celltype) |>
             dplyr::summarize(score = mean(score, na.rm = T))
          # normalize for BestHiT match
          nident <- sapply(mat.split, function(mat) {length(mat@ident)})
