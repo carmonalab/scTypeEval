@@ -1449,7 +1449,7 @@ get.hirearchy <- function(scTypeEval,
                           ndim = 30,
                           distance.method = "euclidean",
                           hirearchy.method = "ward.D2",
-                          data.type = c("sc", "pseudobulk"),
+                          data.type = c("pseudobulk", "sc"),
                           min.samples = 5,
                           min.cells = 10,
                           black.list = NULL,
@@ -1580,3 +1580,147 @@ get.hirearchy <- function(scTypeEval,
    
    return(hire.list)
 }
+
+
+get.NN <- function(scTypeEval,
+                   ident,
+                   sample,
+                   normalization.method = c("Log1p", "CLR", "pearson"),
+                   gene.list = NULL,
+                   pca = FALSE,
+                   ndim = 30,
+                   distance.method = "euclidean",
+                   KNNGraph_k = 5,
+                   data.type = c("pseudobulk", "sc"),
+                   min.samples = 5,
+                   min.cells = 10,
+                   black.list = NULL,
+                   ncores = 1,
+                   bparam = NULL,
+                   progressbar = TRUE,
+                   verbose = TRUE
+){
+   if(is.null(ident)){
+      ident <- scTypeEval@active.ident
+   }
+   
+   if(!ident %in% names(scTypeEval@metadata)){
+      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
+   }
+   
+   data.type = data.type[1]
+   
+   # retrieve ident and convert to factor
+   ident.name <- ident
+   ident <- scTypeEval@metadata[[ident]]
+   ident <- purge_label(ident)
+   ident <- factor(ident)
+   
+   if(data.type == "sc"){
+      sample <- NULL
+   }
+   
+   if(!is.null(sample)){
+      if(!sample %in% names(scTypeEval@metadata)){
+         stop("`sample` parameter not found in metadata colnames.")
+      }
+      # retrieve sample and convert to factor
+      sample.name <- sample
+      sample <- scTypeEval@metadata[[sample]]
+      sample <- purge_label(sample)
+      sample <- factor(sample)
+      
+      if(min.samples < 2){
+         stop("For intersample comparison a minimum threshold of cell population
+              in at least 2 samples is required, but more is recommended.")
+      }
+      
+   } else {
+      
+      if(data.type != "sc"){
+         stop("For pseudobulk provide a dataset with multiple samples,
+              and specifiy their respective column metadata in `sample` parameter")
+      } else {
+         if(verbose){message("Using dataset as a unique sample, computing consistency across cells.\n")}
+      }
+      sample.name <- NULL
+   }
+   
+   
+   if(!distance.method %in% distance_methods){
+      stop(distance.method, " distance method not supported. Pick up one of: ", 
+           paste(distance_methods, collapse = ", "))
+   }
+   # only run EMD on pseudobulk data.type
+   if(distance.method == "EMD" && data.type == "sc"){
+      warning("Earth mover distance (EMD) for single-cell (sc) data.type is
+              highly computially expensive... not recommended, it will take long")
+   }
+   
+   if(!data.type %in% data_type){
+      stop(data.type, " data type conversion method not supported. Pick up one of: ", 
+           paste(data_type, collapse = ", "))
+   }
+   
+   # set normalization method
+   normalization.method <- normalization.method[1]
+   
+   # set gene lists
+   if(is.null(gene.list)){
+      gene.list <- scTypeEval@gene.lists
+      if(length(gene.list) == 0){
+         stop("No gene list found to run consistency metrics.\n
+              Add custom gene list or compute highly variable genes with add.HVG()\n")
+      }
+   } else {
+      if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
+         stop("Some gene list names not included in scTypeEval object")
+      }
+      gene.list <- scTypeEval@gene.lists[gene.list]
+   }
+   
+   if(is.null(black.list)){
+      black.list <- scTypeEval@black.list
+   }
+   
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   # loop over each gene.list
+   nn.list <- BiocParallel::bplapply(names(gene.list),
+                                       BPPARAM = param,
+                                       function(t){
+                                          
+                                          # get matrix
+                                          keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
+                                          mat <- scTypeEval@counts[keep,]
+                                          
+                                          # remove black list genes
+                                          mat <- mat[!rownames(mat) %in% black.list,]
+                                          
+                                          nn <- nn.helper(mat,
+                                                          ident = ident,
+                                                          sample = sample,
+                                                          normalization.method = normalization.method,
+                                                          distance.method = distance.method,
+                                                          KNNGraph_k = KNNGraph_k,
+                                                          data.type = data.type,
+                                                          pca = pca,
+                                                          ndim = ndim,
+                                                          min.samples = min.samples,
+                                                          min.cells = min.cells,
+                                                          verbose = verbose)
+                                          return(nn)
+                                       })
+   
+   if(pca){
+      names(nn.list) <- paste(names(gene.list), "PCA", sep = ".")
+   } else {
+      names(nn.list) <- names(gene.list)
+   }
+   
+   return(nn.list)
+}
+
+
