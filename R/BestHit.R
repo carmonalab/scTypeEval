@@ -32,11 +32,11 @@ singleR.score.tidy <- function(pred,
                           values_to = "score") 
    if (filter) {
       pred <- pred |> 
-         dplyr::filter(true == gsub("scores[.]", "", celltype))
+         dplyr::filter(true == gsub("scores[.]", "", celltype)) |> 
+         dplyr::group_by(true) |> 
+         dplyr::summarize(score = mean(score))
    }
-   pred <- pred |> 
-      dplyr::group_by(true) |> 
-      dplyr::summarize(score = mean(score))
+   
    return(pred)
 }
 
