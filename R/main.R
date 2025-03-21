@@ -1425,7 +1425,11 @@ plot.PCA <- function(scTypeEval,
          as.data.frame() |>
          dplyr::mutate(ident = assay@ident)
       
-      labs <- paste0("PC", dims)
+      # compute variance of PCs
+      vrs <- var_PCA(assay@embeddings)[dims]
+      vrs <- round(vrs*100, 2)
+      
+      labs <- paste0("PC", dims, " (", vrs, "%)")
       
       pl <- helper.plot.PCA(df,
                             show.legend = show.legend,
