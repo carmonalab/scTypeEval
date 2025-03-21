@@ -281,3 +281,18 @@ custom_prcomp <- function(norm.mat,
 purge_label <- function(label){
    gsub(" |_|[+]", ".", label)
 }
+
+
+# function to compute variance captured in PC components
+
+var_PCA <- function(pca_embeddings){
+   # Compute variance per PC
+   n_samples <- nrow(pca_embeddings)  # Number of samples
+   variance_per_pc <- colSums(pca_embeddings^2) / (n_samples - 1)
+   
+   # Compute proportion of variance explained
+   total_variance <- sum(variance_per_pc)
+   variance_explained <- variance_per_pc / total_variance
+
+   return(variance_explained)
+}
