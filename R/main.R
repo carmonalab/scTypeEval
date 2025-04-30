@@ -430,9 +430,11 @@ add.GeneList <- function(scTypeEval,
 #'   - `"Leiden.ARI"`: Adjusted Rand Index for Leiden clustering. (Global level metric)
 #'   - `"NeighborhoodPurity"`: Proportion of K-Nearest Neighbors sharing the same label. (Local agreement, Mean proportion of neighbors sharing same identity)
 #'   - `"GraphConnectivity"`: Proportion of elements within a group that belong to its largest connected component. (Graph structure, Size of the largest connected component relative to reference group size)
+#'   - `"Orbital.centroid"`: Proportion of cells closer to their own cluster centroid than to any cluster other centroid. (Distance-based euclidean, Local agreement using Euclidean distance to centroids)
+#'   - `"Orbita.medoid"`: Proportion of cells closer to their own cluster medoid than to any other cluster medoid. (Distance-based euclidean, Local agreement using Euclidean distances to medoid cell/sample)
 #'   - `"inertia"`: Sum of squared distances from points to their assigned cluster centroid. (Distance-based)  
 #'   - `"Xie-Beni"`: Ratio of intra-cluster dispersion to inter-cluster separation. (Distance-based)  
-#'   - `"S_Dbw"`: Internal cluster validity index combining density and separation. (Distance-based)  
+#'   - `"S.Dbw"`: Internal cluster validity index combining density and separation. (Distance-based)  
 #'   - `"I"`: Trade-off between separation and cohesion in clusters. (Distance-based) 
 #' @param data.type Character. Type of data input to perform.
 #'   Options, one of:

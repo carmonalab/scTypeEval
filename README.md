@@ -188,10 +188,12 @@ By default, the following metrics are computed:
 
 #### **All Available Metrics:**
 ##### **Distance-Based Metrics:**  
-- **`silhouette`** – Measures how distinct each cell type is compared to others.  
+- **`silhouette`** – Measures how distinct each cell type is compared to others.
+- **`Orbital.centroid`** – Proportion of cells/samples closer to their cluster centroid than to other clusters centroids. Evaluates tightness of each group.  
+- **`Orbital.medoid`** – Proportion of cells/samples closer to their cluster medoid than to other clusters medoids. Less sensitive to outliers than centroids.  
 - **`inertia`** – Sum of squared distances from points to their assigned cluster centroid.  
 - **`Xie-Beni`** – Ratio of intra-cluster compactness to inter-cluster separation.  
-- **`S_Dbw`** – Validates clustering based on density and separation.  
+- **`S.Dbw`** – Validates clustering based on density and separation.  
 - **`I`** – Balances cluster cohesion and separation.  
 
 ##### **Clustering-Based Metrics:**  
