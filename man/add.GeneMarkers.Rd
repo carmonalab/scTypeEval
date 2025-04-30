@@ -11,6 +11,7 @@ add.GeneMarkers(
   method = c("scran.findMarkers"),
   ngenes.total = 500,
   ngenes.celltype = 50,
+  black.list = NULL,
   ncores = 1,
   bparam = NULL,
   progressbar = TRUE,
