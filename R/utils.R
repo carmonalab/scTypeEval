@@ -160,60 +160,32 @@ minmax_norm <- function(value, min_value, max_value, inverse = FALSE) {
 }
 
 normalize_metric <- function(value, metric) {
-   # Normalize all metrics to the range [0, 1]
-   scaled_metric <- switch(metric,
-                           
-                           # remove negative values
-                           "silhouette" = rm0(value),
-                           "modularity" = rm0(value),
-                           "modularity_pct" = rm0(value),
-                           
-                           "NeighborhoodPurity" = rm0(value),
-                           "ward.PropMatch" = rm0(value),
-                           "Leiden.PropMatch" = rm0(value),
-                           "ward.PropMatch" = rm0(value),
-                           "Leiden.PropMatch" = rm0(value),
-                           
-                           "ward.ARI" = rm0(value),
-                           "Leiden.ARI" = rm0(value),
-                           
-                           "GraphConnectivity" = rm0(value),
-                           
-                           "ward.NMI" = rm0(value),
-                           "Leiden.NMI" = rm0(value),
-                           
-                           "BestHit-Mutual.Score" = value,
-                           "BestHit-Mutual.Match" = rm0(value),
-                           
-                           # Normalize inertia to [0, 1] (higher is worse, hence inverse = TRUE)
-                           "inertia" = minmax_norm(value,
-                                                   min_value = min(value),
-                                                   max_value = max(value),
-                                                   inverse = TRUE),
-                           
-                           # Normalize Xie-Beni to [0, 1] (higher is worse, hence inverse = TRUE)
-                           "Xie-Beni" = minmax_norm(value,
-                                                    min_value = min(value),
-                                                    max_value = max(value),
-                                                    inverse = TRUE),
-                           
-                           # Normalize S_Dbw to [0, 1] (higher is worse, hence inverse = TRUE)
-                           "S_Dbw" = minmax_norm(value,
-                                                 min_value = min(value),
-                                                 max_value = max(value),
-                                                 inverse = TRUE),
-                           
-                           # Normalize I to [0, 1] (higher is better, inverse = FALSE)
-                           "I" = minmax_norm(value,
-                                             min_value = min(value),
-                                             max_value = max(value),
-                                             inverse = FALSE)
+   # Define metric groups
+   rm0_metrics <- c(
+      "silhouette", "modularity", "modularity_pct",
+      "NeighborhoodPurity", "ward.PropMatch", "Leiden.PropMatch",
+      "Orbital.centroid", "Orbital.medoid",
+      "ward.ARI", "Leiden.ARI",
+      "GraphConnectivity", "ward.NMI", "Leiden.NMI",
+      "BestHit-Mutual.Match"
    )
    
-   return(scaled_metric)
+   minmax_inverse_metrics <- c("inertia", "Xie-Beni", "S.Dbw")
+   minmax_direct_metrics <- c("I")
+   
+   # Normalize based on the metric group
+   if (metric %in% rm0_metrics) {
+      return(rm0(value))
+   } else if (metric == "BestHit-Mutual.Score") {
+      return(value)
+   } else if (metric %in% minmax_inverse_metrics) {
+      return(minmax_norm(value, min_value = min(value), max_value = max(value), inverse = TRUE))
+   } else if (metric %in% minmax_direct_metrics) {
+      return(minmax_norm(value, min_value = min(value), max_value = max(value), inverse = FALSE))
+   } else {
+      stop("Unknown metric: ", metric)
+   }
 }
-
-
 
 get.PCA <- function(mat,
                     ident,
