@@ -115,6 +115,7 @@ get.DEG <- function(mat,
                     progressbar = TRUE,
                     min.prop = 0.6,
                     black.list = NULL,
+                    unlist = TRUE, # wheter to return a vector of genes (TRUE) or a list per ident (FALSE)
                     ...){
    
    param <- set_parallel_params(ncores = ncores,
@@ -133,6 +134,7 @@ get.DEG <- function(mat,
                             pval.type = "some",
                             BPPARAM = param,
                             min.prop = min.prop,
+                            test.type = test.type,
                             ...)
    
    markers <- lapply(de,
@@ -144,9 +146,12 @@ get.DEG <- function(mat,
                       head(ngenes.celltype)
                    
                    return(rownames(d))
-                }) |>
-      unlist() |>
-      unique()
+                })
+   if(unlist){
+      markers <- markers |>
+         unlist() |>
+         unique()
+   }
 
    return(markers)
    
