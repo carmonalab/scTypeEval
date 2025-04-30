@@ -1,15 +1,17 @@
 IntVal_metric <- c("silhouette", "NeighborhoodPurity", "ward.PropMatch",
-                  "inertia", "Xie-Beni", "S_Dbw", "I", "Leiden.PropMatch",
+                  "inertia", "Xie-Beni", "S.Dbw", "I", "Leiden.PropMatch",
                   "modularity", "ward.NMI", "ward.ARI", "Leiden.NMI",
-                  "Leiden.ARI", "GraphConnectivity")
+                  "Leiden.ARI", "GraphConnectivity", "Orbital.centroid",
+                  "Orbital.medoid")
 
-dist.need <- "silhouette|NeighborhoodPurity|ward|Leiden|modularity|GraphConnectivity"
+dist.need <- "silhouette|NeighborhoodPurity|ward|Leiden|modularity|GraphConnectivity|Orbital.medoid"
 
 knn.need <- "NeighborhoodPurity|Leiden|modularity|GraphConnectivity"
 
 snn.need <- "Leiden|modularity|GraphConnectivity"
 
-centroid.need <- c("inertia", "Xie-Beni", "S_Dbw", "I")
+centroid.need <- c("inertia", "Xie-Beni", "S.Dbw",
+                   "I", "Orbital.centroid")
 
 
 # Helper function to compute centroids for each cluster
@@ -20,6 +22,82 @@ compute_centroids <- function(norm.mat, ident) {
    # Combine the list of centroids into a matrix
    centroids <- do.call(cbind, centroid.list) 
    return(centroids)
+}
+
+# compute medoid based on distances
+compute_medoid_indices <- function(ident,
+                                   dist) {
+   dist_mat <- as.matrix(dist)  # full symmetric matrix
+   medoid_indices <- tapply(seq_along(ident), ident, function(idx) {
+      sub_dists <- dist_mat[idx, idx, drop = FALSE]
+      total_dist <- rowSums(sub_dists)
+      idx[which.min(total_dist)]
+   })
+   return(unlist(medoid_indices[!is.na(medoid_indices)]))
+}
+
+compute_orbital_proportion <- function(norm.mat,
+                                       ident,
+                                       dist,
+                                       centroids = NULL,
+                                       use = c("centroid", "medoid")) {
+   use <- use[1]
+   
+   # Initialize medoid_idx outside switch for reuse
+   medoid_idx <- NULL
+   
+   # Compute centroid or medoid representative points
+   reps <- switch(use,
+                  "centroid" = {
+                     if (is.null(centroids)) {
+                        compute_centroids(norm.mat, ident)
+                     } else {
+                        centroids
+                     }
+                  },
+                  "medoid" = {
+                     medoid_idx <- compute_medoid_indices(ident, dist)
+                     nm <- norm.mat[, as.vector(medoid_idx), drop = FALSE]
+                     colnames(nm) <- names(medoid_idx)
+                     as.matrix(nm)
+                  },
+                  stop(use, " is not a supported method for representation points. Choose either centroid or medoid")
+   )
+   
+   # Compute distance between all samples and representatives
+   d_to_reps <- as.matrix(proxy::dist(as.matrix(Matrix::t(norm.mat)),
+                                      t(reps),
+                                      method = "euclidean"))
+   
+   # Rows: samples, Columns: cluster representatives
+   own_clusters <- as.character(ident)
+   own_idx <- match(own_clusters, colnames(d_to_reps))
+   
+   own_dist <- d_to_reps[cbind(seq_along(own_clusters), own_idx)]
+   
+   min_other_dist <- vapply(seq_len(nrow(d_to_reps)),
+                            function(i) {
+                               row <- d_to_reps[i, ]
+                               own <- own_idx[i]
+                               min(row[-own], na.rm = TRUE)
+                            },
+                            numeric(1))
+   
+   closer_to_own <- own_dist < min_other_dist
+   
+   # If using medoids, exclude medoid samples from proportion computation
+   if (use == "medoid") {
+      medoid_cells <- as.vector(medoid_idx)
+      ident <- ident[-medoid_cells]
+      closer_to_own <- closer_to_own[-medoid_cells]
+   }
+   
+   # Compute and return the proportion vector
+   prop_vector <- tapply(closer_to_own, ident, mean)
+   prop_vector <- setNames(as.numeric(prop_vector), names(prop_vector))
+   # remove NAs
+   prop_vector <- prop_vector[!is.na(prop_vector)]
+   return(prop_vector)
 }
 
 
@@ -455,19 +533,19 @@ compute_xie_beni <- function(norm.mat,
    return(xie_beni_scores)
 }
 
-# S_Dbw Index Calculation
+# S.Dbw Index Calculation
 # 1- Dispersion: Compute the mean Euclidean distance between each cell and the cluster
 #  centroid (measuring how "spread out" the cluster is).
 # 2 - Separation: Computes the average pairwise dissimilarity between cluster
 #  centroids using the Pearson correlation coefficient
 # Again the lower the better
 
-# Global: summing per-cluster S_Dbw values will not yield the global S_Dbw index.
+# Global: summing per-cluster S.Dbw values will not yield the global S.Dbw index.
 # The global dispersion and global separation must be averaged across clusters,
 # rather than summed. Summing will overestimate the result and misrepresent the
 # balance between dispersion and separation.
 
-compute_s_dbw <- function(norm.mat,
+compute_S.Dbw <- function(norm.mat,
                           ident,
                           centroids = NULL) {
    # compute centroids if not provided
@@ -476,9 +554,9 @@ compute_s_dbw <- function(norm.mat,
                                      ident = ident)
    }
    
-   # Initialize a vector to store S_Dbw values per cluster
-   s_dbw_per_cluster <- numeric(length(unique(ident)))
-   names(s_dbw_per_cluster) <- unique(ident)
+   # Initialize a vector to store S.Dbw values per cluster
+   S.Dbw_per_cluster <- numeric(length(unique(ident)))
+   names(S.Dbw_per_cluster) <- unique(ident)
    
    for (cluster in unique(ident)) {
       # Dispersion for the current cluster
@@ -496,11 +574,11 @@ compute_s_dbw <- function(norm.mat,
       )
       
       
-      # Compute S_Dbw for this cluster
-      s_dbw_per_cluster[cluster] <- dispersion + separation
+      # Compute S.Dbw for this cluster
+      S.Dbw_per_cluster[cluster] <- dispersion + separation
    }
    
-   return(s_dbw_per_cluster)
+   return(S.Dbw_per_cluster)
 }
 
 # I Index Calculation
@@ -636,8 +714,10 @@ calculate_IntVal_metric <- function(mat = NULL,
                                   "Leiden.ARI" = compute_leiden(dist, ident, KNNGraph_k, knn, snn, label.conservation = "ARI"),
                                   "inertia" = inertia, 
                                   "Xie-Beni" = compute_xie_beni(norm.mat, ident, centroids, inertia),
-                                  "S_Dbw" = compute_s_dbw(norm.mat, ident, centroids),
+                                  "S.Dbw" = compute_S.Dbw(norm.mat, ident, centroids),
                                   "I" = compute_i_index(norm.mat, ident, centroids),
+                                  "Orbital.centroid" = compute_orbital_proportion(norm.mat, ident, dist, centroids, "centroid"),
+                                  "Orbital.medoid" = compute_orbital_proportion(norm.mat, ident, dist, centroids = NULL, "medoid"),
                                   stop(metric, " is not a supported consistency method.")
       )
    }
