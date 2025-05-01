@@ -1,9 +1,142 @@
 mutual_method <-  c("Mutual.Score", "Mutual.Match")
+classifiers <- c("Spearman_correlation", "SingleR")
+
+get.DEG_logfc <- function(mat,
+                          ident,
+                          ngenes.celltype = NULL,
+                          min.logfc = 1,
+                          pseudo_count = 1e-6) {
+   
+   clusters <- levels(ident)
+   
+   if(is.null(ngenes.celltype)){
+      ngenes.celltype <- floor(500 * (2/3)^log2(length(clusters)))
+   }
+   
+   # Normalize 
+   
+   # Initialize a list to store medians per cluster
+   medians_list <- list()
+   # Compute row medians for each cluster
+   for (cl in clusters) {
+      cols <- which(ident == cl)
+      dense_mat <- as.matrix(mat[, cols, drop = FALSE])
+      medians_list[[cl]] <- apply(dense_mat, 1, median)
+   }
+   
+   # Combine medians into a matrix
+   medians <- do.call(cbind, medians_list)
+   
+   # Initialize marker list
+   markers <- vector("list", length(clusters))
+   names(markers) <- clusters
+   
+   # For each cluster, find top genes based on pairwise log2FC
+   for (cl in clusters) {
+      others <- setdiff(clusters, cl)
+      
+      # Store the maximum logFC against all other clusters
+      logfc_vec <- sapply(others, function(other) {
+         log2((medians[, cl] + pseudo_count) / 
+               (medians[, other] + pseudo_count))
+      })
+      
+      top_de <- lapply(others, function(x){
+        m <- logfc_vec[,x]
+        # keep only FC > min.logfc
+        m <- m[m > min.logfc]
+        # filter lowly expressed genes
+        # cols <- which(ident == x)
+        # emat <- mat[, cols, drop = FALSE]
+        # kg <- rownames(emat[Matrix::rowSums(emat) >= length(cols), ,drop = F])
+        # m <- m[names(m) %in% kg]
+        # sort by FC
+        m <- sort(m, decreasing = TRUE)
+        nge <- min(ngenes.celltype, length(m))
+        names(m[1:nge])
+      }) |>
+         unlist() |>
+         unique()
+      
+      markers[[cl]] <- top_de
+   }
+   return(markers)
+}
+
+
+# function to classify cell type based on query-cells vs ref-cells spearman correlation
+# test and ref must be sparse matrices
+spear_classify <- function(test_mat,
+                           ref_mat,
+                           min.markers = 10,
+                           bparam = BiocParallel::SerialParam()){
+   test <- test_mat@matrix |>
+      Normalize_data()
+   ref <- ref_mat@matrix |>
+      Normalize_data()
+   ref.ident <- ref_mat@ident
+   
+   # Step 0: ensure overlapping genes
+   common_genes <- intersect(rownames(test), rownames(ref))
+   test <- test[common_genes, , drop = FALSE]
+   ref <- ref[common_genes, , drop = FALSE]
+   
+   # Step 1: get DEG markers based only on median log2FC
+   markers <- get.DEG_logfc(ref,
+                            ident = ref.ident)
+   
+   # Step 2: group reference by identity
+   ref_groups <- split(seq_len(ncol(ref)), ref.ident)
+   
+   # Step 3: compute scores per identity
+   scores_list <- 
+      BiocParallel::bplapply(names(ref_groups),
+                             BPPARAM = bparam,
+                             function(ident_name) {
+                                marker_genes <- intersect(markers[[ident_name]], rownames(test))
+                                
+                                if (length(marker_genes) < min.markers) {
+                                   return(rep(NA, ncol(test)))  # skip if too few markers
+                                }
+                                
+                                ref_mat <- ref[marker_genes, ref_groups[[ident_name]], drop = FALSE]
+                                test_mat <- test[marker_genes, , drop = FALSE]
+                                
+                                apply(test_mat, 2, function(test_col) {
+                                   quantile(apply(ref_mat, 2, function(ref_col) {
+                                      # get percentil 80th of correlations
+                                      cor(ref_col, test_col, method = "spearman")
+                                   }), probs = 0.8, na.rm = TRUE)
+                                })
+                             })
+   
+   # Step 4: build score dataframe
+   score_df <- as.data.frame(do.call(cbind, scores_list))
+   colnames(score_df) <- paste0("scores.", names(ref_groups))
+   rownames(score_df) <- colnames(test)
+   
+   # Step 5: predicted label (handling NA rows)
+   score_df$label <- apply(score_df, 1, function(x) {
+      if (all(is.na(x))) {
+         return(NA)
+      } else {
+         names(ref_groups)[which.max(x)]
+      }
+   })
+   
+   return(score_df)
+}
+
+
 
 # code to perform a best-hit classifier based on singleR
 singleR.helper <- function(test,
                            ref,
                            bparam = BiocParallel::SerialParam()){
+   # transform to SCE
+   test <- get.SCE(test)
+   ref <- get.SCE(ref)
+   # SingleR prediction
    pred <- SingleR::SingleR(
       test = test,
       ref = ref,
@@ -13,7 +146,7 @@ singleR.helper <- function(test,
    ) |> 
       as.data.frame() |>
       # condition for when singleR return no results (no label)
-      dplyr::mutate(pruned.labels = ifelse(is.na(pruned.labels),
+      dplyr::mutate(label = ifelse(is.na(pruned.labels),
                                           "_nores_",
                                           pruned.labels
                                     )
@@ -21,7 +154,7 @@ singleR.helper <- function(test,
    return(pred)
 }
 
-singleR.score.tidy <- function(pred,
+score.tidy <- function(pred,
                                .true,
                                filter = TRUE){
    pred <- pred |>
@@ -40,11 +173,11 @@ singleR.score.tidy <- function(pred,
    return(pred)
 }
 
-singleR.score <- function(pred1, true1,
+.score <- function(pred1, true1,
                           pred2, true2){
    
-   pred1 <- singleR.score.tidy(pred1, true1)
-   pred2 <- singleR.score.tidy(pred2, true2)
+   pred1 <- score.tidy(pred1, true1)
+   pred2 <- score.tidy(pred2, true2)
    
    pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
       dplyr::mutate(score = score.x * score.y) |>
@@ -54,11 +187,11 @@ singleR.score <- function(pred1, true1,
    return(pred)
 }
 
-singleR.match.tidy <- function(pred, .true){
+match.tidy <- function(pred, .true){
    pred <- pred |>
-      dplyr::select("pruned.labels") |>
+      dplyr::select("label") |>
       dplyr::mutate(true = .true,
-                    score = ifelse(true == pruned.labels,
+                    score = ifelse(true == label,
                                    1, 0
                     )
       )
@@ -67,11 +200,11 @@ singleR.match.tidy <- function(pred, .true){
 }
 
 
-singleR.match <- function(pred1, pred2,
+.match <- function(pred1, pred2,
                           true1, true2){
    
-   pred1 <- singleR.match.tidy(pred1, true1)
-   pred2 <- singleR.match.tidy(pred2, true2)
+   pred1 <- match.tidy(pred1, true1)
+   pred2 <- match.tidy(pred2, true2)
    
    pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
       dplyr::group_by(true) |>
@@ -136,6 +269,7 @@ bestHit.SingleR <- function(mat,
                             ident_GroundTruth = NULL,
                             sample,
                             method = "Mutual.Score",
+                            classifier = "Spearman_correlation",
                             data.type = "sc",
                             min.cells = 10,
                             min.samples = 5,
@@ -157,14 +291,10 @@ bestHit.SingleR <- function(mat,
                                  sep = sep,
                                  bparam = param)
    
-   sce.list <- BiocParallel::bplapply(mat.split,
-                                      BPPARAM = param,
-                                      get.SCE)
-   
    if(is.null(ident_GroundTruth)){
-      sce.listGT <- sce.list
+      mat.splitGT <- mat.split
    } else {
-      mat.split <- get.MutualMatrix(mat = mat,
+      mat.splitGT <- get.MutualMatrix(mat = mat,
                                     ident = ident_GroundTruth,
                                     sample = sample,
                                     data.type = data.type,
@@ -172,17 +302,22 @@ bestHit.SingleR <- function(mat,
                                     min.samples = min.samples,
                                     sep = sep,
                                     bparam = param)
-      
-      sce.listGT <- BiocParallel::bplapply(mat.split,
-                                           BPPARAM = param,
-                                           get.SCE)
    }
    
    
-   names_list <- names(sce.list)
+   names_list <- names(mat.split)
    # Create combinations and ensure columns are not factors
-   combis <- expand.grid(names_list, names_list, stringsAsFactors = FALSE) |>
+   combis <- expand.grid(names_list,
+                         names_list,
+                         stringsAsFactors = FALSE) |>
       dplyr::filter(Var1 < Var2)
+   
+   # set classifier
+   classifier <- switch(classifier,
+                        "Spearman_correlation" = spear_classify,
+                        "SingleR" = singleR.helper,
+                        stop(classifier, " classifier not supported")
+   )
    
    df.tmp <- list()
    
@@ -192,27 +327,31 @@ bestHit.SingleR <- function(mat,
       
       # if reference consist of only one cell, singleR do not return score
       # but all cells are classified as this unique cell with score of 1
-      nc <- lapply(sce.listGT[c(a,b)],
-                   function(x){length(unique(x$ident))})
+      nc <- lapply(mat.splitGT[c(a,b)],
+                   function(x){length(unique(x@ident))})
       if(any(nc < 2)){ next }
       
-      pred1 <- singleR.helper(sce.list[[a]],sce.listGT[[b]],bparam = param)
-      pred2 <- singleR.helper(sce.list[[b]],sce.listGT[[a]], bparam = param)
+      pred1 <- classifier(mat.split[[a]],
+                          mat.splitGT[[b]],
+                          bparam = param)
+      pred2 <- classifier(mat.split[[b]],
+                          mat.splitGT[[a]],
+                          bparam = param)
       
       # original annotations to compare with predictions
-      true1 <- sce.list[[a]]$ident
-      true2 <- sce.list[[b]]$ident
+      true1 <- mat.split[[a]]@ident
+      true2 <- mat.split[[b]]@ident
       
       results <- BiocParallel::bplapply(method,
                                         BPPARAM = param,
                                         function(meth){
       
        r <- switch(meth,
-                   "Mutual.Score" = singleR.score(pred1 = pred1,
+                   "Mutual.Score" = .score(pred1 = pred1,
                                                   pred2 = pred2,
                                                   true1 = true1,
                                                   true2 = true2),
-                   "Mutual.Match" = singleR.match(pred1 = pred1,
+                   "Mutual.Match" = .match(pred1 = pred1,
                                                   pred2 = pred2,
                                                   true1 = true1,
                                                   true2 = true2),

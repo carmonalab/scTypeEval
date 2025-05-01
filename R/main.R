@@ -709,11 +709,14 @@ Run.Consistency <- function(scTypeEval,
 #' annotations. Default is `NULL`, which uses the active identity in `scTypeEval`.
 #' @param ident_GroundTruth (Optional) A character string specifying the metadata column 
 #' containing the ground truth annotations. Default is `NULL`, meaning `ident` is used.
-#' @param method A character vector specifying which Mutual Best Hit method(s) to use. 
+#' @param method A character vector specifying which Mutual Best Hit method(s) quantification to use. 
 #'   Supported options, by default both are run if possible:
 #'   - `"Mutual.Score"`: Computes the product of reciprocal prediction scores from classifier per cell type.
 #'   - `"Mutual.Match"`: Calculates the normalized proportion of reciprocal matches. 
 #'   between the two sample classifications per cell type. Only supported by `"pseudobulk"` data.type.
+#' @param classifier Method to classify or annotated cell type. Supported option are:
+#'   - `Spearman_correlation`: Assigns cell types by computing the Spearman correlation between each cell's expression profile and reference profiles (e.g., averaged marker gene expression per cell type). The label with the highest correlation is assigned.
+#'   - \link[SingleR]{SingleR}: Automatic annotation method introduced by Aran et al., 2019 [\doi{10.1038/s41590-018-0276-y}], implemented in \link[SingleR]{SingleR}. Compares each cell to reference datasets and assigns the most similar cell type label.
 #' @param sample A character string specifying the metadata column that identifies sample IDs. 
 #' This is required for consistency evaluation.
 #' @param data.type Character. Type of data input to perform.
@@ -737,7 +740,7 @@ Run.Consistency <- function(scTypeEval,
 #' @param verbose Logical. Whether to print messages during execution. Default: `TRUE`.
 #'
 #' @details
-#' This function uses \link[SingleR]{SingleR} to assess inter-sample reciprocal similarity, results are stored 
+#' This function uses a classifier to assess inter-sample reciprocal similarity, results are stored 
 #' within `scTypeEval` \code{consistency} slot.
 #'
 #' @return An updated `scTypeEval` object containing the consistency evaluation results. 
@@ -761,6 +764,7 @@ Run.BestHit <- function(scTypeEval,
                         ident = NULL,
                         ident_GroundTruth = NULL,
                         method = c("Mutual.Score", "Mutual.Match"),
+                        classifier = c("SingleR", "Spearman_correlation"),
                         sample = NULL,
                         data.type = "sc",
                         gene.list = NULL,
@@ -834,7 +838,15 @@ Run.BestHit <- function(scTypeEval,
    
    # set methods
    if(any(!method %in% mutual_method)){
-      stop("Not supported consistency metrics, please provide both or either: ", mutual_method)
+      stop("Not supported Best Hit metrics, please provide both or either: ",
+           paste(mutual_method, collapse = ", "))
+   }
+   
+   # set classifier
+   classifier <- classifier[1]
+   if(!classifier %in% classifiers){
+      stop("Not supported classifier, please provide either: ",
+           paste(classifiers, collapse = ", "))
    }
    
    if(data.type == "sc" && "Mutual.Match" %in% method){
@@ -864,6 +876,7 @@ Run.BestHit <- function(scTypeEval,
                                                     sample = sample,
                                                     data.type = data.type,
                                                     method = method,
+                                                    classifier = classifier,
                                                     min.cells = min.cells,
                                                     min.samples = min.samples,
                                                     bparam = param)
