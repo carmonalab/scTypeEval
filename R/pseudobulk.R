@@ -195,7 +195,7 @@ valid.sc <- function(mat,
    
    ret <- new("Mat_ident",
               matrix = mat,
-              ident = new.ident)
+              ident = factor(new.ident))
    
    return(ret)
 }

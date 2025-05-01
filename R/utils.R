@@ -55,7 +55,7 @@ split_matrix <- function(mat,
                                            new.ident <- ident[sample == s]
                                            
                                            ret <- valid.sc(mat = new.mat,
-                                                           ident = new.ident,
+                                                           ident = factor(new.ident),
                                                            min.cells = min.cells)
                                            
                                            return(ret)
