@@ -306,11 +306,12 @@ bestHit.SingleR <- function(mat,
    
    
    names_list <- names(mat.split)
-   # Create combinations and ensure columns are not factors
-   combis <- expand.grid(names_list,
-                         names_list,
-                         stringsAsFactors = FALSE) |>
-      dplyr::filter(Var1 < Var2)
+   idx <- expand.grid(i = seq_along(names_list),
+                      j = seq_along(names_list)) |>
+      filter(i < j)
+   
+   combis <- data.frame(Var1 = names_list[idx$i],
+                        Var2 = names_list[idx$j])
    
    # set classifier
    classifier <- switch(classifier,
