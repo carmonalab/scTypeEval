@@ -65,9 +65,12 @@ compute_orbital_proportion <- function(norm.mat,
    )
    
    # Compute distance between all samples and representatives
-   d_to_reps <- as.matrix(proxy::dist(as.matrix(Matrix::t(norm.mat)),
-                                      t(reps),
-                                      method = "euclidean"))
+   x <- as.matrix(Matrix::t(norm.mat))
+   y <- as.matrix(reps)
+   # Compute pairwise Euclidean distances
+   d_to_reps <- sqrt(
+      outer(rowSums(x^2), colSums(y^2), "+") - 2 * x %*% y
+   )
    
    # Rows: samples, Columns: cluster representatives
    own_clusters <- as.character(ident)
