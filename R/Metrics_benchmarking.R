@@ -1126,31 +1126,30 @@ wr.assayPlot <- function(df,
                          verbose = TRUE,
                          x.label = "rate",
                          trim = 0,
-                         title = "", 
-                         combine = T){
+                         title = "",
+                         combine = TRUE){
    
-   rsq <- df |> 
-      dplyr::group_by(gene.list, data.type, consistency.metric, rate) |> 
+   rsq <- df |>
+      dplyr::group_by(gene.list, data.type, consistency.metric, rate) |>
       dplyr::summarize(mm = mean(scaled_measure,
-                          trim = trim)) |> 
+                                 trim = trim)) |>
       dplyr::group_by(gene.list, data.type, consistency.metric)
    
    type <- type[1]
    
-   
    if(type == 1){
       rsq <- rsq |>
          dplyr::summarize(r.squared = round(fit.ReferenceLine(x = rate, y = mm)$r.squared, 3),
-                   pval = round(fit.ReferenceLine(x = rate, y = mm)$p.value, 3),
-                   p.val_fill = ifelse(pval < 0.05, "sig", "ns")
+                          pval = round(fit.ReferenceLine(x = rate, y = mm)$p.value, 3),
+                          p.val_fill = ifelse(pval < 0.05, "sig", "ns")
          )
       type.verb <- "fit.ReferenceLine, expecting a perfect curve of intercept = 0 and slope = 1\n"
       
    } else if (type == 2){
       rsq <- rsq |>
          dplyr::summarize(r.squared = round(fit.Constant(x = as.numeric(rate), y = mm)$`1-rss`, 3),
-                   pval = round(fit.Constant(x = as.numeric(rate), y = mm)$p.value, 3),
-                   p.val_fill = ifelse(pval < 0.05, "sig", "ns")
+                          pval = round(fit.Constant(x = as.numeric(rate), y = mm)$p.value, 3),
+                          p.val_fill = ifelse(pval < 0.05, "sig", "ns")
          )
       type.verb <- "fit.Constant, expecting a flat curve with slope = 0\n"
    }
@@ -1166,57 +1165,57 @@ wr.assayPlot <- function(df,
       )
       
       for(d in dts){
-         dftmp <- df |> 
+         dftmp <- df |>
             dplyr::filter(data.type == d)
-         rsqtmp <- rsq |> 
+         rsqtmp <- rsq |>
             dplyr::filter(data.type == d)
          
          ncol <- length(unique(dftmp[["consistency.metric"]]))
          
-         plc <- dftmp |> 
-            ggplot(aes(rate, scaled_measure)) +
-            geom_point(aes(color = celltype),
-                       shape = 1) +
-            stat_summary(aes(group = consistency.metric),
-                         geom = "line",
-                         fun = function(y){mean(y, trim = trim)})+
-            stat_summary(aes(group = consistency.metric),
-                         geom = "point",
-                         fun = function(y){mean(y, trim = trim)}) +
-            stat_summary(aes(group = consistency.metric),
-                         geom = "errorbar",
-                         fun.data = function(y){trim_mean_se(y, trim = trim)},  # Use mean and standard error
-                         width = 0.05) +  # Adjust the width of error bars
-            geom_label(data = rsqtmp,
-                       aes(x = range.x[1] + 0.2, y = 1.2,
-                           label = r.squared,
-                           fill = r.squared),
-                       alpha = 0.4,
-                       show.legend = F) +
-            geom_label(data = rsqtmp,
-                       aes(x = (range.x[2] - 0.2), y = 1.2,
-                           label = pval),
-                       fill = "white",
-                       alpha = 0.4,
-                       show.legend = F) + 
-            scale_fill_gradient(low = "red", high = "chartreuse3",
-                                breaks = c(-100, -50, 0, 0.25, 0.5, 0.50, 0.75, 1)) +
-            geom_hline(yintercept = 1,
-                       linetype = "dotted") +
-            facet_wrap(~consistency.metric,
-                       ncol =  ncol,
-                       drop = F) +
-            labs(x = x.label,
-                 title = d) +
-            ylim(c(0,1.3)) +
+         plc <- dftmp |>
+            ggplot2::ggplot(ggplot2::aes(rate, scaled_measure)) +
+            ggplot2::geom_point(ggplot2::aes(color = celltype),
+                                shape = 1) +
+            ggplot2::stat_summary(ggplot2::aes(group = consistency.metric),
+                                  geom = "line",
+                                  fun = function(y){mean(y, trim = trim)}) +
+            ggplot2::stat_summary(ggplot2::aes(group = consistency.metric),
+                                  geom = "point",
+                                  fun = function(y){mean(y, trim = trim)}) +
+            ggplot2::stat_summary(ggplot2::aes(group = consistency.metric),
+                                  geom = "errorbar",
+                                  fun.data = function(y){trim_mean_se::trim_mean_se(y, trim = trim)},  # Use mean and standard error
+                                  width = 0.05) +  # Adjust the width of error bars
+            ggplot2::geom_label(data = rsqtmp,
+                                ggplot2::aes(x = range.x[1] + 0.2, y = 1.2,
+                                    label = r.squared,
+                                    fill = r.squared),
+                                alpha = 0.4,
+                                show.legend = FALSE) +
+            ggplot2::geom_label(data = rsqtmp,
+                                ggplot2::aes(x = (range.x[2] - 0.2), y = 1.2,
+                                    label = pval),
+                                fill = "white",
+                                alpha = 0.4,
+                                show.legend = FALSE) + 
+            ggplot2::scale_fill_gradient(low = "red", high = "chartreuse3",
+                                         breaks = c(-100, -50, 0, 0.25, 0.5, 0.50, 0.75, 1)) +
+            ggplot2::geom_hline(yintercept = 1,
+                                linetype = "dotted") +
+            ggplot2::facet_wrap(~consistency.metric,
+                                ncol =  ncol,
+                                drop = FALSE) +
+            ggplot2::labs(x = x.label,
+                          title = d) +
+            ggplot2::ylim(c(0,1.3)) +
             ggpubr::theme_classic2() +
-            theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust =1))
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, vjust =1))
          
          pls[[d]] <- plc
       }
       
       if(combine){
-         plg <- ggpubr::ggarrange(plotlist = pls, ncol = 1, common.legend = T)
+         plg <- ggpubr::ggarrange(plotlist = pls, ncol = 1, common.legend = TRUE)
          plg <- ggpubr::annotate_figure(plg, top = ggpubr::text_grob(title, 
                                                                      color = "darkblue",
                                                                      face = "bold",
@@ -1230,3 +1229,4 @@ wr.assayPlot <- function(df,
       return(as.data.frame(rsq))
    }
 }
+
