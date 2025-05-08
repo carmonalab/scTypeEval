@@ -1,20 +1,19 @@
-
 downsample_factors <- function(df, factor_col, threshold, seed = 22) {
    set.seed(seed) # Set seed for reproducibility
    
    # Group by the factor column and apply downsampling
-   df_downsampled <- df |>
+   df_downsampled <- df |> 
       tibble::rownames_to_column("cellid") |> 
-      group_by(!!sym(factor_col)) |>
-      group_map(~ {
-         if (nrow(.x) > threshold) {
-            .x[sample(nrow(.x), threshold), ] # Randomly sample rows if exceeding threshold
-         } else {
-            .x # Keep all rows if below threshold
-         }
-      }, .keep = TRUE) |> # Ensure the grouping column is kept
-      bind_rows() |>
-      ungroup() |> 
+      dplyr::group_by(!!rlang::sym(factor_col)) |> 
+      dplyr::group_map(~ { 
+         if (nrow(.x) > threshold) { 
+            .x[sample(nrow(.x), threshold), ] # Randomly sample rows if exceeding threshold 
+         } else { 
+            .x # Keep all rows if below threshold 
+         } 
+      }, .keep = TRUE) |> # Ensure the grouping column is kept 
+      dplyr::bind_rows() |> 
+      dplyr::ungroup() |> 
       tibble::column_to_rownames("cellid")
    
    return(df_downsampled)
@@ -24,35 +23,32 @@ downsample_factor_level <- function(df, factor_col, level, threshold, seed = 22)
    set.seed(seed) # Set seed for reproducibility
    
    # Split the dataframe into the target level and the rest
-   target_df <- df |> filter(!!sym(factor_col) == level)
-   rest_df <- df |> filter(!!sym(factor_col) != level)
+   target_df <- df |> dplyr::filter(!!rlang::sym(factor_col) == level)
+   rest_df <- df |> dplyr::filter(!!rlang::sym(factor_col) != level)
    
    # Downsample the target level if it exceeds the threshold
    if (nrow(target_df) > threshold) {
       target_df <- target_df |> 
-         slice_sample(n = threshold)
+         dplyr::slice_sample(n = threshold)
    }
    
    # Combine the downsampled target level with the rest of the data
-   result_df <- bind_rows(target_df, rest_df)
+   result_df <- dplyr::bind_rows(target_df, rest_df)
    
    return(result_df)
 }
 
-
-
 rand.shuffling <- function(vector,
                            rate = 0.1, # proportion of labels to shuffle
                            prob = NULL,
-                           seed = 22
-){
+                           seed = 22) {
    set.seed(seed)
    
    # Calculate the number of labels to shuffle
    n <- length(vector)
    shuffle_n <- round(n * rate)
    
-   # get the proportions of cells
+   # Get the proportions of cells
    proportions_cells <- table(vector) |> prop.table()
    
    # Indices to shuffle
@@ -63,20 +59,19 @@ rand.shuffling <- function(vector,
    
    # Ensure no value remains in its original label
    shuffled_values <- original_values
-   while(any(shuffled_values == original_values)) {
+   while (any(shuffled_values == original_values)) {
       ind_diff <- shuffled_values == original_values
-      if(is.null(prob)){
+      if (is.null(prob)) {
          shuffled_values[ind_diff] <- sample(vector,
                                              length(shuffled_values[ind_diff]),
-                                             replace = T)
+                                             replace = TRUE)
       } else {
-         
          # Create a matrix of probabilities for each value
          prob_matrix <- sapply(unique(vector), function(l) {
             prob.custom <- prob[, as.character(l)]
             prob.custom <- 1 / prob.custom
             prob.custom[is.infinite(prob.custom)] <- 0
-            # get weights best on distance to centroids and proportions
+            # Get weights based on distance to centroids and proportions
             prob.custom <- prob.custom * proportions_cells
             # Normalize probabilities
             prob.custom <- prob.custom / sum(prob.custom)
@@ -87,18 +82,16 @@ rand.shuffling <- function(vector,
          
          svals <- shuffled_values[ind_diff]
          
-         for(l in unique(svals)){
+         for (l in unique(svals)) {
             svals[svals == l] <- sample(unique(vector),
                                         length(svals[svals == l]),
-                                        replace = T,
-                                        prob = prob_matrix[,l])
+                                        replace = TRUE,
+                                        prob = prob_matrix[, l])
          }
-         
          
          shuffled_values[ind_diff] <- svals
       }
    }
-   
    
    # Replace original values with shuffled values
    vector[shuffle_indices] <- shuffled_values
@@ -106,11 +99,9 @@ rand.shuffling <- function(vector,
    return(vector)
 }
 
-
 rand.shuffling2 <- function(vector,
                             rate = 0.1, # proportion of labels to shuffle
-                            seed = 22
-){
+                            seed = 22) {
    set.seed(seed)
    
    nvector <- vector
@@ -124,16 +115,15 @@ rand.shuffling2 <- function(vector,
    return(nvector)
 }
 
-
 df.missclassify <- function(metadata,
                             annotations,
                             rates,
-                            prefix = "R-"){
-   for(a in annotations){
+                            prefix = "R-") {
+   for (a in annotations) {
       original_vector <- metadata[[a]]
       
-      for(r in rates){
-         ra <- 1-r # proportion of cells to shuffle
+      for (r in rates) {
+         ra <- 1 - r # proportion of cells to shuffle
          new_vector <- rand.shuffling(original_vector,
                                       rate = ra)
          new_name <- paste0("R-", r, "_", a)
@@ -168,7 +158,6 @@ geo_mean <- function(x) {
    exp(mean(log(x)))
 }
 
-
 geo_mean_se <- function(x) {
    # Replace zeros with a small positive value
    x[x == 0] <- 1e-10
@@ -187,7 +176,6 @@ geo_mean_se <- function(x) {
       ymax = geo_mean + se
    ))
 }
-
 
 
 # wrapper to evaluate the missclassifiction rate 
@@ -233,8 +221,7 @@ wr.missclasify <- function(count_matrix,
       }
    }
    
-   
-   # produce missclassificaiton on metadata
+   # produce missclassification on metadata
    # get seed for each replicate
    sds <- seed + 1:replicates
    names(sds) <- 1:replicates
@@ -299,14 +286,14 @@ wr.missclasify <- function(count_matrix,
       
       # accommodate extra data
       res <- res |>
-         dplyr::mutate(rep = strsplit(ann, "_")[[1]][2],
-                       rate = as.numeric(strsplit(ann, "_")[[1]][3]),
+         dplyr::mutate(rep = stringr::str_split(ann, "_")[[1]][2],
+                       rate = as.numeric(stringr::str_split(ann, "_")[[1]][3])
          )
       df.res[[ann]] <- res
       
       # render PCAs
       # only produce for one replicate of the seeds
-      if(strsplit(ann, "_")[[1]][2] != 1) {next}
+      if(stringr::str_split(ann, "_")[[1]][2] != 1) {next}
       # save pdf if indicated
       if(save.PCA){
          
@@ -329,7 +316,6 @@ wr.missclasify <- function(count_matrix,
                        progressbar = progressbar,
                        verbose = verbose)
          pcas[[ann]] <- pcs
-         
          
          for (p in names(pcs)){
             pdf(file.path(pca.dir, paste0(p, "_", ann, ".pdf")),
@@ -1144,17 +1130,17 @@ wr.assayPlot <- function(df,
                          combine = T){
    
    rsq <- df |> 
-      group_by(gene.list, data.type, consistency.metric, rate) |> 
-      summarize(mm = mean(scaled_measure,
+      dplyr::group_by(gene.list, data.type, consistency.metric, rate) |> 
+      dplyr::summarize(mm = mean(scaled_measure,
                           trim = trim)) |> 
-      group_by(gene.list, data.type, consistency.metric)
+      dplyr::group_by(gene.list, data.type, consistency.metric)
    
    type <- type[1]
    
    
    if(type == 1){
       rsq <- rsq |>
-         summarize(r.squared = round(fit.ReferenceLine(x = rate, y = mm)$r.squared, 3),
+         dplyr::summarize(r.squared = round(fit.ReferenceLine(x = rate, y = mm)$r.squared, 3),
                    pval = round(fit.ReferenceLine(x = rate, y = mm)$p.value, 3),
                    p.val_fill = ifelse(pval < 0.05, "sig", "ns")
          )
@@ -1162,7 +1148,7 @@ wr.assayPlot <- function(df,
       
    } else if (type == 2){
       rsq <- rsq |>
-         summarize(r.squared = round(fit.Constant(x = as.numeric(rate), y = mm)$`1-rss`, 3),
+         dplyr::summarize(r.squared = round(fit.Constant(x = as.numeric(rate), y = mm)$`1-rss`, 3),
                    pval = round(fit.Constant(x = as.numeric(rate), y = mm)$p.value, 3),
                    p.val_fill = ifelse(pval < 0.05, "sig", "ns")
          )
@@ -1181,9 +1167,9 @@ wr.assayPlot <- function(df,
       
       for(d in dts){
          dftmp <- df |> 
-            filter(data.type == d)
+            dplyr::filter(data.type == d)
          rsqtmp <- rsq |> 
-            filter(data.type == d)
+            dplyr::filter(data.type == d)
          
          ncol <- length(unique(dftmp[["consistency.metric"]]))
          
