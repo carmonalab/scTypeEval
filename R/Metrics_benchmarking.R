@@ -288,8 +288,10 @@ wr.missclasify <- function(count_matrix,
       
       # accommodate extra data
       res <- res |>
-         dplyr::mutate(rep = stringr::str_split(ann, "_")[[1]][2],
-                       rate = as.numeric(stringr::str_split(ann, "_")[[1]][3])
+         dplyr::mutate(rate = as.numeric(as.character(strsplit(ns, "_")[[1]][3])),
+                       rep = strsplit(ann, "_")[[1]][2],
+                       original.ident = ident,
+                       task = "Missclassification"
          )
       df.res[[ann]] <- res
       
@@ -461,8 +463,10 @@ wr.NSamples <- function(count_matrix,
       
       # accommodate extra data
       res <- res |>
-         dplyr::mutate(rep = strsplit(ns, "_")[[1]][2],
-                       rate = as.numeric(strsplit(ns, "_")[[1]][3]),
+         dplyr::mutate(rate = as.numeric(as.character(strsplit(ns, "_")[[1]][3])),
+                       rep = strsplit(ns, "_")[[1]][2],
+                       original.ident = ident,
+                       task = "NSamples"
          )
       df.res[[ns]] <- res
       
@@ -626,8 +630,10 @@ wr.Nct <- function(count_matrix,
             
             # accommodate extra data
             res <- res |>
-               dplyr::mutate(rep = NA,
-                             rate = ns
+               dplyr::mutate(rate = ns,
+                             rep = NA,
+                             original.ident = ident,
+                             task = "NSamples"
                )
             df.res[[ns]] <- res
             
@@ -677,7 +683,8 @@ wr.Nct <- function(count_matrix,
    df.res <- do.call(rbind, df.res) |>
       # convert to factor to then compute the fit.constant
       dplyr::mutate(rate = factor(rate,
-                                  levels = names(cts)))
+                                  levels = names(cts))
+                    )
    
    if(!is.null(dir)){
       saveRDS(df.res,
@@ -814,8 +821,10 @@ wr.NCell <- function(count_matrix,
          
          # accommodate extra data
          res <- res |>
-            dplyr::mutate(rep = s,
-                          rate = as.numeric(ns)
+            dplyr::mutate(rate = as.numeric(as.character(ns)),
+                          rep = s,
+                          original.ident = ident,
+                          task = "NCell"
             )
          df.res[[nn]] <- res
          
@@ -1072,8 +1081,11 @@ wr.mergeCT <- function(count_matrix,
       
       # accommodate extra data
       res <- res |>
-         dplyr::mutate(rate = as.numeric(strsplit(ann, "_")[[1]][2]),
-                       rep = NA
+         dplyr::mutate(
+            rate = as.numeric(as.character(strsplit(ns, "_")[[1]][2])),
+            rep = NA,
+            original.ident = ident,
+            task = "mergeCT"
          )
       df.res[[ann]] <- res
       
