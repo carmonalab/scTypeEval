@@ -9,6 +9,7 @@ Run.BestHit(
   ident = NULL,
   ident_GroundTruth = NULL,
   method = c("Mutual.Score", "Mutual.Match"),
+  classifier = c("SingleR", "Spearman_correlation"),
   sample = NULL,
   data.type = "sc",
   gene.list = NULL,
@@ -30,12 +31,18 @@ annotations. Default is \code{NULL}, which uses the active identity in \code{scT
 \item{ident_GroundTruth}{(Optional) A character string specifying the metadata column
 containing the ground truth annotations. Default is \code{NULL}, meaning \code{ident} is used.}
 
-\item{method}{A character vector specifying which Mutual Best Hit method(s) to use.
+\item{method}{A character vector specifying which Mutual Best Hit method(s) quantification to use.
 Supported options, by default both are run if possible:
 \itemize{
 \item \code{"Mutual.Score"}: Computes the product of reciprocal prediction scores from classifier per cell type.
 \item \code{"Mutual.Match"}: Calculates the normalized proportion of reciprocal matches.
 between the two sample classifications per cell type. Only supported by \code{"pseudobulk"} data.type.
+}}
+
+\item{classifier}{Method to classify or annotated cell type. Supported option are:
+\itemize{
+\item \code{Spearman_correlation}: Assigns cell types by computing the Spearman correlation between each cell's expression profile and reference profiles (e.g., averaged marker gene expression per cell type). The label with the highest correlation is assigned.
+\item \link[SingleR]{SingleR}: Automatic annotation method introduced by Aran et al., 2019 \link{\doi{10.1038/s41590-018-0276-y}}, implemented in \link[SingleR]{SingleR}. Compares each cell to reference datasets and assigns the most similar cell type label.
 }}
 
 \item{sample}{A character string specifying the metadata column that identifies sample IDs.
@@ -79,7 +86,7 @@ using a Mutual Best Hit approach. It applies a classifier bidirectionally betwee
 sample pairs to assess inter-sample reciprocal similarity.
 }
 \details{
-This function uses \link[SingleR]{SingleR} to assess inter-sample reciprocal similarity, results are stored
+This function uses a classifier to assess inter-sample reciprocal similarity, results are stored
 within \code{scTypeEval} \code{consistency} slot.
 }
 \examples{

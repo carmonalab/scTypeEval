@@ -17,6 +17,7 @@ Run.scTypeEval(
   IntVal.metric = c("silhouette", "NeighborhoodPurity", "ward.PropMatch",
     "Leiden.PropMatch", "modularity"),
   BH.method = c("Mutual.Score", "Mutual.Match"),
+  classifier = c("SingleR", "Spearman_correlation"),
   data.type = c("sc", "pseudobulk", "pseudobulk_1vsall"),
   min.samples = 5,
   min.cells = 10,
@@ -59,6 +60,12 @@ See \link[Run.Consistency]{Run.Consistency} for details.}
 \item{BH.method}{A character vector specifying Mutual Best Hit methods.
 Options: \code{"Mutual.Score"} and \code{"Mutual.Match"}, by default both are run if posssible.
 See \link[Run.BestHit]{Run.BestHit} for details.}
+
+\item{classifier}{Method to classify or annotated cell type. Supported option are:
+\itemize{
+\item \code{Spearman_correlation}: Assigns cell types by computing the Spearman correlation between each cell's expression profile and reference profiles (e.g., averaged marker gene expression per cell type). The label with the highest correlation is assigned.
+\item \link[SingleR]{SingleR}: Automatic annotation method introduced by Aran et al., 2019 \link{\doi{10.1038/s41590-018-0276-y}}, implemented in \link[SingleR]{SingleR}. Compares each cell to reference datasets and assigns the most similar cell type label.
+}}
 
 \item{data.type}{A character vector specifying the type(s) of data input. If multiple are provided, all of them will be run recursively if supported.
 By default all are run. Options:
