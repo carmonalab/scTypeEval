@@ -268,3 +268,61 @@ var_PCA <- function(pca_embeddings){
 
    return(variance_explained)
 }
+
+# function to load single-cell objects
+load_sc <- function(path,
+                    split = TRUE) {
+   
+   if (!file.exists(path)) stop("File does not exist: ", path)
+   
+   # Initialize
+   object <- NULL
+   counts <- NULL
+   metadata <- NULL
+   
+   if (grepl("rds$", path)) {
+      object <- readRDS(path)
+      
+      if (inherits(object, "Seurat")) {
+         rcounts <- Seurat::GetAssayData(object,
+                                         assay = "RNA",
+                                         slot = "counts")
+         counts <- as(rcounts, "dgCMatrix")
+         metadata <- as.data.frame(object@meta.data)
+         
+      } else if (inherits(object, "SingleCellExperiment")) {
+         rcounts <- SummarizedExperiment::assay(object, "counts")
+         counts <- as(rcounts, "dgCMatrix")
+         metadata <- as.data.frame(SummarizedExperiment::colData(object))
+         
+      } else {
+         stop("Unsupported .rds object type: ", class(object))
+      }
+      
+   } else if (grepl("h5ad$", path)) {
+      if (!requireNamespace("anndata", quietly = TRUE)) {
+         stop("The 'anndata' package is required to read .h5ad files. Please install it.")
+      }
+      
+      object <- anndata::read_h5ad(path)
+      
+      if (!"counts" %in% names(object$layers)) {
+         stop("The .h5ad file does not contain a 'counts' layer.")
+      }
+      
+      rcounts <- Matrix::t(object$layers[["counts"]])
+      counts <- as(as(rcounts, "CsparseMatrix"), "dgCMatrix")
+      metadata <- as.data.frame(object$obs)
+      
+   } else {
+      stop("Unsupported file format. Please provide a .rds or .h5ad file.")
+   }
+   
+   if (split) {
+      return(list(counts = counts,
+                  metadata = metadata))
+   } else {
+      return(object)
+   }
+}
+
