@@ -567,6 +567,7 @@ wr.Nct <- function(count_matrix,
    
    # get all possible combinations
    allcts <- unique(metadata[[ident]])
+   allcts <- allcts[!is.na(allcts)]
    
    # Generate combinations of lengths 2 to n-1
    cts <- lapply(2:length(allcts),
