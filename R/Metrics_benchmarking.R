@@ -214,11 +214,11 @@ wr.missclasify <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
-      dir.create(dir)
+      dir.create(dir, showWarnings = F)
       
       if(save.PCA){
          pca.dir <- file.path(dir, "PCA_Missclassify")
-         dir.create(pca.dir)
+         dir.create(pca.dir, showWarnings = F)
       }
    }
    
@@ -288,7 +288,7 @@ wr.missclasify <- function(count_matrix,
       
       # accommodate extra data
       res <- res |>
-         dplyr::mutate(rate = as.numeric(as.character(strsplit(ns, "_")[[1]][3])),
+         dplyr::mutate(rate = as.numeric(as.character(strsplit(ann, "_")[[1]][3])),
                        rep = strsplit(ann, "_")[[1]][2],
                        original.ident = ident,
                        task = "Missclassification"
@@ -384,11 +384,11 @@ wr.NSamples <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
-      dir.create(dir)
+      dir.create(dir, showWarnings = F)
       
       if(save.PCA){
          pca.dir <- file.path(dir, "PCA_NSamples")
-         dir.create(pca.dir)
+         dir.create(pca.dir, showWarnings = F)
       }
    }
    
@@ -556,11 +556,11 @@ wr.Nct <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("Results will be stored at ", dir)}
-      dir.create(dir)
+      dir.create(dir, showWarnings = F)
       
       if(save.PCA){
          pca.dir <- file.path(dir, "PCA_Nct")
-         dir.create(pca.dir)
+         dir.create(pca.dir, showWarnings = F)
       }
    }
    
@@ -736,11 +736,11 @@ wr.NCell <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
-      dir.create(dir)
+      dir.create(dir, showWarnings = F)
       
       if(save.PCA){
          pca.dir <- file.path(dir, "PCA_NCell")
-         dir.create(pca.dir)
+         dir.create(pca.dir, showWarnings = F)
       }
    }
    
@@ -973,11 +973,11 @@ wr.mergeCT <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
-      dir.create(dir)
+      dir.create(dir, showWarnings = F)
       
       if(save.PCA){
          pca.dir <- file.path(dir, "PCA_mergeCT")
-         dir.create(pca.dir)
+         dir.create(pca.dir, showWarnings = F)
       }
    }
    
@@ -1082,7 +1082,7 @@ wr.mergeCT <- function(count_matrix,
       # accommodate extra data
       res <- res |>
          dplyr::mutate(
-            rate = as.numeric(as.character(strsplit(ns, "_")[[1]][2])),
+            rate = as.numeric(as.character(strsplit(ann, "_")[[1]][2])),
             rep = NA,
             original.ident = ident,
             task = "mergeCT"
