@@ -286,7 +286,7 @@ load_sc <- function(path,
       if (inherits(object, "Seurat")) {
          rcounts <- Seurat::GetAssayData(object,
                                          assay = "RNA",
-                                         slot = "counts")
+                                         layer = "counts")
          counts <- as(rcounts, "dgCMatrix")
          metadata <- as.data.frame(object@meta.data)
          
