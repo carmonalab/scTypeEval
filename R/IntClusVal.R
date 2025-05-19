@@ -385,9 +385,9 @@ compute_leiden <- function(dist,
                            knn = NULL,
                            snn = NULL,
                            initial_resolution = 1e-3,
-                           resolution_range = c(1e-4, 10),
+                           resolution_range = c(1e-4, 200),
                            tolerance = 1,
-                           max_iter = 500,
+                           max_iter = 1000,
                            debug = FALSE,
                            label.conservation = "PropMatch") {
    
@@ -438,7 +438,8 @@ compute_leiden <- function(dist,
    
    # Step 4: Check for convergence
    if (abs(num_clusters - target_clusters) > tolerance) {
-      stop("Leiden algorithm could not converge to the target number of clusters. Consider adjusting KNNGraph_k or resolution_range.")
+      warning("Leiden algorithm could not converge to the target number of clusters. Consider adjusting KNNGraph_k or resolution_range.")
+      return(NA)
    }
    
    # Step 5: Compute probability match
