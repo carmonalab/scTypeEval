@@ -155,8 +155,8 @@ singleR.helper <- function(test,
 }
 
 score.tidy <- function(pred,
-                               .true,
-                               filter = TRUE){
+                       .true,
+                       filter = TRUE){
    pred <- pred |>
       dplyr::select(dplyr::starts_with("score")) |>  
       dplyr::mutate(true = .true) |>
@@ -259,7 +259,7 @@ get.SCE <-  function(m){
       assays = list(counts = m@matrix),
       colData = data.frame(ident = m@ident)
    )
-   sce <- sce[,Matrix::colSums(SingleCellExperiment::counts(sce)) > 0] # Remove libraries with no counts.
+   #sce <- sce[,Matrix::colSums(SingleCellExperiment::counts(sce)) > 0] # Remove libraries with no counts.
    sce <- scuttle::logNormCounts(sce)
    return(sce)
 }
