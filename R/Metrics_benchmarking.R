@@ -259,78 +259,82 @@ wr.missclasify <- function(count_matrix,
       sc@gene.lists <- gene.list
    }
    
-   df.res <- list()
-   pcas <- list()
-   ## run scTypeEval
-   for(ann in annotations){
-      res <- Run.scTypeEval(scTypeEval = sc,
-                            ident = ann,
-                            ident_GroundTruth = ident,
-                            sample = sample,
-                            normalization.method = normalization.method,
-                            gene.list = NULL, # Run all gene.lists in the object
-                            pca = pca,
-                            ndim = ndim,
-                            distance.method = distance.method,
-                            IntVal.metric = IntVal.metric,
-                            BH.method = BH.method,
-                            classifier = classifier,
-                            data.type = data.type,
-                            min.samples = min.samples,
-                            min.cells = min.cells,
-                            k.sc = k.sc,
-                            k.psblk = k.psblk,
-                            black.list = black.list,
-                            ncores = ncores,
-                            bparam = bparam,
-                            progressbar = progressbar,
-                            verbose = verbose)
-      
-      # accommodate extra data
-      res <- res |>
-         dplyr::mutate(rate = as.numeric(as.character(strsplit(ann, "_")[[1]][3])),
-                       rep = strsplit(ann, "_")[[1]][2],
-                       original.ident = ident,
-                       task = "Missclassification"
-         )
-      df.res[[ann]] <- res
-      
-      # render PCAs
-      # only produce for one replicate of the seeds
-      if(stringr::str_split(ann, "_")[[1]][2] != 1) {next}
-      # save pdf if indicated
-      if(save.PCA){
-         
-         if(verbose){message("\nProducing PCAs for ", ann, "\n")}
-         pcs <- wr.pca(scTypeEval = sc,
-                       ident = ann,
-                       sample = sample,
-                       normalization.method = normalization.method,
-                       gene.list = NULL,
-                       data.type = data.type,
-                       min.samples = min.samples,
-                       min.cells = min.cells,
-                       black.list = black.list,
-                       ndim = 50,
-                       dims = dims,
-                       show.legend = show.legend,
-                       label = label,
-                       ncores = ncores,
-                       bparam = bparam,
-                       progressbar = progressbar,
-                       verbose = verbose)
-         pcas[[ann]] <- pcs
-         
-         for (p in names(pcs)){
-            pdf(file.path(pca.dir, paste0(p, "_", ann, ".pdf")),
-                width = 4, height = 4)
-            print(pcs[[p]])
-            dev.off()
-         }
-         
-      }
-      
-   }
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   df.res <- BiocParallel::bplapply(annotations,
+                                    BPPARAM = param,
+                                    function(ann){
+                                       
+                                       res <- Run.scTypeEval(scTypeEval = sc,
+                                                             ident = ann,
+                                                             ident_GroundTruth = ident,
+                                                             sample = sample,
+                                                             normalization.method = normalization.method,
+                                                             gene.list = NULL, # Run all gene.lists in the object
+                                                             pca = pca,
+                                                             ndim = ndim,
+                                                             distance.method = distance.method,
+                                                             IntVal.metric = IntVal.metric,
+                                                             BH.method = BH.method,
+                                                             classifier = classifier,
+                                                             data.type = data.type,
+                                                             min.samples = min.samples,
+                                                             min.cells = min.cells,
+                                                             k.sc = k.sc,
+                                                             k.psblk = k.psblk,
+                                                             black.list = black.list,
+                                                             ncores = 1,
+                                                             bparam = NULL,
+                                                             progressbar = progressbar,
+                                                             verbose = verbose)
+                                       
+                                       # accommodate extra data
+                                       res <- res |>
+                                          dplyr::mutate(rate = as.numeric(as.character(strsplit(ann, "_")[[1]][3])),
+                                                        rep = strsplit(ann, "_")[[1]][2],
+                                                        original.ident = ident,
+                                                        task = "Missclassification"
+                                          )
+                                       
+                                       # render PCAs
+                                       # only produce for one replicate of the seeds
+                                       if(stringr::str_split(ann, "_")[[1]][2] == 1){
+                                          # save pdf if indicated
+                                          if(save.PCA){
+                                             
+                                             if(verbose){message("\nProducing PCAs for ", ann, "\n")}
+                                             pcs <- wr.pca(scTypeEval = sc,
+                                                           ident = ann,
+                                                           sample = sample,
+                                                           normalization.method = normalization.method,
+                                                           gene.list = NULL,
+                                                           data.type = data.type,
+                                                           min.samples = min.samples,
+                                                           min.cells = min.cells,
+                                                           black.list = black.list,
+                                                           ndim = 50,
+                                                           dims = dims,
+                                                           show.legend = show.legend,
+                                                           label = label,
+                                                           ncores = 1,
+                                                           bparam = NULL,
+                                                           progressbar = progressbar,
+                                                           verbose = verbose)
+                                             
+                                             for (p in names(pcs)){
+                                                pdf(file.path(pca.dir, paste0(p, "_", ann, ".pdf")),
+                                                    width = 4, height = 4)
+                                                print(pcs[[p]])
+                                                dev.off()
+                                             }
+                                          }
+                                       }
+                                       
+                                       return(res)
+                                       
+                                    })
    
    # concatenate all results
    df.res <- do.call(rbind, df.res)
@@ -340,11 +344,7 @@ wr.missclasify <- function(count_matrix,
               file.path(dir,
                         paste0("Missclassification_", ident, ".rds")))
    }
-   
-   ret.list <- list(df.res = df.res,
-                    PCA = pcas)
-   
-   return(ret.list)
+   return(df.res)
    
 }
 
@@ -427,85 +427,88 @@ wr.NSamples <- function(count_matrix,
       gl <- gene.list
    }
    
-   df.res <- list()
-   pcas <- list()
-   ## run scTypeEval
-   for(ns in names(nss)){
-      # create scTypeEval object with the number of samples
-      md <- metadata[metadata[[sample]] %in% nss[[ns]],]
-      sct <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
-                               metadata = md,
-                               gene.lists = gl,
-                               black.list = bl)
-      
-      res <- Run.scTypeEval(scTypeEval = sct,
-                            ident = ident,
-                            ident_GroundTruth = ident,
-                            sample = sample,
-                            normalization.method = normalization.method,
-                            gene.list = NULL, # fixed gene list earlier
-                            pca = pca,
-                            ndim = ndim,
-                            distance.method = distance.method,
-                            IntVal.metric = IntVal.metric,
-                            BH.method = BH.method,
-                            classifier = classifier,
-                            data.type = data.type,
-                            min.samples = min.samples,
-                            min.cells = min.cells,
-                            k.sc = k.sc,
-                            k.psblk = k.psblk,
-                            black.list = black.list,
-                            ncores = ncores,
-                            bparam = bparam,
-                            progressbar = progressbar,
-                            verbose = verbose)
-      
-      # accommodate extra data
-      res <- res |>
-         dplyr::mutate(rate = as.numeric(as.character(strsplit(ns, "_")[[1]][3])),
-                       rep = strsplit(ns, "_")[[1]][2],
-                       original.ident = ident,
-                       task = "NSamples"
-         )
-      df.res[[ns]] <- res
-      
-      # render PCAs
-      # only produce for one replicate of the seeds
-      if(strsplit(ns, "_")[[1]][2] != 1) {next}
-      # save pdf if indicated
-      if(save.PCA){
-         if(verbose){message("\nProducing PCAs for ", ns, "\n")}
-         pcs <- wr.pca(scTypeEval = sct,
-                       ident = ident,
-                       sample = sample,
-                       normalization.method = normalization.method,
-                       gene.list = NULL, # fixed gene list earlier
-                       data.type = data.type,
-                       min.samples = min.samples,
-                       min.cells = min.cells,
-                       black.list = black.list,
-                       ndim = 50,
-                       dims = dims,
-                       show.legend = show.legend,
-                       label = label,
-                       ncores = ncores,
-                       bparam = bparam,
-                       progressbar = progressbar,
-                       verbose = verbose)
-         pcas[[ns]] <- pcs
-         
-         
-         for (p in names(pcs)){
-            pdf(file.path(pca.dir, paste0(p, "_", ns, ".pdf")),
-                width = 4, height = 4)
-            print(pcs[[p]])
-            dev.off()
-         }
-         
-      }
-      
-   }
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   df.res <- BiocParallel::bplapply(names(nss),
+                                    BPPARAM = param,
+                                    function(ns){
+                                       
+                                       ## run scTypeEval
+                                       # create scTypeEval object with the number of samples
+                                       md <- metadata[metadata[[sample]] %in% nss[[ns]],]
+                                       sct <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
+                                                                metadata = md,
+                                                                gene.lists = gl,
+                                                                black.list = bl)
+                                       
+                                       res <- Run.scTypeEval(scTypeEval = sct,
+                                                             ident = ident,
+                                                             ident_GroundTruth = ident,
+                                                             sample = sample,
+                                                             normalization.method = normalization.method,
+                                                             gene.list = NULL, # fixed gene list earlier
+                                                             pca = pca,
+                                                             ndim = ndim,
+                                                             distance.method = distance.method,
+                                                             IntVal.metric = IntVal.metric,
+                                                             BH.method = BH.method,
+                                                             classifier = classifier,
+                                                             data.type = data.type,
+                                                             min.samples = min.samples,
+                                                             min.cells = min.cells,
+                                                             k.sc = k.sc,
+                                                             k.psblk = k.psblk,
+                                                             black.list = black.list,
+                                                             ncores = 1,
+                                                             bparam = NULL,
+                                                             progressbar = progressbar,
+                                                             verbose = verbose)
+                                       
+                                       # accommodate extra data
+                                       res <- res |>
+                                          dplyr::mutate(rate = as.numeric(as.character(strsplit(ns, "_")[[1]][3])),
+                                                        rep = strsplit(ns, "_")[[1]][2],
+                                                        original.ident = ident,
+                                                        task = "NSamples"
+                                          )
+                                       
+                                       # render PCAs
+                                       # only produce for one replicate of the seeds
+                                       if(strsplit(ns, "_")[[1]][2] == 1){
+                                          # save pdf if indicated
+                                          if(save.PCA){
+                                             if(verbose){message("\nProducing PCAs for ", ns, "\n")}
+                                             pcs <- wr.pca(scTypeEval = sct,
+                                                           ident = ident,
+                                                           sample = sample,
+                                                           normalization.method = normalization.method,
+                                                           gene.list = NULL, # fixed gene list earlier
+                                                           data.type = data.type,
+                                                           min.samples = min.samples,
+                                                           min.cells = min.cells,
+                                                           black.list = black.list,
+                                                           ndim = 50,
+                                                           dims = dims,
+                                                           show.legend = show.legend,
+                                                           label = label,
+                                                           ncores = 1,
+                                                           bparam = NULL,
+                                                           progressbar = progressbar,
+                                                           verbose = verbose)
+                                             
+                                             
+                                             for (p in names(pcs)){
+                                                pdf(file.path(pca.dir, paste0(p, "_", ns, ".pdf")),
+                                                    width = 4, height = 4)
+                                                print(pcs[[p]])
+                                                dev.off()
+                                             }
+                                          }
+                                       }
+                                       return(res)
+                                    })
    
    # concatenate all results
    df.res <- do.call(rbind, df.res)
@@ -516,10 +519,7 @@ wr.NSamples <- function(count_matrix,
                         paste0("NSamples_", ident, ".rds")))
    }
    
-   ret.list <- list(df.res = df.res,
-                    PCA = pcas)
-   
-   return(ret.list)
+   return(df.res)
    
 }
 
@@ -548,6 +548,8 @@ wr.Nct <- function(count_matrix,
                    progressbar = FALSE,
                    k.sc = 20,
                    k.psblk = 5,
+                   down.sample.comb = 30,
+                   seed = 22,
                    save.PCA = TRUE,
                    dims = c(1,2),
                    show.legend = FALSE,
@@ -575,6 +577,14 @@ wr.Nct <- function(count_matrix,
    # Flatten the list into a single vector of combinations
    cts <- do.call(c, cts)
    
+   # downsample if too many combinations
+   if(length(cts)>down.sample.comb){
+      set.seed(seed)
+      # keep all combi
+      cts0 <- cts[length(cts)]
+      cts <- c(sample(cts, down.sample.comb), cts0)
+   }
+   
    # name list
    names(cts) <- lapply(cts, paste, collapse = "-")
    
@@ -593,99 +603,98 @@ wr.Nct <- function(count_matrix,
       gl <- gene.list
    }
    
-   df.res <- list()
-   pcas <- list()
-   ## run scTypeEval
-   for(ns in names(cts)){
-      tryCatch(
-         {
-            # create scTypeEval object with the number of samples
-            md <- metadata[metadata[[ident]] %in% cts[[ns]],]
-            sct <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
-                                     metadata = md,
-                                     gene.lists = gl,
-                                     black.list = bl)
-            
-            res <- Run.scTypeEval(scTypeEval = sct,
-                                  ident = ident,
-                                  ident_GroundTruth = ident,
-                                  sample = sample,
-                                  normalization.method = normalization.method,
-                                  gene.list = NULL, # fixed gene list earlier
-                                  pca = pca,
-                                  ndim = ndim,
-                                  distance.method = distance.method,
-                                  IntVal.metric = IntVal.metric,
-                                  BH.method = BH.method,
-                                  classifier = classifier,
-                                  data.type = data.type,
-                                  min.samples = min.samples,
-                                  min.cells = min.cells,
-                                  k.sc = k.sc,
-                                  k.psblk = k.psblk,
-                                  black.list = black.list,
-                                  ncores = ncores,
-                                  bparam = bparam,
-                                  progressbar = progressbar,
-                                  verbose = verbose)
-            
-            # accommodate extra data
-            res <- res |>
-               dplyr::mutate(rate = ns,
-                             rep = NA,
-                             original.ident = ident,
-                             task = "NSamples"
-               )
-            df.res[[ns]] <- res
-            
-            # render PCAs
-            # only produce for one replicate of the seeds
-            # save pdf if indicated
-            if(save.PCA){
-               if(verbose){message("\nProducing PCAs for ", ns, "\n")}
-               pcs <- wr.pca(scTypeEval = sct,
-                             ident = ident,
-                             sample = sample,
-                             normalization.method = normalization.method,
-                             gene.list = NULL, # fixed gene list earlier
-                             data.type = data.type,
-                             min.samples = min.samples,
-                             min.cells = min.cells,
-                             black.list = black.list,
-                             ndim = 50,
-                             dims = dims,
-                             show.legend = show.legend,
-                             label = label,
-                             ncores = ncores,
-                             bparam = bparam,
-                             progressbar = progressbar,
-                             verbose = verbose)
-               pcas[[ns]] <- pcs
-               
-               
-               for (p in names(pcs)){
-                  pdf(file.path(pca.dir, paste0(p, "_", ns, ".pdf")),
-                      width = 4, height = 4)
-                  print(pcs[[p]])
-                  dev.off()
-               }
-               
-            }
-         },
-         error = function(e){
-            message("\n-X- scTypeEval failed for", ns, "\n")
-            message(e)
-         }
-      )
-      
-   }
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   df.res <- BiocParallel::bplapply(names(cts),
+                                    BPPARAM = param,
+                                    function(ns){
+                                       tryCatch(
+                                          {
+                                             # create scTypeEval object with the number of samples
+                                             md <- metadata[metadata[[ident]] %in% cts[[ns]],]
+                                             sct <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
+                                                                      metadata = md,
+                                                                      gene.lists = gl,
+                                                                      black.list = bl)
+                                             
+                                             res <- Run.scTypeEval(scTypeEval = sct,
+                                                                   ident = ident,
+                                                                   ident_GroundTruth = ident,
+                                                                   sample = sample,
+                                                                   normalization.method = normalization.method,
+                                                                   gene.list = NULL, # fixed gene list earlier
+                                                                   pca = pca,
+                                                                   ndim = ndim,
+                                                                   distance.method = distance.method,
+                                                                   IntVal.metric = IntVal.metric,
+                                                                   BH.method = BH.method,
+                                                                   classifier = classifier,
+                                                                   data.type = data.type,
+                                                                   min.samples = min.samples,
+                                                                   min.cells = min.cells,
+                                                                   k.sc = k.sc,
+                                                                   k.psblk = k.psblk,
+                                                                   black.list = black.list,
+                                                                   ncores = 1,
+                                                                   bparam = NULL,
+                                                                   progressbar = progressbar,
+                                                                   verbose = verbose)
+                                             
+                                             # accommodate extra data
+                                             res <- res |>
+                                                dplyr::mutate(rate = ns,
+                                                              rep = NA,
+                                                              original.ident = ident,
+                                                              task = "NSamples"
+                                                )
+                                             
+                                             # render PCAs
+                                             if(save.PCA){
+                                                if(verbose){message("\nProducing PCAs for ", ns, "\n")}
+                                                pcs <- wr.pca(scTypeEval = sct,
+                                                              ident = ident,
+                                                              sample = sample,
+                                                              normalization.method = normalization.method,
+                                                              gene.list = NULL, # fixed gene list earlier
+                                                              data.type = data.type,
+                                                              min.samples = min.samples,
+                                                              min.cells = min.cells,
+                                                              black.list = black.list,
+                                                              ndim = 50,
+                                                              dims = dims,
+                                                              show.legend = show.legend,
+                                                              label = label,
+                                                              ncores = 1,
+                                                              bparam = NULL,
+                                                              progressbar = progressbar,
+                                                              verbose = verbose)
+                                                
+                                                for (p in names(pcs)){
+                                                   pdf(file.path(pca.dir, paste0(p, "_", ns, ".pdf")),
+                                                       width = 4, height = 4)
+                                                   print(pcs[[p]])
+                                                   dev.off()
+                                                }
+                                                
+                                             }
+                                             return(res)
+                                          },
+                                          error = function(e){
+                                             message("\n-X- scTypeEval failed for", ns, "\n")
+                                             message(e)
+                                          }
+                                       )
+                                       
+                                    })
    
    # concatenate all results
    df.res <- do.call(rbind, df.res) |>
       # convert to factor to then compute the fit.constant
       dplyr::mutate(rate = factor(rate,
                                   levels = names(cts))
-                    )
+      )
    
    if(!is.null(dir)){
       saveRDS(df.res,
@@ -693,11 +702,7 @@ wr.Nct <- function(count_matrix,
                         paste0("Nct_", ident, ".rds")))
    }
    
-   ret.list <- list(df.res = df.res,
-                    PCA = pcas)
-   
-   return(ret.list)
-   
+   return(df.res)
 }
 
 # wrapper to evaluate the number of cells in a cell type
@@ -776,96 +781,99 @@ wr.NCell <- function(count_matrix,
       gl <- gene.list
    }
    
-   df.res <- list()
-   pcas <- list()
-   ## run scTypeEval
-   for(s in names(sds)){
-      for(ns in rates){
-         # create scTypeEval object with the number of samples
-         # subset cell type
-         nn <- paste(s, ns, ident, sep = "_")
-         th <- floor(ns*nb)
-         # subset metadata for specific cell
-         md <- downsample_factor_level(metadata,
-                                       ident,
-                                       ctype,
-                                       threshold = th,
-                                       seed = sds[[s]])
-         #create scTypeEval object
-         sct <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
-                                  metadata = md,
-                                  gene.lists = gl,
-                                  black.list = bl)
-         
-         res <- Run.scTypeEval(scTypeEval = sct,
-                               ident = ident,
-                               ident_GroundTruth = ident,
-                               sample = sample,
-                               normalization.method = normalization.method,
-                               gene.list = NULL, # fixed gene list earlier
-                               pca = pca,
-                               ndim = ndim,
-                               distance.method = distance.method,
-                               IntVal.metric = IntVal.metric,
-                               BH.method = BH.method,
-                               classifier = classifier,
-                               data.type = data.type,
-                               min.samples = min.samples,
-                               min.cells = min.cells,
-                               k.sc = k.sc,
-                               k.psblk = k.psblk,
-                               black.list = black.list,
-                               ncores = ncores,
-                               bparam = bparam,
-                               progressbar = progressbar,
-                               verbose = verbose)
-         
-         # accommodate extra data
-         res <- res |>
-            dplyr::mutate(rate = as.numeric(as.character(ns)),
-                          rep = s,
-                          original.ident = ident,
-                          task = "NCell"
-            )
-         df.res[[nn]] <- res
-         
-         # render PCAs
-         # only produce for one replicate of the seeds
-         if(s != 1) {next}
-         # save pdf if indicated
-         if(save.PCA){
-            if(verbose){message("\nProducing PCAs for ", nn, "\n")}
-            pcs <- wr.pca(scTypeEval = sct,
-                          ident = ident,
-                          sample = sample,
-                          normalization.method = normalization.method,
-                          gene.list = NULL, # fixed gene list earlier
-                          data.type = data.type,
-                          min.samples = min.samples,
-                          min.cells = min.cells,
-                          black.list = black.list,
-                          ndim = 50,
-                          dims = dims,
-                          show.legend = show.legend,
-                          label = label,
-                          ncores = ncores,
-                          bparam = bparam,
-                          progressbar = progressbar,
-                          verbose = verbose)
-            pcas[[nn]] <- pcs
-            
-            
-            for (p in names(pcs)){
-               pdf(file.path(pca.dir, paste0(p, "_", nn, ".pdf")),
-                   width = 4, height = 4)
-               print(pcs[[p]])
-               dev.off()
-            }
-            
-         }
-         
-      }
-   }
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   combi <- expand.grid(names(sds), rates)
+   
+   df.res <- BiocParallel::bplapply(1:nrow(combi),
+                                    BPPARAM = param,
+                                    function(i){
+                                       ## run scTypeEval
+                                       s <- combi[i,][1] |> as.numeric()
+                                       ns <- combi[i,][2] |> as.numeric()
+                                       # create scTypeEval object with the number of samples
+                                       # subset cell type
+                                       th <- floor(ns*nb)
+                                       # subset metadata for specific cell
+                                       md <- downsample_factor_level(metadata,
+                                                                     ident,
+                                                                     ctype,
+                                                                     threshold = th,
+                                                                     seed = sds[[s]])
+                                       #create scTypeEval object
+                                       sct <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
+                                                                metadata = md,
+                                                                gene.lists = gl,
+                                                                black.list = bl)
+                                       
+                                       res <- Run.scTypeEval(scTypeEval = sct,
+                                                             ident = ident,
+                                                             ident_GroundTruth = ident,
+                                                             sample = sample,
+                                                             normalization.method = normalization.method,
+                                                             gene.list = NULL, # fixed gene list earlier
+                                                             pca = pca,
+                                                             ndim = ndim,
+                                                             distance.method = distance.method,
+                                                             IntVal.metric = IntVal.metric,
+                                                             BH.method = BH.method,
+                                                             classifier = classifier,
+                                                             data.type = data.type,
+                                                             min.samples = min.samples,
+                                                             min.cells = min.cells,
+                                                             k.sc = k.sc,
+                                                             k.psblk = k.psblk,
+                                                             black.list = black.list,
+                                                             ncores = 1,
+                                                             bparam = NULL,
+                                                             progressbar = progressbar,
+                                                             verbose = verbose)
+                                       
+                                       # accommodate extra data
+                                       res <- res |>
+                                          dplyr::mutate(rate = as.numeric(as.character(ns)),
+                                                        rep = s,
+                                                        original.ident = ident,
+                                                        task = "NCell"
+                                          )
+                                       
+                                       # render PCAs
+                                       # only produce for one replicate of the seeds
+                                       if(s == 1){
+                                          # save pdf if indicated
+                                          if(save.PCA){
+                                             if(verbose){message("\nProducing PCAs for ", nn, "\n")}
+                                             pcs <- wr.pca(scTypeEval = sct,
+                                                           ident = ident,
+                                                           sample = sample,
+                                                           normalization.method = normalization.method,
+                                                           gene.list = NULL, # fixed gene list earlier
+                                                           data.type = data.type,
+                                                           min.samples = min.samples,
+                                                           min.cells = min.cells,
+                                                           black.list = black.list,
+                                                           ndim = 50,
+                                                           dims = dims,
+                                                           show.legend = show.legend,
+                                                           label = label,
+                                                           ncores = 1,
+                                                           bparam = NULL,
+                                                           progressbar = progressbar,
+                                                           verbose = verbose)
+                                             
+                                             
+                                             for (p in names(pcs)){
+                                                pdf(file.path(pca.dir, paste0(p, "_", nn, ".pdf")),
+                                                    width = 4, height = 4)
+                                                print(pcs[[p]])
+                                                dev.off()
+                                             }
+                                          }
+                                       }
+                                       return(res)
+                                    })
    
    # concatenate all results
    df.res <- do.call(rbind, df.res)
@@ -876,10 +884,8 @@ wr.NCell <- function(count_matrix,
                         paste0("NCell_", ctype, "_", ident, ".rds")))
    }
    
-   ret.list <- list(df.res = df.res,
-                    PCA = pcas)
    
-   return(ret.list)
+   return(df.res)
    
 }
 
@@ -1054,77 +1060,77 @@ wr.mergeCT <- function(count_matrix,
       sc@gene.lists <- gene.list
    }
    
-   df.res <- list()
-   pcas <- list()
-   ## run scTypeEval
-   for(ann in annotations){
-      res <- Run.scTypeEval(scTypeEval = sc,
-                            ident = ann,
-                            sample = sample,
-                            normalization.method = normalization.method,
-                            gene.list = NULL, # Run all gene.lists in the object
-                            pca = pca,
-                            ndim = ndim,
-                            distance.method = distance.method,
-                            IntVal.metric = IntVal.metric,
-                            BH.method = BH.method,
-                            classifier = classifier,
-                            data.type = data.type,
-                            min.samples = min.samples,
-                            min.cells = min.cells,
-                            k.sc = k.sc,
-                            k.psblk = k.psblk,
-                            black.list = black.list,
-                            ncores = ncores,
-                            bparam = bparam,
-                            progressbar = progressbar,
-                            verbose = verbose)
-      
-      # accommodate extra data
-      res <- res |>
-         dplyr::mutate(
-            rate = as.numeric(as.character(strsplit(ann, "_")[[1]][2])),
-            rep = NA,
-            original.ident = ident,
-            task = "mergeCT"
-         )
-      df.res[[ann]] <- res
-      
-      # render PCAs
-      # save pdf if indicated
-      if(save.PCA){
-         
-         if(verbose){message("\nProducing PCAs for ", ann, "\n")}
-         pcs <- wr.pca(scTypeEval = sc,
-                       ident = ann,
-                       sample = sample,
-                       normalization.method = normalization.method,
-                       gene.list = NULL,
-                       data.type = data.type,
-                       min.samples = min.samples,
-                       min.cells = min.cells,
-                       black.list = black.list,
-                       ndim = 50,
-                       dims = dims,
-                       show.legend = show.legend,
-                       label = label,
-                       ncores = ncores,
-                       bparam = bparam,
-                       progressbar = progressbar,
-                       verbose = verbose)
-         pcas[[ann]] <- pcs
-         
-         
-         for (p in names(pcs)){
-            pdf(file.path(pca.dir, paste0(p, "_", ann, ".pdf")),
-                width = 4, height = 4)
-            print(pcs[[p]])
-            dev.off()
-         }
-         
-      }
-      
-   }
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   df.res <- BiocParallel::bplapply(annotations,
+                                    BPPARAM = param,
+                                    function(ann){
+                                       res <- Run.scTypeEval(scTypeEval = sc,
+                                                             ident = ann,
+                                                             sample = sample,
+                                                             normalization.method = normalization.method,
+                                                             gene.list = NULL, # Run all gene.lists in the object
+                                                             pca = pca,
+                                                             ndim = ndim,
+                                                             distance.method = distance.method,
+                                                             IntVal.metric = IntVal.metric,
+                                                             BH.method = BH.method,
+                                                             classifier = classifier,
+                                                             data.type = data.type,
+                                                             min.samples = min.samples,
+                                                             min.cells = min.cells,
+                                                             k.sc = k.sc,
+                                                             k.psblk = k.psblk,
+                                                             black.list = black.list,
+                                                             ncores = 1,
+                                                             bparam = NULL,
+                                                             progressbar = progressbar,
+                                                             verbose = verbose)
+                                       
+                                       # accommodate extra data
+                                       res <- res |>
+                                          dplyr::mutate(
+                                             rate = as.numeric(as.character(strsplit(ann, "_")[[1]][2])),
+                                             rep = NA,
+                                             original.ident = ident,
+                                             task = "mergeCT"
+                                          )
+                                       
+                                       # render PCAs
+                                       # save pdf if indicated
+                                       if(save.PCA){
+                                          if(verbose){message("\nProducing PCAs for ", ann, "\n")}
+                                          pcs <- wr.pca(scTypeEval = sc,
+                                                        ident = ann,
+                                                        sample = sample,
+                                                        normalization.method = normalization.method,
+                                                        gene.list = NULL,
+                                                        data.type = data.type,
+                                                        min.samples = min.samples,
+                                                        min.cells = min.cells,
+                                                        black.list = black.list,
+                                                        ndim = 50,
+                                                        dims = dims,
+                                                        show.legend = show.legend,
+                                                        label = label,
+                                                        ncores = 1,
+                                                        bparam = NULL,
+                                                        progressbar = progressbar,
+                                                        verbose = verbose)
+                                          
+                                          
+                                          for (p in names(pcs)){
+                                             pdf(file.path(pca.dir, paste0(p, "_", ann, ".pdf")),
+                                                 width = 4, height = 4)
+                                             print(pcs[[p]])
+                                             dev.off()
+                                          }
+                                          
+                                       }
+                                       return(res)
+                                    })
    
    # concatenate all results
    df.res <- do.call(rbind, df.res)
@@ -1135,10 +1141,7 @@ wr.mergeCT <- function(count_matrix,
                         paste0("mergeCT_", ident, ".rds")))
    }
    
-   ret.list <- list(df.res = df.res,
-                    PCA = pcas)
-   
-   return(ret.list)
+   return(df.res)
    
 }
 
