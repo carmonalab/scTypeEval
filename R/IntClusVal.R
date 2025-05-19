@@ -345,6 +345,7 @@ custom_PropMatch <- function(ident, clusters){
 compute_PropMatch <- function(ident,
                               clusters,
                               label.conservation = c("PropMatch", "NMI", "ARI")){
+   
    label.conservation <- label.conservation[1]
    scores <- switch(label.conservation,
                     "PropMatch" = custom_PropMatch(ident,
@@ -439,14 +440,17 @@ compute_leiden <- function(dist,
    # Step 4: Check for convergence
    if (abs(num_clusters - target_clusters) > tolerance) {
       warning("Leiden algorithm could not converge to the target number of clusters. Consider adjusting KNNGraph_k or resolution_range.")
-      return(NA)
+      nn <- unique(ident)
+      re.na <- rep(NA, length(nn))
+      names(re.na) <- nn
+      return(re.na)
+   } else {
+      # Step 5: Compute probability match
+      scores <- compute_PropMatch(ident,
+                                  clusters,
+                                  label.conservation)
+      return(scores)
    }
-   
-   # Step 5: Compute probability match
-   scores <- compute_PropMatch(ident,
-                               clusters,
-                               label.conservation)
-   return(scores)
 }
 
 
