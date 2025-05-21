@@ -27,6 +27,8 @@ fit.ReferenceLine <- function(x, y) {
 
 
 fit.Constant <- function(x, y) {
+   # remove NA
+   y <- y[!is.na(y)]
    # Calculate mean of y
    y_mean <- mean(y)
    # Extract residual
