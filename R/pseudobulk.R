@@ -93,6 +93,11 @@ get_pseudobulk <- function(mat,
    # Set row names for clarity (genes as rows, groups as columns)
    colnames(summed_matrix) <- group_levels
    
+   # Filter out pseudobulks (columns) with total count of 0
+   keep_cols <- Matrix::colSums(summed_matrix) > 0
+   summed_matrix <- summed_matrix[, keep_cols, drop = FALSE]
+   group_levels <- group_levels[keep_cols]
+   
    # retrieve new idents
    if(is.null(sample)){
       new.idents <- group_levels
@@ -188,10 +193,17 @@ valid.sc <- function(mat,
    cell_counts <- table(ident)
    # Filter groups with at least `min.cells` cells
    valid_groups <- names(cell_counts[cell_counts >= min.cells])
-   k <- ident %in% valid_groups
-   mat <- mat[,k, drop = FALSE]
+   keep_group <- ident %in% valid_groups
    
-   new.ident <- ident[k]
+   # Remove cells with total count of 0
+   keep_nonzero <- Matrix::colSums(mat) > 0
+   
+   # Combine both filters
+   keep <- keep_group & keep_nonzero
+   
+   # Subset matrix and ident vector
+   mat <- mat[, keep, drop = FALSE]
+   new.ident <- ident[keep]
    
    ret <- new("Mat_ident",
               matrix = mat,
