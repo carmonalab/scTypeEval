@@ -844,7 +844,7 @@ wr.NCell <- function(count_matrix,
                                        if(s == 1){
                                           # save pdf if indicated
                                           if(save.PCA){
-                                             if(verbose){message("\nProducing PCAs for ", nn, "\n")}
+                                             if(verbose){message("\nProducing PCAs for ", as.character(ns), "\n")}
                                              pcs <- wr.pca(scTypeEval = sct,
                                                            ident = ident,
                                                            sample = sample,
@@ -865,7 +865,7 @@ wr.NCell <- function(count_matrix,
                                              
                                              
                                              for (p in names(pcs)){
-                                                pdf(file.path(pca.dir, paste0(p, "_", nn, ".pdf")),
+                                                pdf(file.path(pca.dir, paste0(p, "_", as.character(ns), ".pdf")),
                                                     width = 4, height = 4)
                                                 print(pcs[[p]])
                                                 dev.off()
