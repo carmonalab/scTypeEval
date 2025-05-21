@@ -1155,10 +1155,11 @@ wr.assayPlot <- function(df,
                          title = "",
                          combine = TRUE){
    
-   rsq <- df |>
+   rsq <- df |> 
       dplyr::group_by(gene.list, data.type, consistency.metric, rate) |>
       dplyr::summarize(mm = mean(scaled_measure,
-                                 trim = trim)) |>
+                                 trim = trim,
+                                 na.rm = T)) |>
       dplyr::group_by(gene.list, data.type, consistency.metric)
    
    type <- type[1]
