@@ -38,22 +38,22 @@ get.DEG_logfc <- function(mat,
       # Store the maximum logFC against all other clusters
       logfc_vec <- sapply(others, function(other) {
          log2((medians[, cl] + pseudo_count) / 
-               (medians[, other] + pseudo_count))
+                 (medians[, other] + pseudo_count))
       })
       
       top_de <- lapply(others, function(x){
-        m <- logfc_vec[,x]
-        # keep only FC > min.logfc
-        m <- m[m > min.logfc]
-        # filter lowly expressed genes
-        # cols <- which(ident == x)
-        # emat <- mat[, cols, drop = FALSE]
-        # kg <- rownames(emat[Matrix::rowSums(emat) >= length(cols), ,drop = F])
-        # m <- m[names(m) %in% kg]
-        # sort by FC
-        m <- sort(m, decreasing = TRUE)
-        nge <- min(ngenes.celltype, length(m))
-        names(m[1:nge])
+         m <- logfc_vec[,x]
+         # keep only FC > min.logfc
+         m <- m[m > min.logfc]
+         # filter lowly expressed genes
+         # cols <- which(ident == x)
+         # emat <- mat[, cols, drop = FALSE]
+         # kg <- rownames(emat[Matrix::rowSums(emat) >= length(cols), ,drop = F])
+         # m <- m[names(m) %in% kg]
+         # sort by FC
+         m <- sort(m, decreasing = TRUE)
+         nge <- min(ngenes.celltype, length(m))
+         names(m[1:nge])
       }) |>
          unlist() |>
          unique()
@@ -147,10 +147,10 @@ singleR.helper <- function(test,
       as.data.frame() |>
       # condition for when singleR return no results (no label)
       dplyr::mutate(label = ifelse(is.na(pruned.labels),
-                                          "_nores_",
-                                          pruned.labels
-                                    )
-             )
+                                   "_nores_",
+                                   pruned.labels
+      )
+      )
    return(pred)
 }
 
@@ -174,7 +174,7 @@ score.tidy <- function(pred,
 }
 
 .score <- function(pred1, true1,
-                          pred2, true2){
+                   pred2, true2){
    
    pred1 <- score.tidy(pred1, true1)
    pred2 <- score.tidy(pred2, true2)
@@ -201,7 +201,7 @@ match.tidy <- function(pred, .true){
 
 
 .match <- function(pred1, pred2,
-                          true1, true2){
+                   true1, true2){
    
    pred1 <- match.tidy(pred1, true1)
    pred2 <- match.tidy(pred2, true2)
@@ -211,7 +211,7 @@ match.tidy <- function(pred, .true){
       dplyr::mutate(score = score.x * score.y) |>
       dplyr::select(true, score) |>
       dplyr::rename("celltype" = "true")
-
+   
    return(pred)
 }
 
@@ -232,7 +232,7 @@ get.MutualMatrix <- function(mat,
                                   min.samples = min.samples,
                                   min.cells = min.cells,
                                   sep = sep)
-
+   
    mat <- mat[, valid_indices, drop = FALSE]
    
    mats <- split_matrix(mat,
@@ -243,12 +243,12 @@ get.MutualMatrix <- function(mat,
    
    mat.split <- lapply(mats,
                        function(mat){
-                             get.matrix(mat@matrix,
-                                        data.type = data.type,
-                                        ident = mat@ident,
-                                        sample = NULL, # now is pseudobulk per cell type per invidividual sample
-                                        min.cells = min.cells,
-                                        bparam = bparam)
+                          get.matrix(mat@matrix,
+                                     data.type = data.type,
+                                     ident = mat@ident,
+                                     sample = NULL, # now is pseudobulk per cell type per invidividual sample
+                                     min.cells = min.cells,
+                                     bparam = bparam)
                        })
    
    return(mat.split)
@@ -260,23 +260,24 @@ get.SCE <-  function(m){
       colData = data.frame(ident = m@ident)
    )
    #sce <- sce[,Matrix::colSums(SingleCellExperiment::counts(sce)) > 0] # Remove libraries with no counts.
+   # this is taken account in the processing steps
    sce <- scuttle::logNormCounts(sce)
    return(sce)
 }
 
-bestHit.SingleR <- function(mat,
-                            ident,
-                            ident_GroundTruth = NULL,
-                            sample,
-                            method = "Mutual.Score",
-                            classifier = "Spearman_correlation",
-                            data.type = "sc",
-                            min.cells = 10,
-                            min.samples = 5,
-                            sep = "_",
-                            ncores = 1,
-                            bparam = NULL,
-                            progressbar = TRUE){
+bestHit <- function(mat,
+                    ident,
+                    ident_GroundTruth = NULL,
+                    sample,
+                    method = "Mutual.Score",
+                    classifier = "Spearman_correlation",
+                    data.type = "sc",
+                    min.cells = 10,
+                    min.samples = 5,
+                    sep = "_",
+                    ncores = 1,
+                    bparam = NULL,
+                    progressbar = TRUE){
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
@@ -295,13 +296,13 @@ bestHit.SingleR <- function(mat,
       mat.splitGT <- mat.split
    } else {
       mat.splitGT <- get.MutualMatrix(mat = mat,
-                                    ident = ident_GroundTruth,
-                                    sample = sample,
-                                    data.type = data.type,
-                                    min.cells = min.cells,
-                                    min.samples = min.samples,
-                                    sep = sep,
-                                    bparam = param)
+                                      ident = ident_GroundTruth,
+                                      sample = sample,
+                                      data.type = data.type,
+                                      min.cells = min.cells,
+                                      min.samples = min.samples,
+                                      sep = sep,
+                                      bparam = param)
    }
    
    
@@ -346,21 +347,21 @@ bestHit.SingleR <- function(mat,
       results <- BiocParallel::bplapply(method,
                                         BPPARAM = param,
                                         function(meth){
-      
-       r <- switch(meth,
-                   "Mutual.Score" = .score(pred1 = pred1,
-                                                  pred2 = pred2,
-                                                  true1 = true1,
-                                                  true2 = true2),
-                   "Mutual.Match" = .match(pred1 = pred1,
-                                                  pred2 = pred2,
-                                                  true1 = true1,
-                                                  true2 = true2),
-                   stop(meth, " is not a supported Mutual Besthit method."))
-       return(r)
+                                           
+                                           r <- switch(meth,
+                                                       "Mutual.Score" = .score(pred1 = pred1,
+                                                                               pred2 = pred2,
+                                                                               true1 = true1,
+                                                                               true2 = true2),
+                                                       "Mutual.Match" = .match(pred1 = pred1,
+                                                                               pred2 = pred2,
+                                                                               true1 = true1,
+                                                                               true2 = true2),
+                                                       stop(meth, " is not a supported Mutual Besthit method."))
+                                           return(r)
                                         })
       names(results) <- method
-
+      
       
       df.tmp[[paste(a, b, sep = "_vs_")]] <- results
    }
