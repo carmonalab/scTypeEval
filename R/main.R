@@ -870,16 +870,16 @@ Run.BestHit <- function(scTypeEval,
                              # remove black list genes
                              mat <- mat[!rownames(mat) %in% black.list,]
                              
-                             con <- bestHit.SingleR(mat = mat,
-                                                    ident = ident,
-                                                    ident_GroundTruth = ident_GroundTruth,
-                                                    sample = sample,
-                                                    data.type = data.type,
-                                                    method = method,
-                                                    classifier = classifier,
-                                                    min.cells = min.cells,
-                                                    min.samples = min.samples,
-                                                    bparam = param)
+                             con <- bestHit(mat = mat,
+                                            ident = ident,
+                                            ident_GroundTruth = ident_GroundTruth,
+                                            sample = sample,
+                                            data.type = data.type,
+                                            method = method,
+                                            classifier = classifier,
+                                            min.cells = min.cells,
+                                            min.samples = min.samples,
+                                            bparam = param)
                              
                              # accommodte to ConsistencyAssay
                              
@@ -1932,14 +1932,14 @@ dx.BestHit <- function(scTypeEval,
                         # remove black list genes
                         mat <- mat[!rownames(mat) %in% black.list,]
                         
-                        con <- dx.bestHit.SingleR(mat = mat,
-                                                  ident = ident,
-                                                  sample = sample,
-                                                  data.type = data.type,
-                                                  method = method,
-                                                  min.cells = min.cells,
-                                                  min.samples = min.samples,
-                                                  bparam = param)
+                        con <- dx.bestHit(mat = mat,
+                                          ident = ident,
+                                          sample = sample,
+                                          data.type = data.type,
+                                          method = method,
+                                          min.cells = min.cells,
+                                          min.samples = min.samples,
+                                          bparam = param)
                         return(con)
                      })
    

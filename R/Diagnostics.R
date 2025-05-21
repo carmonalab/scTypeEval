@@ -147,17 +147,17 @@ dx.singleR.match <- function(pred1, pred2,
 }
 
 
-dx.bestHit.SingleR <- function(mat,
-                               ident,
-                               sample,
-                               method = "Mutual.Score",
-                               data.type = "sc",
-                               min.cells = 10,
-                               min.samples = 5,
-                               sep = "_",
-                               ncores = 1,
-                               bparam = NULL,
-                               progressbar = TRUE){
+dx.bestHit <- function(mat,
+                       ident,
+                       sample,
+                       method = "Mutual.Score",
+                       data.type = "sc",
+                       min.cells = 10,
+                       min.samples = 5,
+                       sep = "_",
+                       ncores = 1,
+                       bparam = NULL,
+                       progressbar = TRUE){
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
