@@ -1162,6 +1162,9 @@ wr.assayPlot <- function(df,
                                  na.rm = T)) |>
       dplyr::group_by(gene.list, data.type, consistency.metric)
    
+   # remove NA or NaN
+   rsq <- rsq[complete.cases(rsq),]
+   
    type <- type[1]
    
    if(type == 1){
