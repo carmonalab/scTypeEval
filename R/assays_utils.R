@@ -1,4 +1,14 @@
 fit.ReferenceLine <- function(x, y) {
+   # Remove NA values
+   valid_idx <- !is.na(x) & !is.na(y)
+   x <- x[valid_idx]
+   y <- y[valid_idx]
+   
+   # Check for sufficient data (at least 2 points required)
+   if (length(x) < 2 || length(y) < 2) {
+      warning("Not enough points for computing fit.ReferenceLine")
+      return(list("r.squared" = NA, "p.value" = NA))
+   }
    # Compute residuals for y relative to the reference line
    residuals <- y - x
    # Compute R-squared
@@ -29,6 +39,14 @@ fit.ReferenceLine <- function(x, y) {
 fit.Constant <- function(x, y) {
    # remove NA
    y <- y[!is.na(y)]
+   
+   # if fewer than 2 values, return NA
+   if (length(y) < 2) {
+      warning("Not enough points for computing fit.Constant")
+      return(list("1-rss" = NA,
+                  "p.value" = NA))
+   }
+   
    # Calculate mean of y
    y_mean <- mean(y)
    # Extract residual
