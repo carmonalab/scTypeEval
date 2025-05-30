@@ -251,7 +251,9 @@ custom_prcomp <- function(norm.mat,
 
 # function to purge sample and annotation names
 purge_label <- function(label){
-   gsub(" |_|[+]", ".", label)
+   label <- gsub(" |_|[+]|-", ".", label)
+   label <- gsub(",", "", label)
+   return(label)
 }
 
 
