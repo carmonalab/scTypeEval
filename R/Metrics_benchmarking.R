@@ -570,23 +570,15 @@ wr.Nct <- function(count_matrix,
    # get all possible combinations
    allcts <- unique(metadata[[ident]])
    allcts <- allcts[!is.na(allcts)]
+
    
    # Generate combinations of lengths 2 to n-1
-   cts <- lapply(2:length(allcts),
-                 function(k) combn(allcts, k, simplify = FALSE))
-   # Flatten the list into a single vector of combinations
-   cts <- do.call(c, cts)
-   
-   # downsample if too many combinations
-   if(length(cts)>down.sample.comb){
-      set.seed(seed)
-      # keep all combi
-      cts0 <- cts[length(cts)]
-      cts <- c(sample(cts, down.sample.comb), cts0)
-   }
-   
-   # name list
-   names(cts) <- lapply(cts, paste, collapse = "-")
+   cts <- sample_variable_length_combinations(allcts,
+                                              num_samples = down.sample.comb,
+                                              seed = seed)
+   # add all cell types
+   allelements <- paste(allcts, collapse = "-")
+   cts[[allelements]] <- allcts
    
    # gene list should be the same in all the iterations
    if(is.null(gene.list)){

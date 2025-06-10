@@ -328,3 +328,61 @@ load_sc <- function(path,
    }
 }
 
+
+
+sample_variable_length_combinations <- function(elements,
+                                                min_k = 2,
+                                                max_k = NULL,
+                                                num_samples = 30,
+                                                max_iter = 1000,
+                                                seed = 22) {
+   if (is.null(seed)) {
+     stop("Seed value missing")
+   }
+   set.seed(seed)
+   
+   if(is.null(max_k)){
+      max_k <- length(elements) - 1
+   }
+   
+   unique_combinations <- list()
+   count <- 0
+   iter <- 0
+   
+   # A simple way to sample k values (could be weighted if desired)
+   possible_k_values <- min_k:max_k
+   
+   prop0 <- rep(1, length(elements))
+   names(prop0) <- elements
+   
+   while (count < num_samples) {
+      # 1. Randomly pick a size 'k' for the combination
+      current_k <- sample(possible_k_values, 1)
+      
+      # Ensure k is not larger than elements available
+      if (current_k > length(elements)) next
+    
+      
+      # 2. Sample 'current_k' elements
+      sampled_elements <- sample(elements,
+                                 current_k,
+                                 replace = FALSE)
+      
+      # 3. Sort to make it a canonical representation of a combination
+      sorted_combination <- sort(sampled_elements)
+      current_combo_string <- paste(sorted_combination, collapse = "-")
+      
+      if (!current_combo_string %in% names(unique_combinations)) {
+         unique_combinations[[current_combo_string]] <- sorted_combination
+         count <- count + 1
+      }
+      
+      iter <- iter + 1
+      
+      if(iter >= max_iter){
+         break
+      }
+   }
+   
+   return(unique_combinations)
+}
