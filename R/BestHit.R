@@ -362,6 +362,7 @@ bestHit <- function(mat,
                 stop(meth, " is not a supported Mutual Besthit method."))
       })
       names(results) <- method
+      return(results)
    })
    
    # Filter out NULLs
