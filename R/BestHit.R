@@ -323,48 +323,49 @@ bestHit <- function(mat,
    
    df.tmp <- list()
    
-   for(i in 1:nrow(combis)){
-      a <- combis[i,1]
-      b <- combis[i,2]
+   df.tmp <- BiocParallel::bplapply(seq_len(nrow(combis)),
+                                    BPPARAM = param,
+                                    function(i) {
+      a <- combis[i, 1]
+      b <- combis[i, 2]
       
-      # if reference consist of only one cell, singleR do not return score
-      # but all cells are classified as this unique cell with score of 1
-      nc <- lapply(mat.splitGT[c(a,b)],
-                   function(x){length(unique(x@ident))})
-      if(any(nc < 2)){ next }
+      # Check that both reference and query are not NULL
+      if (is.null(mat.split[[a]]) || is.null(mat.split[[b]]) ||
+          is.null(mat.splitGT[[a]]) || is.null(mat.splitGT[[b]])) {
+         return(NULL)
+      }
       
-      pred1 <- classifier(mat.split[[a]],
-                          mat.splitGT[[b]],
-                          bparam = param)
-      pred2 <- classifier(mat.split[[b]],
-                          mat.splitGT[[a]],
-                          bparam = param)
+      # Check if each matrix has at least two unique cell types
+      nc <- lapply(mat.splitGT[c(a, b)], function(x) length(unique(x@ident)))
+      if (any(nc < 2)) {
+         return(NULL)
+      }
       
-      # original annotations to compare with predictions
+      # Perform classification
+      pred1 <- classifier(mat.split[[a]], mat.splitGT[[b]])
+      pred2 <- classifier(mat.split[[b]], mat.splitGT[[a]])
+      
       true1 <- mat.split[[a]]@ident
       true2 <- mat.split[[b]]@ident
       
-      results <- BiocParallel::bplapply(method,
-                                        BPPARAM = param,
-                                        function(meth){
-                                           
-                                           r <- switch(meth,
-                                                       "Mutual.Score" = .score(pred1 = pred1,
-                                                                               pred2 = pred2,
-                                                                               true1 = true1,
-                                                                               true2 = true2),
-                                                       "Mutual.Match" = .match(pred1 = pred1,
-                                                                               pred2 = pred2,
-                                                                               true1 = true1,
-                                                                               true2 = true2),
-                                                       stop(meth, " is not a supported Mutual Besthit method."))
-                                           return(r)
-                                        })
+      # Evaluate metrics
+      results <- lapply(method, function(meth) {
+         switch(meth,
+                "Mutual.Score" = .score(pred1 = pred1,
+                                        pred2 = pred2,
+                                        true1 = true1,
+                                        true2 = true2),
+                "Mutual.Match" = .match(pred1 = pred1,
+                                        pred2 = pred2,
+                                        true1 = true1,
+                                        true2 = true2),
+                stop(meth, " is not a supported Mutual Besthit method."))
+      })
       names(results) <- method
-      
-      
-      df.tmp[[paste(a, b, sep = "_vs_")]] <- results
-   }
+   })
+   
+   # Filter out NULLs
+   df.tmp <- Filter(Negate(is.null), df.tmp)
    
    # join results by method
    resli <- lapply(method, function(m)
