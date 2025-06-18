@@ -93,6 +93,9 @@ consistency.helper <- function(mat,
       mats <- list(mats)
    }
    
+   # filter for mats with at least 2 cell types
+   mats <- Filter(function(m) length(levels(m@ident)) > 1, mats)
+   
    consist <- BiocParallel::bplapply(mats,
                                      BPPARAM = bparam,
                                      function(red.mat){
