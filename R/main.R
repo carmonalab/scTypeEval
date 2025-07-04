@@ -581,7 +581,7 @@ Run.Consistency <- function(scTypeEval,
    }
    
    if(data.type == "GloScope" && !pca){
-      warning("data.type GloScope only run in PCA space, switching to pca=TRUE")
+      warning("data.type GloScope only run in PCA space, switching to pca=TRUE\n")
       pca <- TRUE
    }
    
@@ -597,7 +597,7 @@ Run.Consistency <- function(scTypeEval,
    }
    
    if(data.type == "GloScope" && "Orbital.centroid" %in% IntVal.metric){
-      warning("Orbital.centroid consistency not supported for data.type GloScope, not running")
+      warning("Orbital.centroid consistency not supported for data.type GloScope, not running\n")
       IntVal.metric <- IntVal.metric[IntVal.metric != "Orbital.centroid"]
    }
    
