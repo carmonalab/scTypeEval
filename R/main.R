@@ -301,6 +301,10 @@ add.GeneMarkers <- function(scTypeEval,
    ident <- purge_label(ident)
    ident <- factor(ident)
    
+   if(length(unique(ident)) < 2){
+      stop("Less than 2 cell type detected, Consistency metrics not possible")
+   }
+   
    if(!is.null(sample)){
       if(!sample %in% names(scTypeEval@metadata)){
          stop("`sample` parameter not found in metadata colnames.")
@@ -441,6 +445,7 @@ add.GeneList <- function(scTypeEval,
 #'   - `"sc"`: Single-cell data, where each cell is treated as an individual observation.
 #'   - `"pseudobulk"`: Aggregated expression values per cell type and sample, useful to capture inter-sample variability.
 #'   - `"pseudobulk_1vsall"`: Pseudobulk comparisons where each cell type is analyzed against all others, useful for detecting cell-type-specific consistency.
+#'   - `"GloScope"`: Estimates the gene expression density from a low dimensional embedding of the UMI count measurements and measure its Kullback_Leibler (KL) divergency using \link{GloScope}.
 #'   Default: `"sc"`.
 #' @param min.samples Integer. Minimum number of samples required for intersample comparisons. Default: `5`.
 #' @param min.cells Integer. Minimum number of cells required per population. Default: `10`.
@@ -491,9 +496,11 @@ Run.Consistency <- function(scTypeEval,
                             distance.method = "euclidean",
                             IntVal.metric = c("silhouette", "NeighborhoodPurity",
                                               "ward.PropMatch", "Leiden.PropMatch",
-                                              "modularity"),
+                                              "modularity", "Orbital.medoid",
+                                              "Orbital.centroid"),
                             data.type = c("sc", "pseudobulk",
-                                          "pseudobulk_1vsall"),
+                                          "pseudobulk_1vsall",
+                                          "GloScope"),
                             min.samples = 5,
                             min.cells = 10,
                             KNNGraph_k = 5,
@@ -520,6 +527,10 @@ Run.Consistency <- function(scTypeEval,
    ident <- purge_label(ident)
    ident <- factor(ident)
    
+   if(length(unique(ident)) < 2){
+      stop("Less than 2 cell type detected, Consistency metrics not possible")
+   }
+   
    if(!is.null(sample)){
       if(!sample %in% names(scTypeEval@metadata)){
          stop("`sample` parameter not found in metadata colnames.")
@@ -538,7 +549,7 @@ Run.Consistency <- function(scTypeEval,
    } else {
       
       if(data.type != "sc"){
-         stop("For pseudobulk provide a dataset with multiple samples,
+         stop("For pseudobulk or GloScope provide a dataset with multiple samples,
               and specifiy their respective column metadata in `sample` parameter")
       } else {
          if(verbose){message("Using dataset as a unique sample, computing consistency across cells.\n")}
@@ -567,6 +578,27 @@ Run.Consistency <- function(scTypeEval,
    if(!data.type %in% data_type){
       stop(data.type, " data type conversion method not supported. Pick up one of: ", 
            paste(data_type, collapse = ", "))
+   }
+   
+   if(data.type == "GloScope" && !pca){
+      warning("data.type GloScope only run in PCA space, switching to pca=TRUE")
+      pca <- TRUE
+   }
+   
+   if(data.type == "GloScope" && !distance.method %in% Gloscope_dists){
+      stop("data.type GloScope only possible with ",
+           paste(Gloscope_dists, collapse = ", "),
+           " distances methods.")
+   }
+   
+   if(data.type != "GloScope" && distance.method %in% Gloscope_dists){
+      stop(paste(Gloscope_dists, collapse = ", "),
+           " only supported with GloScope data.type.")
+   }
+   
+   if(data.type == "GloScope" && "Orbital.centroid" %in% IntVal.metric){
+      warning("Orbital.centroid consistency not supported for data.type GloScope, not running")
+      IntVal.metric <- IntVal.metric[IntVal.metric != "Orbital.centroid"]
    }
    
    # set normalization method
@@ -781,8 +813,8 @@ Run.BestHit <- function(scTypeEval,
    if(!data.type %in% data_type){
       stop(data.type, " data type conversion method not supported. Pick up one of: ", 
            paste(data_type[1:2], collapse = ", "))
-   } else if(data.type == "pseudobulk_1vsall"){
-      stop("pseudobulk_1vsall not supported for mutual BestHit.") 
+   } else if(data.type %in% data_type[3:4]){
+      stop(paste(data_type[3:4], collapse = ", "), "not supported for mutual BestHit.") 
    }
    
    if(is.null(ident)){
@@ -798,6 +830,10 @@ Run.BestHit <- function(scTypeEval,
    ident <- scTypeEval@metadata[[ident]]
    ident <- purge_label(ident)
    ident <- factor(ident)
+   
+   if(length(unique(ident)) < 2){
+      stop("Less than 2 cell type detected, Consistency metrics not possible")
+   }
    
    if(!is.null(ident_GroundTruth)){
       ident_GroundTruth <- scTypeEval@metadata[[ident_GroundTruth]]
@@ -958,6 +994,7 @@ Run.BestHit <- function(scTypeEval,
 #'   - `"sc"`
 #'   - `"pseudobulk"`
 #'   - `"pseudobulk_1vsall"`
+#'   - `"GloScope"`
 #' @param min.samples Integer. Minimum number of samples required per cell type. Default: `5`.
 #' @param min.cells Integer. Minimum number of cells required per cell type. Default: `10`.
 #' @param k.sc Integer. Number of nearest neighbors for single-cell KNN graph. Default: `20`.
@@ -1006,7 +1043,8 @@ Run.scTypeEval <- function(scTypeEval,
                            BH.method = c("Mutual.Score", "Mutual.Match"),
                            classifier = c("SingleR", "Spearman_correlation"),
                            data.type = c("sc", "pseudobulk",
-                                         "pseudobulk_1vsall"),
+                                         "pseudobulk_1vsall",
+                                         "GloScope"),
                            min.samples = 5,
                            min.cells = 10,
                            k.sc = 20,
@@ -1061,7 +1099,7 @@ Run.scTypeEval <- function(scTypeEval,
                                 progressbar = progressbar,
                                 verbose = FALSE)
       
-      if(dt != "pseudobulk_1vsall" && any(BH.method %in% mutual_method)){
+      if(!dt %in% data_type[3:4] && any(BH.method %in% mutual_method)){
          
          if(verbose){message("------- Running BestHit for ", dt, " ",  format(Sys.time()), "\n")}
          sc.tmp <- Run.BestHit(sc.tmp,
@@ -1207,13 +1245,13 @@ get.ConsistencyData <- function(scTypeEval,
 #' @param ident Character. Metadata column name used to group cells (e.g., cell type annotation).
 #' If \code{NULL}, the active identity from \code{scTypeEval} is used.
 #' @param sample Character. Metadata column name specifying sample identity for pseudobulk analysis.
-#' Required for pseudobulk and \code{pseudobulk_1vsall} data types.
+#' Required for \code{pseudobulk}, \code{pseudobulk_1vsall}, and \code{GloScope} data types.
 #' @param normalization.method Character. Method for normalizing gene expression before PCA. See \link[scTypeEval]{add.HVG} for more details.
 #' Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"} (default: \code{"Log1p"}).
 #' @param gene.list Named list of character vectors. Each element is a set of genes for PCA analysis.
 #' If \code{NULL}, all pre-defined gene lists in \code{scTypeEval} are used recursively.
 #' @param data.type Character. Type of data to analyze. Options: \code{"sc"}, \code{"pseudobulk"},
-#' or \code{"pseudobulk_1vsall"}. Default is \code{"sc"}.
+#' \code{"pseudobulk_1vsall"}, or \code{GloScope}. Default is \code{"sc"}.
 #' @param min.samples Integer. Minimum number of samples required for pseudobulk PCA (default: 5).
 #' @param min.cells Integer. Minimum number of cells required per group for PCA (default: 10).
 #' @param black.list Character vector. Genes to exclude from PCA. If \code{NULL}, defaults to
@@ -1543,6 +1581,10 @@ get.hierarchy <- function(scTypeEval,
    ident <- purge_label(ident)
    ident <- factor(ident)
    
+   if(length(unique(ident)) < 2){
+      stop("Less than 2 cell type detected, Consistency metrics not possible")
+   }
+   
    if(data.type == "sc"){
       sample <- NULL
    }
@@ -1728,6 +1770,10 @@ get.NN <- function(scTypeEval,
    ident <- purge_label(ident)
    ident <- factor(ident)
    
+   if(length(unique(ident)) < 2){
+      stop("Less than 2 cell type detected, Consistency metrics not possible")
+   }
+   
    if(data.type == "sc"){
       sample <- NULL
    }
@@ -1857,8 +1903,8 @@ dx.BestHit <- function(scTypeEval,
    if(!data.type %in% data_type){
       stop(data.type, " data type conversion method not supported. Pick up one of: ", 
            paste(data_type[1:2], collapse = ", "))
-   } else if(data.type == "pseudobulk_1vsall"){
-      stop("pseudobulk_1vsall not supported for mutual BestHit.") 
+   } else if(data.type %in% data_type[3:4]){
+      stop(paste(data_type[3:4], collapse = ", "), "not supported for mutual BestHit.") 
    }
    
    if(is.null(ident)){
@@ -1874,6 +1920,10 @@ dx.BestHit <- function(scTypeEval,
    ident <- scTypeEval@metadata[[ident]]
    ident <- purge_label(ident)
    ident <- factor(ident)
+   
+   if(length(unique(ident)) < 2){
+      stop("Less than 2 cell type detected, Consistency metrics not possible")
+   }
    
    if(!is.null(sample)){
       if(!sample %in% names(scTypeEval@metadata)){

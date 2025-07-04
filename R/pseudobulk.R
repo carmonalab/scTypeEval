@@ -1,6 +1,8 @@
 # script to pseudobulking cells:
 
-data_type <- c("sc", "pseudobulk", "pseudobulk_1vsall")
+data_type <- c("sc", "pseudobulk",
+               "pseudobulk_1vsall",
+               "GloScope")
 
 
 valid.indices <- function(groups,
@@ -44,7 +46,7 @@ valid.indices <- function(groups,
    # Filter the grouping indices to keep only valid groups
    valid_indices <- which(groups %in% valid_groups)
    if (length(valid_indices) == 0) {
-      stop("No valid pseudobulk groups meet the specified thresholds.")
+      stop("No valid sample-celltype groups meet the specified thresholds.")
    }
    
    return(valid_indices)
@@ -235,6 +237,48 @@ get.sc <- function(mat,
 }
 
 
+# Keep the filtering of cell type with low proportion or in few samples
+get.GloScope <- function(mat, 
+                         ident, 
+                         sample = NULL, 
+                         min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
+                         min.cells = 10,   # Minimum cells per pseudobulk to be included 
+                         sep = "_") {  
+   
+   if (is.null(sample)) {
+      # Single grouping
+      groups <- factor(ident)
+   } else {
+      # Combined grouping
+      groups <- factor(paste(sample, ident, sep = sep))
+   }
+   
+   valid_indices <- valid.indices(groups = groups,
+                                  ident = ident,
+                                  sample = sample,
+                                  min.samples = min.samples,
+                                  min.cells = min.cells,
+                                  sep = sep)
+   
+   # Remove cells with total count of 0
+   keep_nonzero <- Matrix::colSums(mat) > 0
+   
+   vl <- colnames(mat) %in% colnames(mat)[valid_indices]
+   
+   keep <- vl & keep_nonzero
+   
+   groups <- factor(groups[keep])
+   mat <- mat[, keep, drop = FALSE]
+   
+   
+   ret <- new("Mat_ident",
+              matrix = mat,
+              ident = factor(groups))
+   
+   return(ret)
+}
+
+
 # get matrix according to the data type
 get.matrix <- function(matrix,
                        data.type,
@@ -263,6 +307,11 @@ get.matrix <- function(matrix,
                                                             min.samples = min.samples,
                                                             min.cells = min.cells,
                                                             bparam = bparam),
+                 "GloScope" = get.GloScope(mat = matrix,
+                                           ident = ident,
+                                           sample = sample,
+                                           min.cells = min.cells,
+                                           min.samples = min.samples),
                  stop(data.type, " is not a supported data.type.")
                  )
                  

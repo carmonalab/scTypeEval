@@ -44,9 +44,6 @@ split_matrix <- function(mat,
    # Get the unique sample groups
    unique_samples <- unique(sample)
    
-   # Initialize an empty list to store matrices
-   split_list <- list()
-   
    # Loop through each unique sample and subset the matrix
    split_list <- BiocParallel::bplapply(unique_samples,
                                         BPPARAM = bparam,
@@ -67,28 +64,29 @@ split_matrix <- function(mat,
 
 
 consistency.helper <- function(mat,
-                              ident,
-                              normalization.method,
-                              distance.method = "euclidean",
-                              IntVal.metric,
-                              data.type,
-                              sample = NULL,
-                              pca = FALSE,
-                              ndim = 30,
-                              bparam = BiocParallel::SerialParam(),
-                              min.samples = 5,
-                              min.cells = 10,
-                              KNNGraph_k = 5,
-                              verbose = TRUE){
+                               ident,
+                               normalization.method,
+                               distance.method = "euclidean",
+                               IntVal.metric,
+                               data.type,
+                               sample = NULL,
+                               pca = FALSE,
+                               ndim = 30,
+                               bparam = BiocParallel::SerialParam(),
+                               min.samples = 5,
+                               min.cells = 10,
+                               KNNGraph_k = 5,
+                               verbose = TRUE){
    
+   # adjust for GloScope we require still sc, but filtered
    mats <- get.matrix(mat,
-                     data.type = data.type,
-                     ident = ident,
-                     sample = sample,
-                     min.samples = min.samples,
-                     min.cells = min.cells,
-                     bparam = bparam)
-
+                      data.type = data.type,
+                      ident = ident,
+                      sample = sample,
+                      min.samples = min.samples,
+                      min.cells = min.cells,
+                      bparam = bparam)
+   
    if(!is.list(mats)){
       mats <- list(mats)
    }
@@ -102,20 +100,46 @@ consistency.helper <- function(mat,
                                         # normalized subetted matrix
                                         norm.mat <- Normalize_data(red.mat@matrix,
                                                                    method = normalization.method)
-                                        if(!pca){
-                                           mat <- red.mat@matrix
-                                        } else {
+                                        dist <- NULL
+                                        nident <- red.mat@ident
+                                        if(pca){
+                                           if(verbose){message("Computing PCA space\n")}
                                            pr <- custom_prcomp(norm.mat, ndim)
                                            mat <- NULL
-                                           norm.mat <- t(pr$x)
+                                           
+                                           if(data.type == "GloScope"){
+                                              if(verbose){message("Computing GloScope divergencies\n")}
+                                              suppressWarnings(
+                                                 {
+                                                    dist <- GloScope::gloscope(embedding_matrix = pr$x,
+                                                                               cell_sample_ids = red.mat@ident,
+                                                                               dens = "KNN",
+                                                                               dist_mat = distance.method,
+                                                                               k = min.cells-1
+                                                    )
+                                                    nident <- sapply(colnames(dist),
+                                                                     function(x){
+                                                                        strsplit(x, "_")[[1]][2]
+                                                                     }) |>
+                                                       factor()
+                                                 })
+                                              norm.mat <- dist
+                                              dist <- as.dist(dist)
+                                           } else {
+                                              norm.mat <- t(pr$x)
+                                           }
+                                        } else{
+                                           mat <- red.mat@matrix
                                         }
+                                        
                                         
                                         # compute internal validation metrics
                                         con <- calculate_IntVal_metric(mat = mat,
                                                                        norm.mat = norm.mat,
+                                                                       dist = dist,
                                                                        metrics = IntVal.metric,
                                                                        distance.method = distance.method,
-                                                                       ident = red.mat@ident,
+                                                                       ident = nident,
                                                                        KNNGraph_k = KNNGraph_k,
                                                                        verbose = verbose)
                                         return(con)
@@ -138,7 +162,7 @@ consistency.helper <- function(mat,
    } else{
       unlist(consist, recursive = F)
    }
-
+   
    
    return(consist)
    
@@ -213,27 +237,27 @@ get.PCA <- function(mat,
    }
    
    pcas <- BiocParallel::bplapply(mats,
-                                     BPPARAM = bparam,
-                                     function(red.mat){
-                                        
-                                        # normalized subetted matrix
-                                        norm.mat <- Normalize_data(red.mat@matrix,
-                                                                   method = normalization.method)
-                                        
-                                        pr <- custom_prcomp(norm.mat, ndim)
-                                        
-                                        rr <- methods::new("DimRed",
-                                                           embeddings = pr$x,
-                                                           feature.loadings = pr$rotation,
-                                                           gene.list = "tmp",
-                                                           black.list = "tmp",
-                                                           data.type = as.character(data.type),
-                                                           ident = red.mat@ident,
-                                                           key = "PCA")
-                                        
-                                        return(rr)
-                                        
-                                     })
+                                  BPPARAM = bparam,
+                                  function(red.mat){
+                                     
+                                     # normalized subetted matrix
+                                     norm.mat <- Normalize_data(red.mat@matrix,
+                                                                method = normalization.method)
+                                     
+                                     pr <- custom_prcomp(norm.mat, ndim)
+                                     
+                                     rr <- methods::new("DimRed",
+                                                        embeddings = pr$x,
+                                                        feature.loadings = pr$rotation,
+                                                        gene.list = "tmp",
+                                                        black.list = "tmp",
+                                                        data.type = as.character(data.type),
+                                                        ident = red.mat@ident,
+                                                        key = "PCA")
+                                     
+                                     return(rr)
+                                     
+                                  })
    
    names(pcas) <- names(mats)
    
@@ -270,7 +294,7 @@ var_PCA <- function(pca_embeddings){
    # Compute proportion of variance explained
    total_variance <- sum(variance_per_pc)
    variance_explained <- variance_per_pc / total_variance
-
+   
    return(variance_explained)
 }
 
@@ -340,7 +364,7 @@ sample_variable_length_combinations <- function(elements,
                                                 max_iter = 1000,
                                                 seed = 22) {
    if (is.null(seed)) {
-     stop("Seed value missing")
+      stop("Seed value missing")
    }
    set.seed(seed)
    
@@ -364,7 +388,7 @@ sample_variable_length_combinations <- function(elements,
       
       # Ensure k is not larger than elements available
       if (current_k > length(elements)) next
-    
+      
       
       # 2. Sample 'current_k' elements
       sampled_elements <- sample(elements,
