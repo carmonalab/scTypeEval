@@ -43,34 +43,33 @@ compute_orbital_proportion <- function(norm.mat,
                                        use = c("centroid", "medoid")) {
    use <- use[1]
    
-   # Initialize medoid_idx outside switch for reuse
    medoid_idx <- NULL
+   d_to_reps <- NULL
    
-   # Compute centroid or medoid representative points
-   reps <- switch(use,
-                  "centroid" = {
-                     if (is.null(centroids)) {
-                        compute_centroids(norm.mat, ident)
-                     } else {
-                        centroids
-                     }
-                  },
-                  "medoid" = {
-                     medoid_idx <- compute_medoid_indices(ident, dist)
-                     nm <- norm.mat[, as.vector(medoid_idx), drop = FALSE]
-                     colnames(nm) <- names(medoid_idx)
-                     as.matrix(nm)
-                  },
-                  stop(use, " is not a supported method for representation points. Choose either centroid or medoid")
-   )
-   
-   # Compute distance between all samples and representatives
-   x <- as.matrix(Matrix::t(norm.mat))
-   y <- as.matrix(reps)
-   # Compute pairwise Euclidean distances
-   d_to_reps <- sqrt(
-      outer(rowSums(x^2), colSums(y^2), "+") - 2 * x %*% y
-   )
+   if (use == "centroid") {
+      # Get or compute centroids
+      reps <- if (is.null(centroids)) {
+         compute_centroids(norm.mat, ident)
+      } else {
+         centroids
+      }
+      
+      # Compute pairwise Euclidean distances from all cells to centroids
+      x <- as.matrix(Matrix::t(norm.mat))
+      y <- as.matrix(reps)
+      d_to_reps <- sqrt(
+         outer(rowSums(x^2), colSums(y^2), "+") - 2 * x %*% y
+      )
+      colnames(d_to_reps) <- colnames(y)
+      
+   } else if (use == "medoid") {
+      dist_mat <- as.matrix(dist)
+      medoid_idx <- compute_medoid_indices(ident, dist)
+      
+      # Subset distance matrix: rows = all cells, columns = medoids
+      d_to_reps <- dist_mat[, medoid_idx, drop = FALSE]
+      colnames(d_to_reps) <- names(medoid_idx)
+   }
    
    # Rows: samples, Columns: cluster representatives
    own_clusters <- as.character(ident)
@@ -88,7 +87,7 @@ compute_orbital_proportion <- function(norm.mat,
    
    closer_to_own <- own_dist < min_other_dist
    
-   # If using medoids, exclude medoid samples from proportion computation
+   # If using medoids, exclude the medoid samples themselves
    if (use == "medoid") {
       medoid_cells <- as.vector(medoid_idx)
       ident <- ident[-medoid_cells]
@@ -98,7 +97,6 @@ compute_orbital_proportion <- function(norm.mat,
    # Compute and return the proportion vector
    prop_vector <- tapply(closer_to_own, ident, mean)
    prop_vector <- setNames(as.numeric(prop_vector), names(prop_vector))
-   # remove NAs
    prop_vector <- prop_vector[!is.na(prop_vector)]
    return(prop_vector)
 }
