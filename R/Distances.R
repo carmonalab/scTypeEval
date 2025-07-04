@@ -11,8 +11,12 @@ distance_methods <- c(
    "gower",
    "bray-curtis",
    "cosine",
-   "pearson"
+   "pearson",
+   "KL",
+   "JS"
 )
+
+Gloscope_dists <- c("KL","JS")
 
 compute_fast_euclidean <- function(norm.mat) {
    
