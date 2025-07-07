@@ -14,7 +14,7 @@ get.NN(
   ndim = 30,
   distance.method = "euclidean",
   KNNGraph_k = 5,
-  data.type = c("pseudobulk", "sc"),
+  data.type = c("pseudobulk", "sc", "GloScope"),
   min.samples = 5,
   min.cells = 10,
   black.list = NULL,
@@ -43,7 +43,7 @@ get.NN(
 
 \item{KNNGraph_k}{Integer; the number of neighbors to consider in the KNN graph (default: \code{5}).}
 
-\item{data.type}{A character string indicating whether to use \code{"pseudobulk"} (aggregated samples) or \code{"sc"} (single-cell) data (default: \code{"pseudobulk"}).}
+\item{data.type}{A character string indicating whether to use \code{"pseudobulk"} (aggregated samples), \verb{"GloScope}, or \code{"sc"} (single-cell) data (default: \code{"pseudobulk"}).}
 
 \item{min.samples}{Integer; minimum number of samples required for pseudobulk analysis (default: \code{5}).}
 

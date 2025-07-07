@@ -14,7 +14,7 @@ get.hierarchy(
   ndim = 30,
   distance.method = "euclidean",
   hierarchy.method = "ward.D2",
-  data.type = c("pseudobulk", "sc"),
+  data.type = c("pseudobulk", "sc", "GloScope"),
   min.samples = 5,
   min.cells = 10,
   black.list = NULL,
@@ -43,7 +43,7 @@ get.hierarchy(
 
 \item{hierarchy.method}{A character string specifying the hierarchical clustering method. Default is \code{"ward.D2"}. For more option see \link[stats]{hclust}.}
 
-\item{data.type}{A character string indicating whether to use \code{"pseudobulk"} (aggregated samples) or \code{"sc"} (single-cell) data (default: \code{"pseudobulk"}).}
+\item{data.type}{A character string indicating whether to use \code{"pseudobulk"} (aggregated samples), \verb{"GloScope}, or \code{"sc"} (single-cell) data (default: \code{"pseudobulk"}).}
 
 \item{min.samples}{Integer; minimum number of samples required for pseudobulk analysis (default: \code{5}).}
 

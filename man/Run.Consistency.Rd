@@ -14,8 +14,8 @@ Run.Consistency(
   ndim = 30,
   distance.method = "euclidean",
   IntVal.metric = c("silhouette", "NeighborhoodPurity", "ward.PropMatch",
-    "Leiden.PropMatch", "modularity"),
-  data.type = c("sc", "pseudobulk", "pseudobulk_1vsall"),
+    "Leiden.PropMatch", "modularity", "Orbital.medoid", "Orbital.centroid"),
+  data.type = c("sc", "pseudobulk", "pseudobulk_1vsall", "GloScope"),
   min.samples = 5,
   min.cells = 10,
   KNNGraph_k = 5,
@@ -41,8 +41,7 @@ Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"}. Default: \code{"Log1p"}
 \item{gene.list}{List. A list of gene sets to compute consistency metrics on.
 By default, each of the gene lists stored in \code{scTypeEval} are used recursively to compute consitency metrics.}
 
-\item{pca}{Logical. Whether to perform PCA before computing metrics. Default: \code{FALSE}.
-
+\item{pca}{Logical. Whether to perform PCA before computing metrics. Default: \code{FALSE}. This parameter will be turned to \code{TRUE} for GloScope data.type.
 \code{FALSE} will build consistency metrics directly on the genes within \code{gene.list}, while \code{TRUE} will do it on their principal components.}
 
 \item{ndim}{Integer. Number of PCA dimensions to use to compute metrics if \code{pca = TRUE}. Default: \code{30}.}
@@ -94,6 +93,7 @@ Options, one of:
 \item \code{"sc"}: Single-cell data, where each cell is treated as an individual observation.
 \item \code{"pseudobulk"}: Aggregated expression values per cell type and sample, useful to capture inter-sample variability.
 \item \code{"pseudobulk_1vsall"}: Pseudobulk comparisons where each cell type is analyzed against all others, useful for detecting cell-type-specific consistency.
+\item \code{"GloScope"}: Estimates the gene expression density from a low dimensional embedding of the UMI count measurements and measure its Kullback_Leibler (KL) divergency using \link{GloScope}.
 Default: \code{"sc"}.
 }}
 

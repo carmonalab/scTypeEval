@@ -18,7 +18,7 @@ Run.scTypeEval(
     "Leiden.PropMatch", "modularity"),
   BH.method = c("Mutual.Score", "Mutual.Match"),
   classifier = c("SingleR", "Spearman_correlation"),
-  data.type = c("sc", "pseudobulk", "pseudobulk_1vsall"),
+  data.type = c("sc", "pseudobulk", "pseudobulk_1vsall", "GloScope"),
   min.samples = 5,
   min.cells = 10,
   k.sc = 20,
@@ -73,6 +73,7 @@ By default all are run. Options:
 \item \code{"sc"}
 \item \code{"pseudobulk"}
 \item \code{"pseudobulk_1vsall"}
+\item \code{"GloScope"}
 }}
 
 \item{min.samples}{Integer. Minimum number of samples required per cell type. Default: \code{5}.}
