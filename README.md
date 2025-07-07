@@ -2,7 +2,7 @@
 
 <p align="center">
 
-<img src="docs/scTypeEval_logo.png" height="90"/>
+<img src="docs/scTypeEval_logo.png" height="180"/>
 
 </p>
 
