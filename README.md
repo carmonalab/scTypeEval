@@ -2,7 +2,7 @@
 
 <p align="center">
 
-<img src="docs/scTypeEval_logo.png" height="180"/>
+<img src="docs/scTypeEval_logo.png" height="90"/>
 
 </p>
 
@@ -167,7 +167,8 @@ When computing consistency metrics, data can be structured in the following ways
 
 - **`sc` (Single-cell level)**: Each cell is treated as an individual observation.  
 - **`pseudobulk` (Aggregated per sample & cell type)**: Expression values are summed per sample and cell type, useful for capturing inter-sample variability.  
-- **`pseudobulk_1vsall` (Pairwise comparison)**: Pseudobulk for each cell type is compared against the pseudobulk of all others cell types, resulting in 2 observations per sample.
+- **`pseudobulk_1vsall` (Pairwise comparison)**: Pseudobulk for each cell type and sample is compared against the pseudobulk of all others cell types in each sample, resulting in 2 observations per sample.
+- **`GloScope`**: Compares at sample & cell type level cellular distributions across a latent embedding using [GloScope package](https://bioconductor.org/packages/release/bioc/html/GloScope.html) from [Wang et al., 2024](https://doi.org/10.1186/s13059-024-03398-1). Each sample and cell type is represented as a probability distribution (e.g., KNN-based density) in a reduced-dimensional space (PCA). Pairwise distances between samples are computed using divergence metrics such as symmetric Kullback-Leibler (KL) or Jensen-Shannon (JS) distances. This approach captures global transcriptomic shifts across samples and cell types. 
 
 </details>
 
