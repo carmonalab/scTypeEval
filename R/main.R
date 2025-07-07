@@ -401,8 +401,7 @@ add.GeneList <- function(scTypeEval,
 #'   Options: `"Log1p"`, `"CLR"`, `"pearson"`. Default: `"Log1p"`. 
 #' @param gene.list List. A list of gene sets to compute consistency metrics on.
 #'    By default, each of the gene lists stored in `scTypeEval` are used recursively to compute consitency metrics.
-#' @param pca Logical. Whether to perform PCA before computing metrics. Default: `FALSE`. 
-#' 
+#' @param pca Logical. Whether to perform PCA before computing metrics. Default: `FALSE`. This parameter will be turned to `TRUE` for GloScope data.type.
 #'    `FALSE` will build consistency metrics directly on the genes within `gene.list`, while `TRUE` will do it on their principal components.
 #' @param ndim Integer. Number of PCA dimensions to use to compute metrics if `pca = TRUE`. Default: `30`.
 #' @param distance.method Character. Distance metric to use. Must be one of the predefined methods. Default: `"euclidean"`.
@@ -596,9 +595,10 @@ Run.Consistency <- function(scTypeEval,
            " only supported with GloScope data.type.")
    }
    
-   if(data.type == "GloScope" && "Orbital.centroid" %in% IntVal.metric){
-      warning("Orbital.centroid consistency not supported for data.type GloScope, not running\n")
-      IntVal.metric <- IntVal.metric[IntVal.metric != "Orbital.centroid"]
+   if(data.type == "GloScope" &&
+      centroid.need %in% IntVal.metric){
+      warning("Centroid-based consistency metrics not supported for data.type GloScope, not running\n")
+      IntVal.metric <- IntVal.metric[!IntVal.metric %in% centroid.need]
    }
    
    # set normalization method
@@ -1250,8 +1250,8 @@ get.ConsistencyData <- function(scTypeEval,
 #' Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"} (default: \code{"Log1p"}).
 #' @param gene.list Named list of character vectors. Each element is a set of genes for PCA analysis.
 #' If \code{NULL}, all pre-defined gene lists in \code{scTypeEval} are used recursively.
-#' @param data.type Character. Type of data to analyze. Options: \code{"sc"}, \code{"pseudobulk"},
-#' \code{"pseudobulk_1vsall"}, or \code{GloScope}. Default is \code{"sc"}.
+#' @param data.type Character. Type of data to analyze. Options: \code{"sc"}, \code{"pseudobulk"}, or
+#' \code{"pseudobulk_1vsall"}. Default is \code{"sc"}.
 #' @param min.samples Integer. Minimum number of samples required for pseudobulk PCA (default: 5).
 #' @param min.cells Integer. Minimum number of cells required per group for PCA (default: 10).
 #' @param black.list Character vector. Genes to exclude from PCA. If \code{NULL}, defaults to
@@ -1332,9 +1332,13 @@ add.PCA <- function(scTypeEval,
       sample.name <- NULL
    }
    
-   if(!data.type %in% data_type){
+   if(data.type == "GloScope"){
+      stop("PCA not supported for GloScope data.type. Please use add.MDS() instead")
+   }
+   
+   if(!data.type %in% data_type[1:3]){
       stop(data.type, " data type conversion method not supported. Pick up one of: ", 
-           paste(data_type, collapse = ", "))
+           paste(data_type[1:3], collapse = ", "))
    }
    
    # set normalization method
@@ -1381,7 +1385,8 @@ add.PCA <- function(scTypeEval,
                                                             normalization.method = normalization.method,
                                                             data.type = data.type,
                                                             min.samples = min.samples,
-                                                            min.cells = min.cells)
+                                                            min.cells = min.cells,
+                                                            ndim = ndim)
                                          
                                          # accommodte to DimReduc
                                          
@@ -1478,6 +1483,7 @@ plot.PCA <- function(scTypeEval,
       # Apply filtering
       if (!is.null(gene.list) && length(intersect(gene.list, assay@gene.list)) == 0) next
       if (!is.null(data.type) && !assay@data.type %in% data.type) next
+      if (assay@key != "PCA") next
       
       df <- assay@embeddings[, dims] |>
          as.data.frame() |>
@@ -1499,6 +1505,10 @@ plot.PCA <- function(scTypeEval,
       pls[[a]] <- pl  # Store plot in the list
    }
    
+   if(length(pls) == 0){
+      warning("No PCA reductions found, run add.PCA before.\n")
+   }
+   
    return(pls)
 }
 
@@ -1517,7 +1527,7 @@ plot.PCA <- function(scTypeEval,
 #' @param ndim Integer; number of principal components to retain if `pca = TRUE` (default: `30`).
 #' @param distance.method A character string specifying the distance metric for clustering (default: `"euclidean"`).
 #' @param hierarchy.method A character string specifying the hierarchical clustering method. Default is `"ward.D2"`. For more option see \link[stats]{hclust}.
-#' @param data.type A character string indicating whether to use `"pseudobulk"` (aggregated samples) or `"sc"` (single-cell) data (default: `"pseudobulk"`).
+#' @param data.type A character string indicating whether to use `"pseudobulk"` (aggregated samples), `"GloScope`, or `"sc"` (single-cell) data (default: `"pseudobulk"`).
 #' @param min.samples Integer; minimum number of samples required for pseudobulk analysis (default: `5`).
 #' @param min.cells Integer; minimum number of cells required per group for inclusion in the analysis (default: `10`).
 #' @param black.list A vector of gene names to exclude from clustering. If `NULL`, uses the blacklist stored in `scTypeEval`.
@@ -1556,7 +1566,7 @@ get.hierarchy <- function(scTypeEval,
                           ndim = 30,
                           distance.method = "euclidean",
                           hierarchy.method = "ward.D2",
-                          data.type = c("pseudobulk", "sc"),
+                          data.type = c("pseudobulk", "sc", "GloScope"),
                           min.samples = 5,
                           min.cells = 10,
                           black.list = NULL,
@@ -1607,7 +1617,7 @@ get.hierarchy <- function(scTypeEval,
    } else {
       
       if(data.type != "sc"){
-         stop("For pseudobulk provide a dataset with multiple samples,
+         stop("For pseudobulk or GloScope provide a dataset with multiple samples,
               and specifiy their respective column metadata in `sample` parameter")
       } else {
          if(verbose){message("Using dataset as a unique sample, computing consistency across cells.\n")}
@@ -1629,6 +1639,22 @@ get.hierarchy <- function(scTypeEval,
    if(!data.type %in% data_type){
       stop(data.type, " data type conversion method not supported. Pick up one of: ", 
            paste(data_type, collapse = ", "))
+   }
+   
+   if(data.type == "GloScope" && !pca){
+      warning("data.type GloScope only run in PCA space, switching to pca=TRUE\n")
+      pca <- TRUE
+   }
+   
+   if(data.type == "GloScope" && !distance.method %in% Gloscope_dists){
+      stop("data.type GloScope only possible with ",
+           paste(Gloscope_dists, collapse = ", "),
+           " distances methods.")
+   }
+   
+   if(data.type != "GloScope" && distance.method %in% Gloscope_dists){
+      stop(paste(Gloscope_dists, collapse = ", "),
+           " only supported with GloScope data.type.")
    }
    
    # set normalization method
@@ -1707,7 +1733,7 @@ get.hierarchy <- function(scTypeEval,
 #' @param ndim Integer; number of principal components to retain if `pca = TRUE` (default: `30`).
 #' @param distance.method A character string specifying the distance metric for computing the KNN graph (default: `"euclidean"`).
 #' @param KNNGraph_k Integer; the number of neighbors to consider in the KNN graph (default: `5`).
-#' @param data.type A character string indicating whether to use `"pseudobulk"` (aggregated samples) or `"sc"` (single-cell) data (default: `"pseudobulk"`).
+#' @param data.type A character string indicating whether to use `"pseudobulk"` (aggregated samples), `"GloScope`, or `"sc"` (single-cell) data (default: `"pseudobulk"`).
 #' @param min.samples Integer; minimum number of samples required for pseudobulk analysis (default: `5`).
 #' @param min.cells Integer; minimum number of cells required per group for inclusion in the analysis (default: `10`).
 #' @param black.list A vector of gene names to exclude from analysis. If `NULL`, uses the blacklist stored in `scTypeEval`.
@@ -1745,7 +1771,7 @@ get.NN <- function(scTypeEval,
                    ndim = 30,
                    distance.method = "euclidean",
                    KNNGraph_k = 5,
-                   data.type = c("pseudobulk", "sc"),
+                   data.type = c("pseudobulk", "sc", "GloScope"),
                    min.samples = 5,
                    min.cells = 10,
                    black.list = NULL,
@@ -1796,7 +1822,7 @@ get.NN <- function(scTypeEval,
    } else {
       
       if(data.type != "sc"){
-         stop("For pseudobulk provide a dataset with multiple samples,
+         stop("For pseudobulk or GloScope provide a dataset with multiple samples,
               and specifiy their respective column metadata in `sample` parameter")
       } else {
          if(verbose){message("Using dataset as a unique sample, computing consistency across cells.\n")}
@@ -1818,6 +1844,22 @@ get.NN <- function(scTypeEval,
    if(!data.type %in% data_type){
       stop(data.type, " data type conversion method not supported. Pick up one of: ", 
            paste(data_type, collapse = ", "))
+   }
+   
+   if(data.type == "GloScope" && !pca){
+      warning("data.type GloScope only run in PCA space, switching to pca=TRUE\n")
+      pca <- TRUE
+   }
+   
+   if(data.type == "GloScope" && !distance.method %in% Gloscope_dists){
+      stop("data.type GloScope only possible with ",
+           paste(Gloscope_dists, collapse = ", "),
+           " distances methods.")
+   }
+   
+   if(data.type != "GloScope" && distance.method %in% Gloscope_dists){
+      stop(paste(Gloscope_dists, collapse = ", "),
+           " only supported with GloScope data.type.")
    }
    
    # set normalization method
@@ -1997,4 +2039,321 @@ dx.BestHit <- function(scTypeEval,
    
    
    return(dx.list)
+}
+
+
+
+#' @title Perform MDS (multidimensional scaling) from a distance matrix on a Gene List and Store Results in scTypeEval object
+#'
+#' @description This function projects your distance matrix into a lower-dimensional Euclidean space (typically 2D or 3D),
+#' while preserving the pairwise distances as closely as possible, based on an specified gene list
+#' and stores the results in the \code{reductions} slot of an scTypeEval object.
+#'
+#' @param scTypeEval A \code{scTypeEval} object containing single-cell expression data.
+#' @param ident Character. Metadata column name used to group cells (e.g., cell type annotation).
+#' If \code{NULL}, the active identity from \code{scTypeEval} is used.
+#' @param sample Character. Metadata column name specifying sample identity for pseudobulk analysis.
+#' Required for \code{pseudobulk}, \code{pseudobulk_1vsall}, and \code{GloScope} data types.
+#' @param normalization.method Character. Method for normalizing gene expression before PCA. See \link[scTypeEval]{add.HVG} for more details.
+#' Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"} (default: \code{"Log1p"}).
+#' @param distance.method Character. Distance metric to use. Must be one of the predefined methods. Default: `"euclidean"`.
+#' @param gene.list Named list of character vectors. Each element is a set of genes for PCA analysis.
+#' If \code{NULL}, all pre-defined gene lists in \code{scTypeEval} are used recursively.
+#' @param data.type Character. Type of data to analyze. Options: \code{"sc"}, \code{"pseudobulk"},
+#' \code{"pseudobulk_1vsall"}, or \code{GloScope}. Default is \code{"sc"}.
+#' @param min.samples Integer. Minimum number of samples required for pseudobulk PCA (default: 5).
+#' @param min.cells Integer. Minimum number of cells required per group for PCA (default: 10).
+#' @param black.list Character vector. Genes to exclude from PCA. If \code{NULL}, defaults to
+#' the blacklist stored in \code{scTypeEval}.
+#' @param ndim Integer. Number of maximum dimensions of the space represented (default: 30).
+#' @param pca Logical. Whether to perform PCA before computing metrics. Default: `FALSE`. This parameter will be turned to `TRUE` for GloScope data.type.
+#'    `FALSE` will build distances directly on the genes within `gene.list`, while `TRUE` will do it on their principal components.
+#' @param pca.dim Integer. Number of maximum dimensions to compute PCA, if distances are computed there (default: 30).
+#' @param ncores Integer. Number of CPU cores to use for parallel processing. Default: `1`.
+#' @param bparam Parallel backend parameter object for BiocParallel. If provided, overrides `ncores`.
+#' @param progressbar Logical. Whether to display a progress bar during computation. Default: `FALSE`.
+#' @param verbose Logical. Whether to print messages during execution. Default: `TRUE`.
+#'
+#' @return The modified \code{scTypeEval} object with MDS results stored in \code{reductions} slot.
+
+#'
+#' @examples
+#' \dontrun{
+#' sceval <- add.MDS(sceval, # scTypeEval object
+#'                  ident = "cell_type",
+#'                  distance.method = "euclidean",
+#'                  sample = "sample_id",
+#'                  data.type = "pseudobulk")
+#' }
+#' 
+#' @seealso \link{add.HVG} \link[stats]{cmdscale} 
+#'
+#' @export add.MDS
+
+
+# obtain PCA from a gene list
+add.MDS <- function(scTypeEval,
+                    ident = NULL,
+                    sample = NULL,
+                    normalization.method = c("Log1p", "CLR", "pearson"),
+                    distance.method = "euclidean",
+                    gene.list = NULL,
+                    data.type = c("sc", "pseudobulk",
+                                  "pseudobulk_1vsall",
+                                  "GloScope"),
+                    min.samples = 5,
+                    min.cells = 10,
+                    black.list = NULL,
+                    ndim = 30,
+                    pca = FALSE,
+                    pca.dim = 30,
+                    ncores = 1,
+                    bparam = NULL,
+                    progressbar = TRUE,
+                    verbose = TRUE){
+   
+   if(is.null(ident)){
+      ident <- scTypeEval@active.ident
+   }
+   
+   if(!ident %in% names(scTypeEval@metadata)){
+      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
+   }
+   
+   data.type = data.type[1]
+   
+   # retrieve ident and convert to factor
+   ident.name <- ident
+   ident <- scTypeEval@metadata[[ident]]
+   ident <- purge_label(ident)
+   ident <- factor(ident)
+   
+   if(!is.null(sample)){
+      if(!sample %in% names(scTypeEval@metadata)){
+         stop("`sample` parameter not found in metadata colnames.")
+      }
+      # retrieve sample and convert to factor
+      sample.name <- sample
+      sample <- scTypeEval@metadata[[sample]]
+      sample <- purge_label(sample)
+      sample <- factor(sample)
+      
+      if(min.samples < 2){
+         stop("For intersample comparison a minimum threshold of cell population
+              in at least 2 samples is required, but more is recommended.")
+      }
+      
+   } else {
+      
+      if(data.type != "sc"){
+         stop("For pseudobulk or GloScope provide a dataset with multiple samples,
+              and specifiy their respective column metadata in `sample` parameter")
+      } else {
+         if(verbose){message("Using dataset as a unique sample, computing consistency across cells.\n")}
+      }
+      sample.name <- NULL
+   }
+   
+   
+   if(!distance.method %in% distance_methods){
+      stop(distance.method, " distance method not supported. Pick up one of: ", 
+           paste(distance_methods, collapse = ", "))
+   }
+   # only run EMD on pseudobulk data.type
+   if(distance.method == "EMD" && data.type == "sc"){
+      warning("Earth mover distance (EMD) for single-cell (sc) data.type is
+              highly computially expensive... not recommended, it will take long")
+   }
+   
+   if(!data.type %in% data_type){
+      stop(data.type, " data type conversion method not supported. Pick up one of: ", 
+           paste(data_type, collapse = ", "))
+   }
+   
+   if(data.type == "GloScope" && !pca){
+      warning("data.type GloScope only run in PCA space, switching to pca=TRUE\n")
+      pca <- TRUE
+   }
+   
+   if(data.type == "GloScope" && !distance.method %in% Gloscope_dists){
+      stop("data.type GloScope only possible with ",
+           paste(Gloscope_dists, collapse = ", "),
+           " distances methods.")
+   }
+   
+   if(data.type != "GloScope" && distance.method %in% Gloscope_dists){
+      stop(paste(Gloscope_dists, collapse = ", "),
+           " only supported with GloScope data.type.")
+   }
+
+   # set normalization method
+   normalization.method <- normalization.method[1]
+   
+   # set gene lists
+   if(is.null(gene.list)){
+      gene.list <- scTypeEval@gene.lists
+      if(length(gene.list) == 0){
+         stop("No gene list found to run MDS\n
+              Add custom gene list or compute highly variable genes with add.HVG()\n")
+      }
+   } else {
+      if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
+         stop("Some gene list names not included in scTypeEval object")
+      }
+      gene.list <- scTypeEval@gene.lists[gene.list]
+   }
+   
+   if(is.null(black.list)){
+      black.list <- scTypeEval@black.list
+   }
+   
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   # loop over each gene.list
+   mds.list <- BiocParallel::bplapply(names(gene.list),
+                                      BPPARAM = param,
+                                      function(t){
+                                         
+                                         # get matrix
+                                         keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
+                                         mat <- scTypeEval@counts[keep,]
+                                         
+                                         # remove black list genes
+                                         mat <- mat[!rownames(mat) %in% black.list,]
+                                         
+                                         # compute PCA
+                                         mds.list <- get.MDS(mat,
+                                                            ident = ident,
+                                                            sample = sample,
+                                                            normalization.method = normalization.method,
+                                                            distance.method = distance.method,
+                                                            data.type = data.type,
+                                                            min.samples = min.samples,
+                                                            min.cells = min.cells,
+                                                            ndim = ndim,
+                                                            pca = pca,
+                                                            pca.dim = pca.dim,
+                                                            verbose = verbose)
+                                         
+                                         # accommodte to DimReduc
+                                         
+                                         mds.list <- lapply(seq_along(mds.list),
+                                                           function(cc){
+                                                              mds.list[[cc]]@gene.list <- t
+                                                              mds.list[[cc]]@black.list <- black.list
+                                                              mds.list[[cc]]@sample <- names(mds.list)[[cc]]
+                                                              return(mds.list[[cc]])
+                                                           })
+                                         
+                                         
+                                         
+                                         # name DimRed assays
+                                         names(mds.list) <- lapply(seq_along(mds.list),
+                                                                  function(ca){
+                                                                     v <- na.omit(c(mds.list[[ca]]@sample,
+                                                                                    mds.list[[ca]]@data.type))
+                                                                     paste(v,
+                                                                           collapse = "_")
+                                                                  })
+                                         
+                                         return(mds.list)
+                                      })
+   
+   names(mds.list) <- names(gene.list)
+   
+   # add to scTypeEval object
+   for(n in names(mds.list)){
+      for(m in names(mds.list[[n]]))
+         scTypeEval@reductions[[n]][[m]] <- mds.list[[n]][[m]]
+   }
+   
+   return(scTypeEval)
+   
+}
+
+#' Plot PCA Results from scTypeEval Object
+#'
+#' This function visualizes Principal Component Analysis (PCA) results stored in the \code{reductions} slot of an scTypeEval object.
+#'
+#' @param scTypeEval An \code{scTypeEval} object containing PCA results in the \code{reductions} slot.
+#' @param gene.list Character vector. gene.list names to filter PCA plots. If \code{NULL}, all available PCA results are plotted.
+#' @param data.type Character vector. Specifies which data types to include in the plots (e.g., \code{"sc"}, \code{"pseudobulk"}).
+#' If \code{NULL}, all data types are included.
+#' @param dims Integer vector of length 2. The principal component (PC) dimensions to plot (default: \code{c(1,2)}).
+#' @param label Logical. Whether to add labels to the PCA plot (default: \code{TRUE}).
+#' @param show.legend Logical. Whether to display a legend (default: \code{FALSE}).
+#'
+#' @return A named list of PCA plots (\link{ggplot2} objects) corresponding to different PCA analyses stored in
+#'  \code{reductions} slot of an scTypeEval object by \link{add.PCA}.
+#'
+#' @seealso \link{add.PCA}
+#' 
+#' @examples
+#' \dontrun{
+#' # plot all PCA dimensional reductions
+#' pca_plots <- plot.MDS(sceval) # scTypeEval object with previously run `add.PCA()`
+#' 
+#' # plot only some PCAs
+#' mds_plots_filtered <- plot.MDS(sceval, # scTypeEval object with previously run `add.PCA()`
+#'                               gene.list = "HVG", # plot only PCA for highly variable genes
+#'                               data.type = "pseudobulk" # plot only PCA for pseudobulk data
+#'                               ) 
+#' }
+#'
+#' @export plot.MDS
+
+
+plot.MDS <- function(scTypeEval,
+                     gene.list = NULL,
+                     data.type = NULL,
+                     dims = c(1,2),
+                     label = TRUE,
+                     show.legend = FALSE) {
+   
+   # Ensure the reductions slot is not empty
+   if (length(scTypeEval@reductions) == 0) {
+      stop("The 'reductions' slot in the 'scTypeEval' object is empty.")
+   }
+   
+   assays <- unlist(scTypeEval@reductions)
+   pls <- list()  # Initialize an empty list to store plots
+   
+   # Loop through each ConsistencyAssay object in scTypeEval@reductions
+   for (a in names(assays)) {
+      assay <- assays[[a]]
+      
+      # Check for class validity
+      if (!inherits(assay, "DimRed")) {
+         stop(paste("Invalid object in reductions slot"))
+      }
+      
+      # Apply filtering
+      if (!is.null(gene.list) && length(intersect(gene.list, assay@gene.list)) == 0) next
+      if (!is.null(data.type) && !assay@data.type %in% data.type) next
+      if (assay@key != "MDS") next
+      
+      df <- assay@embeddings[, dims] |>
+         as.data.frame() |>
+         dplyr::mutate(ident = assay@ident)
+
+      
+      labs <- paste0("Dim", dims)
+      
+      pl <- helper.plot.PCA(df,
+                            show.legend = show.legend,
+                            label = label) +
+         ggplot2::labs(x = labs[1],
+                       y = labs[2],
+                       title = a)
+      
+      pls[[a]] <- pl  # Store plot in the list
+   }
+   
+   if(length(pls) == 0){
+      warning("No MDS reductions found, run add.MDS before.\n")
+   }
+   
+   return(pls)
 }

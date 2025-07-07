@@ -216,8 +216,8 @@ normalize_metric <- function(value, metric) {
 
 get.PCA <- function(mat,
                     ident,
-                    normalization.method,
-                    data.type,
+                    normalization.method = "Log1p",
+                    data.type = "sc",
                     sample = NULL,
                     min.samples = 5,
                     min.cells = 10,
@@ -412,4 +412,100 @@ sample_variable_length_combinations <- function(elements,
    }
    
    return(unique_combinations)
+}
+
+
+get.MDS <- function(mat,
+                    ident,
+                    normalization.method = "Log1p",
+                    distance.method = "euclidean",
+                    data.type = "sc",
+                    sample = NULL,
+                    min.samples = 5,
+                    min.cells = 10,
+                    bparam = BiocParallel::SerialParam(),
+                    ndim = 30,
+                    pca = FALSE,
+                    pca.dim = 30,
+                    verbose = TRUE)
+{
+   mats <- get.matrix(mat,
+                      data.type = data.type,
+                      ident = ident,
+                      sample = sample,
+                      min.samples = min.samples,
+                      min.cells = min.cells,
+                      bparam = bparam)
+   
+   if(!is.list(mats)){
+      mats <- list(mats)
+   }
+   
+   mdss <- BiocParallel::bplapply(mats,
+                                  BPPARAM = bparam,
+                                  function(red.mat){
+                                     # normalized subetted matrix
+                                     norm.mat <- Normalize_data(red.mat@matrix,
+                                                                method = normalization.method)
+                                     nident <- red.mat@ident
+                                     if(pca){
+                                        if(verbose){message("Computing PCA space\n")}
+                                        pr <- custom_prcomp(norm.mat, pca.dim)
+                                        mat <- NULL
+                                        
+                                        if(data.type == "GloScope"){
+                                           if(verbose){message("Computing GloScope divergencies\n")}
+                                           suppressWarnings(
+                                              {
+                                                 dist <- GloScope::gloscope(embedding_matrix = pr$x,
+                                                                            cell_sample_ids = red.mat@ident,
+                                                                            dens = "KNN",
+                                                                            dist_mat = distance.method,
+                                                                            k = min.cells-1
+                                                 )
+                                                 nident <- sapply(colnames(dist),
+                                                                  function(x){
+                                                                     strsplit(x, "_")[[1]][2]
+                                                                  }) |>
+                                                    factor()
+                                              })
+                                           norm.mat <- dist
+                                           dist <- as.dist(dist)
+                                        } else {
+                                           norm.mat <- t(pr$x)
+                                        }
+                                     } else{
+                                        mat <- red.mat@matrix
+                                     }
+                                     # get distances
+                                     if(data.type != "GloScope"){
+                                        dist <- get.distance(mat = mat,
+                                                             norm.mat = norm.mat,
+                                                             distance.method = distance.method)
+                                     }
+                                     
+                                     ndim <- min(attr(dist, "Size") - 1, ndim)
+                                     
+                                     # comute MDS scale
+                                     mds <- stats::cmdscale(dist,
+                                                            k = ndim,
+                                                            eig = TRUE)
+                                     
+                                     rr <- methods::new("DimRed",
+                                                        embeddings = mds$points,
+                                                        feature.loadings = matrix(nrow = 0, ncol = 0),  # not applicable for MDS,
+                                                        gene.list = "tmp",
+                                                        black.list = "tmp",
+                                                        data.type = as.character(data.type),
+                                                        ident = nident,
+                                                        key = "MDS")
+                                     
+                                     return(rr)
+                                     
+                                  })
+   
+   names(mdss) <- names(mats)
+   
+   return(mdss)
+   
 }
