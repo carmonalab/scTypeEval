@@ -2288,7 +2288,7 @@ add.MDS <- function(scTypeEval,
 #' @return A named list of PCA plots (\link{ggplot2} objects) corresponding to different PCA analyses stored in
 #'  \code{reductions} slot of an scTypeEval object by \link{add.PCA}.
 #'
-#' @seealso \link{add.PCA}
+#' @seealso \link{add.MDS}
 #' 
 #' @examples
 #' \dontrun{
