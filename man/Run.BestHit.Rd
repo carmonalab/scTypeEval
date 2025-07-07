@@ -42,7 +42,7 @@ between the two sample classifications per cell type. Only supported by \code{"p
 \item{classifier}{Method to classify or annotated cell type. Supported option are:
 \itemize{
 \item \code{Spearman_correlation}: Assigns cell types by computing the Spearman correlation between each cell's expression profile and reference profiles (e.g., averaged marker gene expression per cell type). The label with the highest correlation is assigned.
-\item \link[SingleR]{SingleR}: Automatic annotation method introduced by Aran et al., 2019 \link{\doi{10.1038/s41590-018-0276-y}}, implemented in \link[SingleR]{SingleR}. Compares each cell to reference datasets and assigns the most similar cell type label.
+\item \link[SingleR]{SingleR}: Automatic annotation method introduced by Aran et al., 2019, implemented in \link[SingleR]{SingleR}. Compares each cell to reference datasets and assigns the most similar cell type label.
 }}
 
 \item{sample}{A character string specifying the metadata column that identifies sample IDs.

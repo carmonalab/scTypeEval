@@ -748,7 +748,7 @@ Run.Consistency <- function(scTypeEval,
 #'   between the two sample classifications per cell type. Only supported by `"pseudobulk"` data.type.
 #' @param classifier Method to classify or annotated cell type. Supported option are:
 #'   - `Spearman_correlation`: Assigns cell types by computing the Spearman correlation between each cell's expression profile and reference profiles (e.g., averaged marker gene expression per cell type). The label with the highest correlation is assigned.
-#'   - \link[SingleR]{SingleR}: Automatic annotation method introduced by Aran et al., 2019 [\doi{10.1038/s41590-018-0276-y}], implemented in \link[SingleR]{SingleR}. Compares each cell to reference datasets and assigns the most similar cell type label.
+#'   - \link[SingleR]{SingleR}: Automatic annotation method introduced by Aran et al., 2019, implemented in \link[SingleR]{SingleR}. Compares each cell to reference datasets and assigns the most similar cell type label.
 #' @param sample A character string specifying the metadata column that identifies sample IDs. 
 #' This is required for consistency evaluation.
 #' @param data.type Character. Type of data input to perform.
