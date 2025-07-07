@@ -25,6 +25,7 @@ compute_centroids <- function(norm.mat, ident) {
 }
 
 # compute medoid based on distances
+# expecting symmetric distances
 compute_medoid_indices <- function(ident,
                                    dist) {
    dist_mat <- as.matrix(dist)  # full symmetric matrix
