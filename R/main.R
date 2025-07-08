@@ -585,19 +585,23 @@ Run.Consistency <- function(scTypeEval,
    }
    
    if(data.type == "GloScope" && !distance.method %in% Gloscope_dists){
-      stop("data.type GloScope only possible with ",
+      warning("data.type GloScope only possible with ",
            paste(Gloscope_dists, collapse = ", "),
-           " distances methods.")
+           " distances methods. Changing distance to KL")
+      distance.method <- "KL"
    }
    
    if(data.type != "GloScope" && distance.method %in% Gloscope_dists){
-      stop(paste(Gloscope_dists, collapse = ", "),
-           " only supported with GloScope data.type.")
+      warning(paste(Gloscope_dists, collapse = ", "),
+           " only supported with GloScope data.type. Changing distance to euclidean")
+      distance.method <- "euclidean"
    }
    
    if(data.type == "GloScope" &&
-      centroid.need %in% IntVal.metric){
-      warning("Centroid-based consistency metrics not supported for data.type GloScope, not running\n")
+      any(centroid.need %in% IntVal.metric)){
+      warning("Centroid-based consistency metrics (",
+              paste(IntVal.metric[IntVal.metric %in% centroid.need], collapse = ", "),
+      ") not supported for data.type GloScope, not running\n")
       IntVal.metric <- IntVal.metric[!IntVal.metric %in% centroid.need]
    }
    
