@@ -1226,18 +1226,18 @@ wr.assayPlot <- function(df,
          
          plc <- dftmp |>
             ggplot2::ggplot(ggplot2::aes(rate, scaled_measure)) +
-            ggplot2::geom_point(ggplot2::aes(color = celltype),
-                                shape = 1) +
+            ggplot2::stat_summary(ggplot2::aes(group = celltype,
+                                               color = celltype),
+                                  geom = "point",
+                                  alpha = 0.6,
+                                  shape = 1,
+                                  fun = mean) +
             ggplot2::stat_summary(ggplot2::aes(group = consistency.metric),
                                   geom = "line",
                                   fun = function(y){mean(y, trim = trim)}) +
             ggplot2::stat_summary(ggplot2::aes(group = consistency.metric),
                                   geom = "point",
                                   fun = function(y){mean(y, trim = trim)}) +
-            ggplot2::stat_summary(ggplot2::aes(group = consistency.metric),
-                                  geom = "errorbar",
-                                  fun.data = function(y){trim_mean_se::trim_mean_se(y, trim = trim)},  # Use mean and standard error
-                                  width = 0.05) +  # Adjust the width of error bars
             ggplot2::geom_label(data = rsqtmp,
                                 ggplot2::aes(x = range.x[1] + 0.2, y = 1.2,
                                              label = r.squared,
