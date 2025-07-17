@@ -3,6 +3,7 @@ methods::setClass("scTypeEval",
                   slots = c(
                      counts = "dgCMatrix", # raw counts
                      metadata = "data.frame", # data.frame with metadata
+                     distances = "list",
                      consistency = "list", # actual consistency results assays
                      gene.lists = "list", # list of either HGV, markers
                      black.list = "character", # list of genes in black list
@@ -16,6 +17,11 @@ methods::setClass("scTypeEval",
 # Define the initialize method to set default for reductions and consistency
 methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
    args <- list(...)
+   
+   # Set default for consistency if not provided
+   if (is.null(args$distances)) {
+      args$distances <- list()
+   }
    
    # Set default for consistency if not provided
    if (is.null(args$consistency)) {
@@ -35,6 +41,19 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
    validObject(.Object)  # Validate the object
    .Object
 })
+
+methods::setClass("DissimilarityAssay",
+                  slots = c(
+                     measure = "ANY",
+                     consistency.metric = "character",
+                     distance.method = "ANY",
+                     gene.list = "character",
+                     black.list = "character",
+                     ident = "character",
+                     data.type = "character",
+                     sample = "ANY"
+                  )
+)
 
 # define consistency assay object
 methods::setClass("ConsistencyAssay",
@@ -56,8 +75,9 @@ methods::setClass("DimRed",
                      feature.loadings = 'matrix',
                      gene.list = "character",
                      black.list = "character",
-                     data.type = "character",
-                     sample = "ANY",
+                     aggregation = "character",
+                     group = "factor",
+                     sample = "factor",
                      ident = "factor",
                      key = "character" # type of reduction, PCA, UMAP...
                   )
@@ -65,7 +85,9 @@ methods::setClass("DimRed",
 
 methods::setClass("Mat_ident",
                   slots = c(
-                     matrix = 'ANY',
-                     ident = 'factor'
+                     matrix = 'matrix',
+                     groups = 'factor',
+                     ident = 'factor',
+                     sample = 'factor'
                   )
 )

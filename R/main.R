@@ -47,7 +47,7 @@ create.scTypeEval <- function(matrix,
                               gene.lists = list(), 
                               black.list = character(), 
                               active.ident = NULL,
-                              version = "1.0.0") {
+                              version = "2.0.0") {
    
    # Check input type
    if (inherits(matrix, "Seurat")) {
@@ -137,6 +137,7 @@ set.activeIdent <- function(scTypeEval,
 #' @param ncores Integer specifying the number of CPU cores to use for parallel processing (default: `1`).
 #' @param bparam A `BiocParallel` backend parameter object for parallelization. If provided, overrides `ncores`.
 #' @param progressbar Logical, whether to display a progress bar during computation (default: `TRUE`).
+#' @param verbose Logical. Whether to print messages during execution. Default: `TRUE`.
 #' @param ... Additional arguments passed to pearson residuals normalization functions.
 #'
 #' @return The modified `scTypeEval` object with HVGs added to `scTypeEval@gene.lists[["HVG"]]`.
@@ -175,34 +176,24 @@ add.HVG <- function(scTypeEval,
                     normalization.method = c("Log1p", "CLR", "pearson"),
                     var.method = c("scran", "basic"),
                     sample = NULL,
-                    ngenes = 500,
+                    ngenes = 2000,
                     black.list = NULL,
                     ncores = 1,
                     bparam = NULL,
                     progressbar = TRUE,
+                    verbose = TRUE,
                     ...){
-   if(!is.null(sample)){
-      if(!sample %in% names(scTypeEval@metadata)){
-         stop("`sample` parameter not found in metadata colnames.")
-      }
-      # retrieve sample and convert to factor
-      sample.name <- sample
-      sample <- scTypeEval@metadata[[sample]]
-      sample <- purge_label(sample)
-      sample <- factor(sample)
-   }
+   
+   sample <- .check_sample(scTypeEval, sample, verbose = verbose)
+   
+   black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
+   
    # normalize matrix
-   mat <- scTypeEval@counts
-   if(is.null(black.list)){
-      black.list <- scTypeEval@black.list
-   }
-   
-   
    norm.mat <- Normalize_data(mat = mat,
                               method = normalization.method[1],
                               ...)
@@ -251,6 +242,7 @@ add.HVG <- function(scTypeEval,
 #' @param ncores Integer specifying the number of cores to use for parallel processing (default: 1).
 #' @param bparam Optional. A BiocParallel parameter object for controlling parallel computation. If provided, overrides `ncores`.
 #' @param progressbar Logical. Whether to display a progress bar (default: TRUE).
+#' @param verbose Logical. Whether to print messages during execution. Default: `TRUE`.
 #' @param ... Additional arguments passed to `"scran.findMarkers"`.
 #'
 #' @return The modified `scTypeEval` object with gene markers added to `scTypeEval@gene.lists[[method]]`.
@@ -280,44 +272,17 @@ add.GeneMarkers <- function(scTypeEval,
                             ncores = 1,
                             bparam = NULL,
                             progressbar = TRUE,
+                            verbose = TRUE,
                             ...){
    
    method <- method[1]
-   if(!method %in% c("scran.findMarkers", "gpsFISH")){
+   if(!method %in% c("scran.findMarkers")){
       stop("Supported gene markes definitions is `scran.findMarkers`")
    }
    
-   if(is.null(ident)){
-      ident <- scTypeEval@active.ident
-   }
-   
-   if(!ident %in% names(scTypeEval@metadata)){
-      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
-   }
-   
-   # retrieve ident and convert to factor
-   ident.name <- ident
-   ident <- scTypeEval@metadata[[ident]]
-   ident <- purge_label(ident)
-   ident <- factor(ident)
-   
-   if(length(unique(ident)) < 2){
-      stop("Less than 2 cell type detected, Consistency metrics not possible")
-   }
-   
-   if(!is.null(sample)){
-      if(!sample %in% names(scTypeEval@metadata)){
-         stop("`sample` parameter not found in metadata colnames.")
-      }
-      # retrieve sample and convert to factor
-      sample <- scTypeEval@metadata[[sample]]
-      sample <- purge_label(sample)
-      sample <- factor(sample)
-   }
-   
-   if(is.null(black.list)){
-      black.list <- scTypeEval@black.list
-   }
+   ident <- .check_ident(scTypeEval, ident, verbose = verbose)
+   sample <- .check_sample(scTypeEval, sample, verbose = verbose)
+   black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
    
    mat <- scTypeEval@counts
    
@@ -330,11 +295,7 @@ add.GeneMarkers <- function(scTypeEval,
                                                    bparam = bparam,
                                                    progressbar = progressbar,
                                                    black.list = black.list,
-                                                   ...),
-                     "gpsFISH" = get.gpsFISHMarkers(sc_count = mat,
-                                                    ident = ident,
-                                                    black.list = black.list
-                     )
+                                                   ...)
    )
    
    scTypeEval@gene.lists[[method]] <- markers
@@ -371,8 +332,12 @@ add.GeneList <- function(scTypeEval,
    
    # check if it is a list and if it is named
    # Check if gene.list is provided
-   if (is.null(gene.list) || !is.list(gene.list)) {
+   if (is.null(gene.list)) {
       stop("gene.list cannot be NULL. Please provide a valid list.")
+   }
+   
+   if(!is.list(gene.list)){
+      gene.list <- list(gene.list)
    }
    
    # If gene.list is unnamed, assign names
@@ -385,6 +350,182 @@ add.GeneList <- function(scTypeEval,
    
    return(scTypeEval)
 }
+
+#' @title Perform PCA on a Gene List and Store Results in scTypeEval object
+#'
+#' @description This function computes Principal Component Analysis (PCA) based on an specified gene list
+#' and stores the results in the \code{reductions} slot of an scTypeEval object.
+#'
+#' @param scTypeEval A \code{scTypeEval} object containing single-cell expression data.
+#' @param ident Character. Metadata column name used to group cells (e.g., cell type annotation).
+#' If \code{NULL}, the active identity from \code{scTypeEval} is used.
+#' @param sample Character. Metadata column name specifying sample identity for pseudobulk analysis.
+#' Required for \code{pseudobulk}, \code{pseudobulk_1vsall}, and \code{GloScope} data types.
+#' @param normalization.method Character. Method for normalizing gene expression before PCA. See \link[scTypeEval]{add.HVG} for more details.
+#' Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"} (default: \code{"Log1p"}).
+#' @param gene.list Named list of character vectors. Each element is a set of genes for PCA analysis.
+#' If \code{NULL}, all pre-defined gene lists in \code{scTypeEval} are used recursively.
+#' @param data.type Character. Type of data to analyze. Options: \code{"sc"}, \code{"pseudobulk"}, or
+#' \code{"pseudobulk_1vsall"}. Default is \code{"sc"}.
+#' @param min.samples Integer. Minimum number of samples required for pseudobulk PCA (default: 5).
+#' @param min.cells Integer. Minimum number of cells required per group for PCA (default: 10).
+#' @param black.list Character vector. Genes to exclude from PCA. If \code{NULL}, defaults to
+#' the blacklist stored in \code{scTypeEval}.
+#' @param ndim Integer. Number of principal components to compute (default: 30).
+#' @param ncores Integer. Number of CPU cores to use for parallel processing. Default: `1`.
+#' @param bparam Parallel backend parameter object for BiocParallel. If provided, overrides `ncores`.
+#' @param progressbar Logical. Whether to display a progress bar during computation. Default: `FALSE`.
+#' @param verbose Logical. Whether to print messages during execution. Default: `TRUE`.
+#'
+#' @return The modified \code{scTypeEval} object with PCA results stored in \code{reductions} slot.
+
+#'
+#' @examples
+#' \dontrun{
+#' sceval <- add.PCA(sceval, # scTypeEval object
+#'                  ident = "cell_type",
+#'                  sample = "sample_id",
+#'                  data.type = "pseudobulk")
+#' }
+#' 
+#' @seealso \link{add.HVG}
+#'
+#' @export add.PCA
+
+
+# obtain PCA from a gene list
+add.PCA <- function(scTypeEval,
+                    ident = NULL,
+                    sample = NULL,
+                    normalization.method = "Log1p",
+                    gene.list = NULL,
+                    aggregation = "single-cell",
+                    min.samples = 5,
+                    min.cells = 10,
+                    black.list = NULL,
+                    ndim = 30,
+                    ncores = 1,
+                    bparam = NULL,
+                    progressbar = TRUE,
+                    verbose = TRUE){
+   
+   #### preflights checks
+   ident.name <- ident
+   ident <- .check_ident(scTypeEval, ident, verbose = verbose)
+   sample.name <- sample
+   sample <- .check_sample(scTypeEval, sample, verbose = verbose)
+   if(is.null(sample)){
+      stop("Sample information required for computing inter-sample dissimilarity")
+   }
+   
+   black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
+   gene.list <- .check_genelist(scTypeEval, gene.list, verbose = verbose)
+   
+   # set normalization method
+   normalization.method <- normalization.method[1]
+   
+   # set paralelization
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   #### RUN 
+   # Transform data
+   mat <- get.matrix(scTypeEval@counts,
+                     ident = ident,
+                     sample = sample,
+                     aggregation = aggregation,
+                     min.samples = min.samples,
+                     min.cells = min.cells)
+   
+   # Normalize data
+   norm.mat <- Normalize_data(mat@matrix,
+                              method = normalization.method)
+                                         
+   # keep only gene list features
+   norm.mat <- norm.mat[rownames(norm.mat) %in% gene.list,]
+   
+   # remove black list genes
+   norm.mat <- norm.mat[!rownames(mat) %in% black.list,]
+   
+   # remove rows or columsns with only 0
+   mat@matrix <- norm.mat
+   mat <- filter_empty(mat)
+   
+   # compute PCA
+   pr <- custom_prcomp(mat@matrix,
+                       ndim = ndim)
+   
+   # Create DimRed assay
+   rr <- methods::new("DimRed",
+                      embeddings = pr$x,
+                      feature.loadings = pr$rotation,
+                      gene.list = gene.list,
+                      black.list = black.list,
+                      aggregation = aggregation,
+                      group = mat@group,
+                      ident = mat@ident,
+                      sample = mat@sample,
+                      key = "PCA")
+   
+   # add to scTypeEval object
+   nn <- paste(aggregation, ident.name, sample.name, sep = "_")
+   
+   scTypeEval@reductions[[nn]]<- rr
+
+   
+   return(scTypeEval)
+   
+}
+
+
+add.Dissimilarity <- function(scTypeEval,
+                              ident = NULL,
+                              sample = NULL,
+                              gene.list = NULL,
+                              pca = TRUE,
+                              ndim = 30,
+                              method = "WasserStein",
+                              min.samples = 5,
+                              min.cells = 10,
+                              black.list = NULL,
+                              ncores = 1,
+                              bparam = NULL,
+                              progressbar = TRUE,
+                              verbose = TRUE
+                              
+){
+   # run preflight checks
+   method <- method[1]
+   if(!method %in% dissimilarity_methods){
+      stop("Not supported dissimilarity method.\n 
+           Please choice one of: ",
+           paste(dissimilarity_methods, collapse = ", "),
+           ".\n")
+   }
+   
+   ident <- .check_ident(scTypeEval, ident, verbose = verbose)
+   sample <- .check_sample(scTypeEval, sample, verbose = verbose)
+   if(is.null(sample)){
+      stop("Sample information required for computing inter-sample dissimilarity")
+   }
+
+   black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
+   
+   if(!pca){
+      warning("Not using PCA dimensionality reduction, this may increase computing time...\n")
+   }
+   
+   # set normalization method
+   normalization.method <- normalization.method[1]
+   
+   # set paralelization
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+}
+
 
 
 #' @title Run Consistency Analysis on Single-Cell Data
@@ -1240,193 +1381,7 @@ get.ConsistencyData <- function(scTypeEval,
    
 }
 
-#' @title Perform PCA on a Gene List and Store Results in scTypeEval object
-#'
-#' @description This function computes Principal Component Analysis (PCA) based on an specified gene list
-#' and stores the results in the \code{reductions} slot of an scTypeEval object.
-#'
-#' @param scTypeEval A \code{scTypeEval} object containing single-cell expression data.
-#' @param ident Character. Metadata column name used to group cells (e.g., cell type annotation).
-#' If \code{NULL}, the active identity from \code{scTypeEval} is used.
-#' @param sample Character. Metadata column name specifying sample identity for pseudobulk analysis.
-#' Required for \code{pseudobulk}, \code{pseudobulk_1vsall}, and \code{GloScope} data types.
-#' @param normalization.method Character. Method for normalizing gene expression before PCA. See \link[scTypeEval]{add.HVG} for more details.
-#' Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"} (default: \code{"Log1p"}).
-#' @param gene.list Named list of character vectors. Each element is a set of genes for PCA analysis.
-#' If \code{NULL}, all pre-defined gene lists in \code{scTypeEval} are used recursively.
-#' @param data.type Character. Type of data to analyze. Options: \code{"sc"}, \code{"pseudobulk"}, or
-#' \code{"pseudobulk_1vsall"}. Default is \code{"sc"}.
-#' @param min.samples Integer. Minimum number of samples required for pseudobulk PCA (default: 5).
-#' @param min.cells Integer. Minimum number of cells required per group for PCA (default: 10).
-#' @param black.list Character vector. Genes to exclude from PCA. If \code{NULL}, defaults to
-#' the blacklist stored in \code{scTypeEval}.
-#' @param ndim Integer. Number of principal components to compute (default: 30).
-#' @param ncores Integer. Number of CPU cores to use for parallel processing. Default: `1`.
-#' @param bparam Parallel backend parameter object for BiocParallel. If provided, overrides `ncores`.
-#' @param progressbar Logical. Whether to display a progress bar during computation. Default: `FALSE`.
-#' @param verbose Logical. Whether to print messages during execution. Default: `TRUE`.
-#'
-#' @return The modified \code{scTypeEval} object with PCA results stored in \code{reductions} slot.
 
-#'
-#' @examples
-#' \dontrun{
-#' sceval <- add.PCA(sceval, # scTypeEval object
-#'                  ident = "cell_type",
-#'                  sample = "sample_id",
-#'                  data.type = "pseudobulk")
-#' }
-#' 
-#' @seealso \link{add.HVG}
-#'
-#' @export add.PCA
-
-
-# obtain PCA from a gene list
-add.PCA <- function(scTypeEval,
-                    ident = NULL,
-                    sample = NULL,
-                    normalization.method = c("Log1p", "CLR", "pearson"),
-                    gene.list = NULL,
-                    data.type = c("sc", "pseudobulk",
-                                  "pseudobulk_1vsall"),
-                    min.samples = 5,
-                    min.cells = 10,
-                    black.list = NULL,
-                    ndim = 30,
-                    ncores = 1,
-                    bparam = NULL,
-                    progressbar = TRUE,
-                    verbose = TRUE){
-   
-   if(is.null(ident)){
-      ident <- scTypeEval@active.ident
-   }
-   
-   if(!ident %in% names(scTypeEval@metadata)){
-      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
-   }
-   
-   data.type = data.type[1]
-   
-   # retrieve ident and convert to factor
-   ident.name <- ident
-   ident <- scTypeEval@metadata[[ident]]
-   ident <- purge_label(ident)
-   ident <- factor(ident)
-   
-   if(!is.null(sample)){
-      if(!sample %in% names(scTypeEval@metadata)){
-         stop("`sample` parameter not found in metadata colnames.")
-      }
-      # retrieve sample and convert to factor
-      sample.name <- sample
-      sample <- scTypeEval@metadata[[sample]]
-      sample <- purge_label(sample)
-      sample <- factor(sample)
-      
-   } else {
-      
-      if(data.type != "sc"){
-         stop("For pseudobulk provide a dataset with multiple samples,
-              and specifiy their respective column metadata in `sample` parameter")
-      } else {
-         if(verbose){message("Using dataset as a unique sample, computing PCA across cells.\n")}
-      }
-      sample.name <- NULL
-   }
-   
-   if(data.type == "GloScope"){
-      stop("PCA not supported for GloScope data.type. Please use add.MDS() instead")
-   }
-   
-   if(!data.type %in% data_type[1:3]){
-      stop(data.type, " data type conversion method not supported. Pick up one of: ", 
-           paste(data_type[1:3], collapse = ", "))
-   }
-   
-   # set normalization method
-   normalization.method <- normalization.method[1]
-   
-   # set gene lists
-   if(is.null(gene.list)){
-      gene.list <- scTypeEval@gene.lists
-      if(length(gene.list) == 0){
-         stop("No gene list found to run PCA.\n
-              Add custom gene list or compute highly variable genes with add.HVG()\n")
-      }
-   } else {
-      if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
-         stop("Some gene list names not included in scTypeEval object")
-      }
-      gene.list <- scTypeEval@gene.lists[gene.list]
-   }
-   
-   if(is.null(black.list)){
-      black.list <- scTypeEval@black.list
-   }
-   
-   param <- set_parallel_params(ncores = ncores,
-                                bparam = bparam,
-                                progressbar = progressbar)
-   
-   # loop over each gene.list
-   pca.list <- BiocParallel::bplapply(names(gene.list),
-                                      BPPARAM = param,
-                                      function(t){
-                                         
-                                         # get matrix
-                                         keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
-                                         mat <- scTypeEval@counts[keep,]
-                                         
-                                         # remove black list genes
-                                         mat <- mat[!rownames(mat) %in% black.list,]
-                                         
-                                         # compute PCA
-                                         pc.list <- get.PCA(mat,
-                                                            ident = ident,
-                                                            sample = sample,
-                                                            normalization.method = normalization.method,
-                                                            data.type = data.type,
-                                                            min.samples = min.samples,
-                                                            min.cells = min.cells,
-                                                            ndim = ndim)
-                                         
-                                         # accommodte to DimReduc
-                                         
-                                         pc.list <- lapply(seq_along(pc.list),
-                                                           function(cc){
-                                                              pc.list[[cc]]@gene.list <- t
-                                                              pc.list[[cc]]@black.list <- black.list
-                                                              pc.list[[cc]]@sample <- names(pc.list)[[cc]]
-                                                              return(pc.list[[cc]])
-                                                           })
-                                         
-                                         
-                                         
-                                         # name DimRed assays
-                                         names(pc.list) <- lapply(seq_along(pc.list),
-                                                                  function(ca){
-                                                                     v <- na.omit(c(pc.list[[ca]]@sample,
-                                                                                    pc.list[[ca]]@data.type))
-                                                                     paste(v,
-                                                                           collapse = "_")
-                                                                  })
-                                         
-                                         return(pc.list)
-                                      })
-   
-   names(pca.list) <- names(gene.list)
-   
-   # add to scTypeEval object
-   for(n in names(pca.list)){
-      for(m in names(pca.list[[n]]))
-         scTypeEval@reductions[[n]][[m]] <- pca.list[[n]][[m]]
-   }
-   
-   return(scTypeEval)
-   
-}
 
 #' Plot PCA Results from scTypeEval Object
 #'

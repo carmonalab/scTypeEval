@@ -217,10 +217,12 @@ normalize_metric <- function(value, metric) {
 get.PCA <- function(mat,
                     ident,
                     normalization.method = "Log1p",
-                    data.type = "sc",
+                    aggregation = c("single-cell"),
                     sample = NULL,
+                    gene.list,
                     min.samples = 5,
                     min.cells = 10,
+                    black.list = NULL,
                     bparam = BiocParallel::SerialParam(),
                     ndim = 30)
 {
@@ -266,21 +268,19 @@ get.PCA <- function(mat,
 }
 
 custom_prcomp <- function(norm.mat,
-                          ndim){
+                          ndim, 
+                          verbose = TRUE){
    # if ncol or nrow is below given ndim use this number
-   ndim <- min(dim(norm.mat), ndim)
+   ndim <- min(dim(norm.mat)-1, ndim)
+   
+   if(verbose){message("Returning ", ndim, "dimensions for PCA")}
    
    # compute PCA
-   pr <- stats::prcomp(Matrix::t(norm.mat),
-                       rank. = ndim)
+   pr <- irlba::prcomp_irlba(Matrix::t(norm.mat),
+                             n = ndim,
+                             center = TRUE,
+                             scale. = FALSE)
    return(pr)
-}
-
-# function to purge sample and annotation names
-purge_label <- function(label){
-   label <- gsub(" |_|[+]|-", ".", label)
-   label <- gsub(",", "", label)
-   return(label)
 }
 
 

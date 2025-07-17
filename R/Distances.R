@@ -16,6 +16,15 @@ distance_methods <- c(
    "JS"
 )
 
+dissimilarity_methods <-
+   c("Distribution:WasserStein",
+     "Aggregated:Euclidean",
+     "Aggregated:Cosine",
+     "Aggregated:Pearson",
+     "Mutual:BestHit",
+     "Mutual:Score"
+   )
+
 Gloscope_dists <- c("KL","JS")
 
 compute_fast_euclidean <- function(norm.mat) {
