@@ -512,8 +512,9 @@ get.MDS <- function(mat,
 
 
 .general_filtering <- function(mat, # Mat_ident object
-                              black.list = NULL,
-                              gene.list = NULL){
+                               black.list = NULL,
+                               gene.list = NULL,
+                               verbose = T){
    norm.mat <- mat@matrix
    # remove blacked listed genes
    if(!is.null(black.list) && verbose){message("   Filtering out black listed genes... \n")}
@@ -529,3 +530,4 @@ get.MDS <- function(mat,
    mat <- filter_empty(mat)
    return(mat)
 }
+
