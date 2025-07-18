@@ -509,3 +509,23 @@ get.MDS <- function(mat,
    return(mdss)
    
 }
+
+
+.general_filtering <- function(mat, # Mat_ident object
+                              black.list = NULL,
+                              gene.list = NULL){
+   norm.mat <- mat@matrix
+   # remove blacked listed genes
+   if(!is.null(black.list) && verbose){message("   Filtering out black listed genes... \n")}
+   norm.mat <- norm.mat[!rownames(norm.mat) %in% black.list,]
+   
+   # keep only gene list features
+   if(verbose){message("   Filtering gene list... \n")}
+   norm.mat <- norm.mat[rownames(norm.mat) %in% gene.list,]
+   
+   # remove rows or columns with only 0
+   mat@matrix <- norm.mat
+   if(verbose){message("   Filtering empty rows and cols... \n")}
+   mat <- filter_empty(mat)
+   return(mat)
+}
