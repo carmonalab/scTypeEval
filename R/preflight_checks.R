@@ -6,53 +6,56 @@ purge_label <- function(label){
 }
 
 
-.check_ident <- function(scTypeEval, ident, verbose = T){
-   if(is.null(ident)){
-      ident <- scTypeEval@active.ident
-      if(verbose){message("Using default ident: ", ident, "\n")}
+.check_ident <- function(scTypeEval = NULL,
+                         ident,
+                         verbose = T){
+   if(!is.null(scTypeEval)){
+      if(is.null(ident)){
+         ident <- scTypeEval@active.ident
+         if(verbose){message("Using default ident: ", ident, "\n")}
+      }
+      
+      if(!ident %in% names(scTypeEval@metadata)){
+         stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
+      }
+      
+      # retrieve ident and convert to factor
+      ident.name <- ident
+      ident <- scTypeEval@metadata[[ident]]
    }
-   
-   if(!ident %in% names(scTypeEval@metadata)){
-      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
-   }
-   
-   # retrieve ident and convert to factor
-   ident.name <- ident
-   ident <- scTypeEval@metadata[[ident]]
    ident <- purge_label(ident)
    ident <- factor(ident)
    
    if(length(unique(ident)) < 2){
-      stop("Less than 2 cell type detected, Consistency metrics not possible")
+      stop("Less than 2 cell type detected in ident, Consistency metrics not possible")
    }
    
    return(ident)
 }
 
 
-.check_sample <- function(scTypeEval, sample, verbose = T){
-   if(!is.null(sample)){
+.check_sample <- function(scTypeEval = NULL,
+                          sample,
+                          verbose = T){
+   if(!is.null(scTypeEval)){
       if(!sample %in% names(scTypeEval@metadata)){
          stop("`sample` parameter not found in metadata colnames.\n")
       }
       # retrieve sample and convert to factor
       sample <- scTypeEval@metadata[[sample]]
-      sample <- purge_label(sample)
-      sample <- factor(sample)
-      
-      if(length(sample)<2){
-         stop("For inter-sample comparison at least 2 samples is required, but more is recommended.\n")
-      }
-      
-      if(length(sample)<5){
-         warning("Only ", length(sample), " samples detected.\n",
-            "For inter-sample comparison 5 or more samples is recommended.\n")
-      }
-      
-   } else {
-      if(verbose){message("Not using sample information\n")}
-      sample <- NULL
    }
+   sample <- purge_label(sample)
+   sample <- factor(sample)
+   
+   if(length(sample)<2){
+      stop("For inter-sample comparison at least 2 samples is required, but more is recommended.\n")
+   }
+   
+   if(length(sample)<5){
+      warning("Only ", length(sample), " samples detected.\n",
+              "For inter-sample comparison 5 or more samples is recommended.\n")
+   }
+   
    return(sample)
 }
 
@@ -85,6 +88,10 @@ purge_label <- function(label){
    
    if(verbose){message("Using ", gene.list, "gene list.\n")}
    gl <- scTypeEval@gene.lists[gene.list]
+   
+   if(length(gl)>5000){
+      warning("Large number of genes selected for downstream analyses, this may increase computing time.\n")
+   }
    
    return(gl)
 }
