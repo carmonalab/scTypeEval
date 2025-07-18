@@ -105,7 +105,7 @@ get.GeneVar <- function(norm.mat,
 
 
 # get markers using scran findMarkers
-get.DEG <- function(mat,
+get.DEG <- function(mat, # normalized gene expression matrix!,
                     ident,
                     block = NULL,
                     ngenes.celltype = 50,
@@ -114,7 +114,6 @@ get.DEG <- function(mat,
                     bparam = NULL,
                     progressbar = TRUE,
                     min.prop = 0.6,
-                    black.list = NULL,
                     unlist = TRUE, # wheter to return a vector of genes (TRUE) or a list per ident (FALSE)
                     ...){
    
@@ -122,13 +121,7 @@ get.DEG <- function(mat,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
-   norm.mat <- Normalize_data(mat = mat,
-                              method = "Log1p")
-   
-
-   norm.mat <- norm.mat[!rownames(norm.mat) %in% black.list,]
-   
-   de <- scran::findMarkers(x = norm.mat,
+   de <- scran::findMarkers(x = mat,
                             groups = ident,
                             block = block,
                             pval.type = "some",
@@ -154,7 +147,6 @@ get.DEG <- function(mat,
    }
 
    return(markers)
-   
    
 }
 
