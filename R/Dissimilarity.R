@@ -17,12 +17,12 @@ distance_methods <- c(
 )
 
 dissimilarity_methods <-
-   c("Distribution:WasserStein",
+   c("WasserStein",
      "Aggregated:Euclidean",
      "Aggregated:Cosine",
      "Aggregated:Pearson",
-     "Mutual:BestHit",
-     "Mutual:Score"
+     "BestHit:Match",
+     "BestHit:Score"
    )
 
 Gloscope_dists <- c("KL","JS")
