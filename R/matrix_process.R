@@ -1,6 +1,6 @@
 # script to pseudobulking cells:
 
-aggregation <- c("single-cell", "pseudobulk")
+aggregation_types <- c("single-cell", "pseudobulk")
 
 
 valid.indices <- function(groups,
@@ -153,7 +153,7 @@ get_singlecell <- function(mat,
    
    
    ret <- new("Mat_ident",
-              matrix = summed_matrix,
+              matrix = mat,
               group = new.group,
               ident = new.ident,
               sample = new.sample)
@@ -196,7 +196,8 @@ filter_empty <- function(mat_ident){
    # Extract slots
    mat <- mat_ident@matrix
    group <- mat_ident@group
-   ident <- mat_ident@ident
+   ident.name <- names(mat_ident@ident)
+   ident <- unlist(mat_ident@ident)
    sample <- mat_ident@sample
    
    # Identify non-zero rows and columns
@@ -207,15 +208,15 @@ filter_empty <- function(mat_ident){
    mat_filtered <- mat[keep_rows, keep_cols, drop = FALSE]
    
    # Filter metadata
-   group_filtered <- group[keep_cols]
-   ident_filtered <- ident[keep_cols]
-   sample_filtered <- sample[keep_cols]
+   group_filtered <- factor(group[keep_cols])
+   ident_filtered <- factor(ident[keep_cols])
+   sample_filtered <- factor(sample[keep_cols])
    
    # Return new Mat_ident object
    ret <- new("Mat_ident",
               matrix = mat_filtered,
               group = group_filtered,
-              ident = ident_filtered,
+              ident = list(ident.name = ident_filtered),
               sample = sample_filtered)
    
    return(ret)
