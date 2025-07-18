@@ -17,15 +17,18 @@ distance_methods <- c(
 )
 
 dissimilarity_methods <-
-   c("WasserStein",
-     "Aggregated:Euclidean",
-     "Aggregated:Cosine",
-     "Aggregated:Pearson",
-     "BestHit:Match",
-     "BestHit:Score"
+   c("WasserStein" = "single-cell",
+     "Pseudobulk:Euclidean" = "Pseudobulk",
+     "Pseudobulk:Cosine" = "Pseudobulk",
+     "Pseudobulk:Pearson" = "Pseudobulk",
+     "BestHit:Match" = "Pseudobulk",
+     "BestHit:Score" = "Pseudobulk"
    )
 
-Gloscope_dists <- c("KL","JS")
+
+no_dr_ds <- c("BestHit:Match",
+               "BestHit:Score")
+
 
 compute_fast_euclidean <- function(norm.mat) {
    
