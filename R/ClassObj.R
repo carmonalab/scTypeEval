@@ -3,6 +3,7 @@ methods::setClass("scTypeEval",
                   slots = c(
                      counts = "dgCMatrix", # raw counts
                      metadata = "data.frame", # data.frame with metadata
+                     data = "list",
                      distances = "list",
                      consistency = "list", # actual consistency results assays
                      gene.lists = "list", # list of either HGV, markers
@@ -17,6 +18,10 @@ methods::setClass("scTypeEval",
 # Define the initialize method to set default for reductions and consistency
 methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
    args <- list(...)
+   
+   if (is.null(args$data)) {
+      args$data <- list()
+   }
    
    # Set default for consistency if not provided
    if (is.null(args$distances)) {
@@ -35,12 +40,24 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
    
    # Pass the updated arguments to the default initialize method
    .Object <- callNextMethod(.Object, ..., 
+                             data = args$data,
+                             distances = args$distances,
                              consistency = args$consistency, 
                              reductions = args$reductions)
    
    validObject(.Object)  # Validate the object
    .Object
 })
+
+methods::setClass("DataAssay",
+                  slots = c(
+                     data = 'matrix',
+                     aggregation = "character",
+                     group = "factor",
+                     sample = "factor",
+                     ident = "list"
+                  )
+)
 
 methods::setClass("DissimilarityAssay",
                   slots = c(
@@ -49,9 +66,9 @@ methods::setClass("DissimilarityAssay",
                      distance.method = "ANY",
                      gene.list = "character",
                      black.list = "character",
-                     ident = "character",
+                     ident = "list",
                      data.type = "character",
-                     sample = "ANY"
+                     sample = "factor"
                   )
 )
 
@@ -78,7 +95,7 @@ methods::setClass("DimRed",
                      aggregation = "character",
                      group = "factor",
                      sample = "factor",
-                     ident = "factor",
+                     ident = "list",
                      key = "character" # type of reduction, PCA, UMAP...
                   )
 )
