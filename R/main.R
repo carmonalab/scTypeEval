@@ -580,7 +580,8 @@ Run.PCA <- function(scTypeEval,
                          
                          mat <- .general_filtering(mat,
                                                    black.list = black.list,
-                                                   gene.list = gene.list)
+                                                   gene.list = gene.list,
+                                                   verbose = verbose)
                          
                          # compute PCA
                          if(verbose){message("   Computing PCA space... \n")}
@@ -590,7 +591,7 @@ Run.PCA <- function(scTypeEval,
                          
                          # Create DimRed assay
                          rr <- methods::new("DimRed",
-                                            embeddings = pr$x,
+                                            embeddings = t(pr$x),
                                             feature.loadings = pr$rotation,
                                             gene.list = gene.list,
                                             black.list = black.list,
@@ -693,6 +694,9 @@ add.DimReduction <- function(scTypeEval,
 
 Run.Dissimilarity <- function(scTypeEval,
                               method = "WasserStein",
+                              reduction = TRUE,
+                              gene.list = NULL,
+                              black.list = NULL,
                               ncores = 1,
                               bparam = NULL,
                               progressbar = FALSE,
@@ -700,28 +704,44 @@ Run.Dissimilarity <- function(scTypeEval,
                               
 ){
    # run preflight checks
-   method <- method[1]
-   if(!method %in% dissimilarity_methods){
+   if(!method %in% names(dissimilarity_methods)){
       stop("Not supported dissimilarity method.\n 
            Please choice one of: ",
-           paste(dissimilarity_methods, collapse = ", "),
+           paste(names(dissimilarity_methods), collapse = ", "),
            ".\n")
    }
    
-   ident <- .check_ident(scTypeEval, ident, verbose = verbose)
-   sample <- .check_sample(scTypeEval, sample, verbose = verbose)
-   if(is.null(sample)){
-      stop("Sample information required for computing inter-sample dissimilarity")
+   slot <- dissimilarity_methods[method]
+   
+   if(reduction && !method %in% no_dr_ds){
+      warning("No dimensional reduction dissimilarity computationg supported for: ",
+              paste(no_dr_ds, collapse = ", "), "swithcing `reduction=FALSE`")
+      reduction <- FALSE
    }
    
-   black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
-   
-   if(!pca){
-      warning("Not using PCA dimensionality reduction, this may increase computing time...\n")
+   if(reduction){
+      mat_ident <- scTypeEval@reductions[[slot]]
+      if(is.null(mat_ident)){
+         stop("No dimensional reduction slot found for ", slot ,
+              ". Please run before `Run.PCA()` or add a valid dimensional reduction assay.\n")
+      }
+      mat <- mat_ident@embeddings
+      
+   } else {
+      mat_ident <- scTypeEval@data[[slot]]
+      if(is.null(mat_ident)){
+         stop("No processed data slot found for ", slot ,
+              ". Please run before `Run.ProcessingData()` or add a data assay.\n")
+      }
+      gene.list <- .check_genelist(scTypeEval, gene.list, verbose = verbose)
+      black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
+      mat_ident <- .general_filtering(mat_ident,
+                                      black.list = black.list,
+                                      gene.list = gene.list,
+                                      verbose = verbose)
+      mat <- mat_ident@data
    }
    
-   # set normalization method
-   normalization.method <- normalization.method[1]
    
    # set paralelization
    param <- set_parallel_params(ncores = ncores,
