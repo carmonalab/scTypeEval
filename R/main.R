@@ -42,31 +42,48 @@
 #' @export create.scTypeEval
 
 
-create.scTypeEval <- function(matrix, 
-                              metadata = NULL, 
-                              gene.lists = list(), 
-                              black.list = character(), 
+create.scTypeEval <- function(matrix = NULL,
+                              metadata = NULL,
+                              gene.lists = list(),
+                              black.list = character(),
                               active.ident = NULL,
                               version = "2.0.0") {
    
-   # Check input type
-   if (inherits(matrix, "Seurat")) {
+   # Handle NULL matrix case
+   if (is.null(matrix)) {
+      message("⚠️  No matrix provided. Initializing scTypeEval with empty counts.")
+      
+      # Create an empty dgCMatrix
+      counts <- Matrix::Matrix(0, nrow = 0, ncol = 0, sparse = TRUE)
+      
+      # If no metadata provided, create an empty data frame
+      if (is.null(metadata)) {
+         stop("metadata dataframe must be provided.\n")
+      } else {
+         metadata <- as.data.frame(metadata)
+      }
+      
+   } else if (inherits(matrix, "Seurat")) {
       counts <- as(matrix@assays$RNA@counts, "dgCMatrix")
       metadata <- as.data.frame(matrix@meta.data)
+      
    } else if (inherits(matrix, "SingleCellExperiment")) {
       counts <- as(SummarizedExperiment::assay(matrix, "counts"), "dgCMatrix")
       metadata <- as.data.frame(SummarizedExperiment::colData(matrix))
+      
    } else if (inherits(matrix, "matrix") || inherits(matrix, "dgCMatrix")) {
       counts <- as(matrix, "dgCMatrix")
       if (is.null(metadata)) {
          stop("For matrix input, metadata dataframe must be provided.")
       }
       metadata <- as.data.frame(metadata)
+      
    } else {
-      stop("Input object must be a Seurat, SingleCellExperiment, or matrix-like object.")
+      stop("Input object must be NULL, Seurat, SingleCellExperiment, or matrix-like object.")
    }
    
-   if(ncol(counts) != nrow(metadata)){
+   # Check dimensions (skip if matrix is NULL/empty)
+   if (!is.null(matrix) && ncol(counts) != nrow(metadata)) {
       stop("Different number of columns in counts and number of rows in metadata.")
    }
    
@@ -78,6 +95,10 @@ create.scTypeEval <- function(matrix,
                                   black.list = black.list,
                                   active.ident = active.ident,
                                   version = version)
+   
+   tmp <- .check_ident(scTypeEval_obj,
+                       active.ident,
+                       verbose = FALSE)
    
    return(scTypeEval_obj)
 }
@@ -118,6 +139,132 @@ set.activeIdent <- function(scTypeEval,
    scTypeEval@active.ident <- ident
    
    return(scTypeEval)
+}
+
+
+Run.ProcessingData <- function(scTypeEval,
+                               ident = NULL,
+                               sample = NULL,
+                               normalization.method = "Log1p",
+                               min.samples = 5,
+                               min.cells = 10,
+                               ndim = 30,
+                               verbose = TRUE){
+   #### preflights checks
+   ident.name <- ident
+   ident <- .check_ident(scTypeEval, ident, verbose = verbose)
+   sample <- .check_sample(scTypeEval, sample, verbose = verbose)
+   
+   # set normalization method
+   normalization.method <- normalization.method[1]
+   
+   #### RUN 
+   data.list <- lapply(aggregation_types,
+                       function(ag){
+                          if(verbose){message("# Processing data for ", ag, " ... \n")}
+                          # Transform data
+                          if(verbose){message("   Transforming and filtering count matrix... \n")}
+                          mat <- get.matrix(scTypeEval@counts,
+                                            ident = ident,
+                                            sample = sample,
+                                            aggregation = aggregation,
+                                            min.samples = min.samples,
+                                            min.cells = min.cells)
+                          
+                          # Normalize data
+                          if(verbose){message("   Normalizing count matrix... \n")}
+                          norm.mat <- Normalize_data(mat@matrix,
+                                                     method = normalization.method)
+                          
+                          rr <- methods::new("DataAssay",
+                                             data = norm.mat,
+                                             aggregation = ag,
+                                             group = mat@group,
+                                             ident = list(ident.name = mat@ident),
+                                             sample = mat@sample)
+                          return(rr)
+                       })
+   names(data.list) <- aggregation_types
+   
+   # add to scTypeEval object
+   scTypeEval@data <- data.list
+   
+   return(scTypeEval)
+   
+}
+
+
+Add.ProcessedData <- function(scTypeEval,
+                              data,
+                              aggregation,
+                              ident = NULL,
+                              ident.name = "custom",
+                              sample = NULL,
+                              filter = FALSE,
+                              min.samples = 5,
+                              min.cells = 10,
+                              verbose = TRUE){
+   
+   # preflight
+   if(!aggregation %in% aggregation_types){
+      stop("Only supported aggregations are just `single-cell` (no aggregation) or `pseudobulk` per cell type and sample.\n")
+   }
+   #### preflights checks
+   ident <- .check_ident(ident = ident, verbose = verbose)
+   if(length(ident) == ncol(data)){
+      stop("Different length of ident and ncol of data\n")
+   }
+   sample <- .check_sample(sample = sample, verbose = verbose)
+   if(length(sample) == ncol(data)){
+      stop("Different length of sample and ncol of data\n")
+   }
+   groups <- factor(paste(sample, ident, sep = "_"))
+   
+   if(aggregation == "single-cell"){
+      
+      if(filter){
+         if(verbose){message(" - Filtering cells based on min.samples and min.cells\n")}
+         
+         mat <- get.matrix(data,
+                           ident = ident,
+                           sample = sample,
+                           aggregation = aggregation,
+                           min.samples = min.samples,
+                           min.cells = min.cells)
+         
+         data <- mat@matrix
+         ident <- mat@ident
+         sample <- mat@sample
+         groups <- factor(paste(sample, ident, sep = "_"))
+         
+      } 
+      
+   } else if(aggregation == "pseudobulk"){
+      if(filter) {
+         stop("Filtering only allowed with single-cell data aggregation\n.")
+      }
+      if(verbose){message("Expecting cells aggregated (pseudobulk) per cell type (ident) and sample of origin.\n")}
+      
+      prop <- table(groups)
+      if(any(prop)>1){
+         stop("Aggregated data by pseudobulk expect a frequency of 1 for each cell type & sample combination.\n")
+      }
+   }
+   
+   
+   # Create Data assay
+   rr <- methods::new("DataAssay",
+                      data = data,
+                      aggregation = aggregation,
+                      group = group,
+                      ident = list(ident.name = ident),
+                      sample = sample)
+   
+   # add to scTypeEval object
+   scTypeEval@data[[aggregation]]<- rr
+   
+   return(scTypeEval)
+   
 }
 
 #' @title Identify and add highly variable genes (HVG) to an scTypeEval object.
@@ -167,12 +314,12 @@ set.activeIdent <- function(scTypeEval,
 #' sceval <- add.HVG(sceval)
 #' }
 #'
-#' @export add.HVG
+#' @export Run.HVG
 
 
 
 
-add.HVG <- function(scTypeEval,
+Run.HVG <- function(scTypeEval,
                     normalization.method = c("Log1p", "CLR", "pearson"),
                     var.method = c("scran", "basic"),
                     sample = NULL,
@@ -180,11 +327,9 @@ add.HVG <- function(scTypeEval,
                     black.list = NULL,
                     ncores = 1,
                     bparam = NULL,
-                    progressbar = TRUE,
+                    progressbar = FALSE,
                     verbose = TRUE,
                     ...){
-   
-   sample <- .check_sample(scTypeEval, sample, verbose = verbose)
    
    black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
    
@@ -193,23 +338,30 @@ add.HVG <- function(scTypeEval,
                                 progressbar = progressbar)
    
    
-   # normalize matrix
-   norm.mat <- Normalize_data(mat = mat,
-                              method = normalization.method[1],
-                              ...)
+   # normalized matrix
+   norm.mat <- scTypeEval@data[["single-cell"]]
+   if(is.null(norm.mat)){
+      stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
+   }
+   mat <- norm.mat@matrix
+   if(!is.null(sample)){
+      sample <- norm.mat@sample
+   }
    
    # remove blacked listed genes
-   norm.mat <- norm.mat[!rownames(norm.mat) %in% black.list,]
+   if(!is.null(black.list) && verbose){message("Filtering out black listed genes... \n")}
+   mat <- mat[!rownames(mat) %in% black.list,]
    
    var.method <- var.method[1]
    
    # get highly variable genes
+   if(verbose){message("Computing HVG... \n")}
    hgv <- switch(var.method,
-                 "basic" = get.HVG(norm.mat,
+                 "basic" = get.HVG(norm.mat = mat,
                                    ngenes = ngenes,
                                    sample = sample,
                                    bparam = param),
-                 "scran" = get.GeneVar(norm.mat = norm.mat,
+                 "scran" = get.GeneVar(norm.mat = mat,
                                        sample = sample,
                                        ngenes = ngenes,
                                        bparam = param),
@@ -262,16 +414,13 @@ add.HVG <- function(scTypeEval,
 #' @export add.GeneMarkers
 
 
-add.GeneMarkers <- function(scTypeEval,
-                            ident = NULL,
-                            sample = NULL,
+Run.GeneMarkers <- function(scTypeEval,
                             method = c("scran.findMarkers"),
-                            ngenes.total = 500,
                             ngenes.celltype = 50,
                             black.list = NULL,
                             ncores = 1,
                             bparam = NULL,
-                            progressbar = TRUE,
+                            progressbar = FALSE,
                             verbose = TRUE,
                             ...){
    
@@ -280,12 +429,22 @@ add.GeneMarkers <- function(scTypeEval,
       stop("Supported gene markes definitions is `scran.findMarkers`")
    }
    
-   ident <- .check_ident(scTypeEval, ident, verbose = verbose)
-   sample <- .check_sample(scTypeEval, sample, verbose = verbose)
    black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
    
-   mat <- scTypeEval@counts
+   # normalized matrix
+   norm.mat <- scTypeEval@data[["single-cell"]]
+   if(is.null(norm.mat)){
+      stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
+   }
+   mat <- norm.mat@matrix
+   ident <- unlist(norm.mat@ident)
+   sample <- norm.mat@sample
    
+   # remove blacked listed genes
+   if(!is.null(black.list) && verbose){message("Filtering out black listed genes... \n")}
+   norm.mat <- norm.mat[!rownames(norm.mat) %in% black.list,]
+   
+   if(verbose){message("Computing cell type markers for", names(norm.mat@ident),  "... \n")}
    markers <- switch(method,
                      "scran.findMarkers" = get.DEG(mat = mat,
                                                    ident = ident,
@@ -294,7 +453,6 @@ add.GeneMarkers <- function(scTypeEval,
                                                    ncores = ncores,
                                                    bparam = bparam,
                                                    progressbar = progressbar,
-                                                   black.list = black.list,
                                                    ...)
    )
    
@@ -351,6 +509,10 @@ add.GeneList <- function(scTypeEval,
    return(scTypeEval)
 }
 
+
+
+
+
 #' @title Perform PCA on a Gene List and Store Results in scTypeEval object
 #'
 #' @description This function computes Principal Component Analysis (PCA) based on an specified gene list
@@ -390,108 +552,150 @@ add.GeneList <- function(scTypeEval,
 #' 
 #' @seealso \link{add.HVG}
 #'
-#' @export add.PCA
+#' @export Run.PCA
 
 
 # obtain PCA from a gene list
-add.PCA <- function(scTypeEval,
-                    ident = NULL,
-                    sample = NULL,
-                    normalization.method = "Log1p",
-                    gene.list = NULL,
-                    aggregation = "single-cell",
-                    min.samples = 5,
-                    min.cells = 10,
-                    black.list = NULL,
+Run.PCA <- function(scTypeEval,
+                    gene.list,
+                    black.list,
                     ndim = 30,
-                    ncores = 1,
-                    bparam = NULL,
-                    progressbar = TRUE,
                     verbose = TRUE){
    
-   #### preflights checks
-   ident.name <- ident
-   ident <- .check_ident(scTypeEval, ident, verbose = verbose)
-   sample.name <- sample
-   sample <- .check_sample(scTypeEval, sample, verbose = verbose)
-   if(is.null(sample)){
-      stop("Sample information required for computing inter-sample dissimilarity")
+   if(length(scTypeEval@data)<1){
+      stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
    }
    
-   black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
    gene.list <- .check_genelist(scTypeEval, gene.list, verbose = verbose)
+   black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
    
-   # set normalization method
-   normalization.method <- normalization.method[1]
+   pca.list <- lapply(names(scTypeEval@data),
+                      function(ag){
+                         if(verbose){message("# Computing PCA data for", ag, " ... \n")}
+                         # normalized matrix
+                         mat <- scTypeEval@data[[ag]]
+                         if(is.null(mat)){
+                            stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
+                         }
+                         
+                         mat <- .general_filtering(mat,
+                                                   black.list = black.list,
+                                                   gene.list = gene.list)
+                         
+                         # compute PCA
+                         if(verbose){message("   Computing PCA space... \n")}
+                         pr <- custom_prcomp(mat@matrix,
+                                             ndim = ndim,
+                                             verbose = verbose)
+                         
+                         # Create DimRed assay
+                         rr <- methods::new("DimRed",
+                                            embeddings = pr$x,
+                                            feature.loadings = pr$rotation,
+                                            gene.list = gene.list,
+                                            black.list = black.list,
+                                            aggregation = ag,
+                                            group = mat@group,
+                                            ident = mat@ident,
+                                            sample = mat@sample,
+                                            key = "PCA")
+                      })
    
-   # set paralelization
-   param <- set_parallel_params(ncores = ncores,
-                                bparam = bparam,
-                                progressbar = progressbar)
+   names(pca.list) <- names(scTypeEval@data)
+   # add to scTypeEval object
+   scTypeEval@reductions <- pca.list
    
-   #### RUN 
-   # Transform data
-   mat <- get.matrix(scTypeEval@counts,
-                     ident = ident,
-                     sample = sample,
-                     aggregation = aggregation,
-                     min.samples = min.samples,
-                     min.cells = min.cells)
+   return(scTypeEval)
    
-   # Normalize data
-   norm.mat <- Normalize_data(mat@matrix,
-                              method = normalization.method)
-                                         
-   # keep only gene list features
-   norm.mat <- norm.mat[rownames(norm.mat) %in% gene.list,]
+}
+
+add.DimReduction <- function(scTypeEval,
+                             embeddings,
+                             aggregation,
+                             ident = NULL,
+                             ident.name = "custom",
+                             sample = NULL,
+                             key = NULL,
+                             gene.list = NULL,
+                             black.list = NULL,
+                             feature.loadings = NULL,
+                             filter = FALSE,
+                             min.samples = 5,
+                             min.cells = 10,
+                             verbose = TRUE
+                             
+)
+{
+   # preflight
+   if(!aggregation %in% aggregation_types){
+      stop("Only supported aggregations are just `single-cell` (no aggregation) or `pseudobulk` per cell type and sample.\n")
+   }
+   ident <- .check_ident(ident = ident, verbose = verbose)
+   if(length(ident) == ncol(data)){
+      stop("Different length of ident vector and ncol of data\n")
+   }
+   sample <- .check_sample(sample = sample, verbose = verbose)
+   if(length(sample) == ncol(data)){
+      stop("Different length of sample vector and ncol of data\n")
+   }
+   groups <- factor(paste(sample, ident, sep = "_"))
    
-   # remove black list genes
-   norm.mat <- norm.mat[!rownames(mat) %in% black.list,]
-   
-   # remove rows or columsns with only 0
-   mat@matrix <- norm.mat
-   mat <- filter_empty(mat)
-   
-   # compute PCA
-   pr <- custom_prcomp(mat@matrix,
-                       ndim = ndim)
+   if(aggregation == "single-cell"){
+      
+      if(filter){
+         if(verbose){message(" - Filtering cells based on min.samples and min.cells\n")}
+         
+         mat <- get.matrix(data,
+                           ident = ident,
+                           sample = sample,
+                           aggregation = aggregation,
+                           min.samples = min.samples,
+                           min.cells = min.cells)
+         
+         embeddings <- mat@matrix
+         ident <- mat@ident
+         sample <- mat@sample
+         groups <- factor(paste(sample, ident, sep = "_"))
+         
+      } 
+      
+   } else if(aggregation == "pseudobulk"){
+      if(filter) {
+         stop("Filtering only allowed with single-cell data aggregation\n.")
+      }
+      if(verbose){message("Expecting cells aggregated (pseudobulk) per cell type (ident) and sample of origin.\n")}
+      
+      prop <- table(groups)
+      if(any(prop)>1){
+         stop("Aggregated data by pseudobulk expect a frequency of 1 for each cell type & sample combination.\n")
+      }
+   }
    
    # Create DimRed assay
    rr <- methods::new("DimRed",
-                      embeddings = pr$x,
-                      feature.loadings = pr$rotation,
+                      embeddings = emdeddings,
+                      feature.loadings = feature.loadings,
                       gene.list = gene.list,
                       black.list = black.list,
                       aggregation = aggregation,
-                      group = mat@group,
-                      ident = mat@ident,
-                      sample = mat@sample,
-                      key = "PCA")
+                      group = groups,
+                      ident = list(ident.name = ident),
+                      sample = sample,
+                      key = key)
    
    # add to scTypeEval object
-   nn <- paste(aggregation, ident.name, sample.name, sep = "_")
-   
-   scTypeEval@reductions[[nn]]<- rr
-
+   scTypeEval@reductions[[aggregation]]<- rr
    
    return(scTypeEval)
    
 }
 
 
-add.Dissimilarity <- function(scTypeEval,
-                              ident = NULL,
-                              sample = NULL,
-                              gene.list = NULL,
-                              pca = TRUE,
-                              ndim = 30,
+Run.Dissimilarity <- function(scTypeEval,
                               method = "WasserStein",
-                              min.samples = 5,
-                              min.cells = 10,
-                              black.list = NULL,
                               ncores = 1,
                               bparam = NULL,
-                              progressbar = TRUE,
+                              progressbar = FALSE,
                               verbose = TRUE
                               
 ){
@@ -509,7 +713,7 @@ add.Dissimilarity <- function(scTypeEval,
    if(is.null(sample)){
       stop("Sample information required for computing inter-sample dissimilarity")
    }
-
+   
    black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
    
    if(!pca){
@@ -647,7 +851,7 @@ Run.Consistency <- function(scTypeEval,
                             black.list = NULL,
                             ncores = 1,
                             bparam = NULL,
-                            progressbar = TRUE,
+                            progressbar = FALSE,
                             verbose = TRUE
                             
 ){
@@ -727,14 +931,14 @@ Run.Consistency <- function(scTypeEval,
    
    if(data.type == "GloScope" && !distance.method %in% Gloscope_dists){
       warning("data.type GloScope only possible with ",
-           paste(Gloscope_dists, collapse = ", "),
-           " distances methods. Changing distance to KL")
+              paste(Gloscope_dists, collapse = ", "),
+              " distances methods. Changing distance to KL")
       distance.method <- "KL"
    }
    
    if(data.type != "GloScope" && distance.method %in% Gloscope_dists){
       warning(paste(Gloscope_dists, collapse = ", "),
-           " only supported with GloScope data.type. Changing distance to euclidean")
+              " only supported with GloScope data.type. Changing distance to euclidean")
       distance.method <- "euclidean"
    }
    
@@ -742,7 +946,7 @@ Run.Consistency <- function(scTypeEval,
       any(centroid.need %in% IntVal.metric)){
       warning("Centroid-based consistency metrics (",
               paste(IntVal.metric[IntVal.metric %in% centroid.need], collapse = ", "),
-      ") not supported for data.type GloScope, not running\n")
+              ") not supported for data.type GloScope, not running\n")
       IntVal.metric <- IntVal.metric[!IntVal.metric %in% centroid.need]
    }
    
@@ -950,7 +1154,7 @@ Run.BestHit <- function(scTypeEval,
                         min.samples = 5,
                         ncores = 1,
                         bparam = NULL,
-                        progressbar = TRUE,
+                        progressbar = FALSE,
                         verbose = TRUE
                         
 ){
@@ -1531,7 +1735,7 @@ get.hierarchy <- function(scTypeEval,
                           black.list = NULL,
                           ncores = 1,
                           bparam = NULL,
-                          progressbar = TRUE,
+                          progressbar = FALSE,
                           verbose = TRUE
 ){
    if(is.null(ident)){
@@ -1736,7 +1940,7 @@ get.NN <- function(scTypeEval,
                    black.list = NULL,
                    ncores = 1,
                    bparam = NULL,
-                   progressbar = TRUE,
+                   progressbar = FALSE,
                    verbose = TRUE
 ){
    if(is.null(ident)){
@@ -1895,7 +2099,7 @@ dx.BestHit <- function(scTypeEval,
                        min.samples = 5,
                        ncores = 1,
                        bparam = NULL,
-                       progressbar = TRUE,
+                       progressbar = FALSE,
                        verbose = TRUE
                        
 ){
@@ -2068,7 +2272,7 @@ add.MDS <- function(scTypeEval,
                     pca.dim = 30,
                     ncores = 1,
                     bparam = NULL,
-                    progressbar = TRUE,
+                    progressbar = FALSE,
                     verbose = TRUE){
    
    if(is.null(ident)){
@@ -2144,7 +2348,7 @@ add.MDS <- function(scTypeEval,
       stop(paste(Gloscope_dists, collapse = ", "),
            " only supported with GloScope data.type.")
    }
-
+   
    # set normalization method
    normalization.method <- normalization.method[1]
    
@@ -2184,38 +2388,38 @@ add.MDS <- function(scTypeEval,
                                          
                                          # compute PCA
                                          mds.list <- get.MDS(mat,
-                                                            ident = ident,
-                                                            sample = sample,
-                                                            normalization.method = normalization.method,
-                                                            distance.method = distance.method,
-                                                            data.type = data.type,
-                                                            min.samples = min.samples,
-                                                            min.cells = min.cells,
-                                                            ndim = ndim,
-                                                            pca = pca,
-                                                            pca.dim = pca.dim,
-                                                            verbose = verbose)
+                                                             ident = ident,
+                                                             sample = sample,
+                                                             normalization.method = normalization.method,
+                                                             distance.method = distance.method,
+                                                             data.type = data.type,
+                                                             min.samples = min.samples,
+                                                             min.cells = min.cells,
+                                                             ndim = ndim,
+                                                             pca = pca,
+                                                             pca.dim = pca.dim,
+                                                             verbose = verbose)
                                          
                                          # accommodte to DimReduc
                                          
                                          mds.list <- lapply(seq_along(mds.list),
-                                                           function(cc){
-                                                              mds.list[[cc]]@gene.list <- t
-                                                              mds.list[[cc]]@black.list <- black.list
-                                                              mds.list[[cc]]@sample <- names(mds.list)[[cc]]
-                                                              return(mds.list[[cc]])
-                                                           })
+                                                            function(cc){
+                                                               mds.list[[cc]]@gene.list <- t
+                                                               mds.list[[cc]]@black.list <- black.list
+                                                               mds.list[[cc]]@sample <- names(mds.list)[[cc]]
+                                                               return(mds.list[[cc]])
+                                                            })
                                          
                                          
                                          
                                          # name DimRed assays
                                          names(mds.list) <- lapply(seq_along(mds.list),
-                                                                  function(ca){
-                                                                     v <- na.omit(c(mds.list[[ca]]@sample,
-                                                                                    mds.list[[ca]]@data.type))
-                                                                     paste(v,
-                                                                           collapse = "_")
-                                                                  })
+                                                                   function(ca){
+                                                                      v <- na.omit(c(mds.list[[ca]]@sample,
+                                                                                     mds.list[[ca]]@data.type))
+                                                                      paste(v,
+                                                                            collapse = "_")
+                                                                   })
                                          
                                          return(mds.list)
                                       })
@@ -2296,7 +2500,7 @@ plot.MDS <- function(scTypeEval,
       df <- assay@embeddings[, dims] |>
          as.data.frame() |>
          dplyr::mutate(ident = assay@ident)
-
+      
       
       labs <- paste0("Dim", dims)
       
