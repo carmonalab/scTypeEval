@@ -1,4 +1,4 @@
-mutual_method <-  c("Mutual.Score", "Mutual.Match")
+mutual_method <-  c("Score", "Match")
 classifiers <- c("Spearman_correlation", "SingleR")
 
 get.DEG_logfc <- function(mat,
@@ -12,8 +12,6 @@ get.DEG_logfc <- function(mat,
    if(is.null(ngenes.celltype)){
       ngenes.celltype <- floor(500 * (2/3)^log2(length(clusters)))
    }
-   
-   # Normalize 
    
    # Initialize a list to store medians per cluster
    medians_list <- list()
@@ -70,10 +68,6 @@ spear_classify <- function(test_mat,
                            ref_mat,
                            min.markers = 10,
                            bparam = BiocParallel::SerialParam()){
-   test <- test_mat@matrix |>
-      Normalize_data()
-   ref <- ref_mat@matrix |>
-      Normalize_data()
    ref.ident <- ref_mat@ident
    
    # Step 0: ensure overlapping genes
@@ -132,15 +126,14 @@ spear_classify <- function(test_mat,
 # code to perform a best-hit classifier based on singleR
 singleR.helper <- function(test,
                            ref,
+                           ref.ident,
                            bparam = BiocParallel::SerialParam()){
-   # transform to SCE
-   test <- get.SCE(test)
-   ref <- get.SCE(ref)
+
    # SingleR prediction
    pred <- SingleR::SingleR(
       test = test,
       ref = ref,
-      labels = ref$ident,
+      labels = ref.ident,
       de.method = "classic",
       BPPARAM = bparam
    ) |> 
@@ -156,7 +149,7 @@ singleR.helper <- function(test,
 
 score.tidy <- function(pred,
                        .true,
-                       filter = TRUE){
+                       filter = FALSE){
    pred <- pred |>
       dplyr::select(dplyr::starts_with("score")) |>  
       dplyr::mutate(true = .true) |>
@@ -254,16 +247,6 @@ get.MutualMatrix <- function(mat,
    return(mat.split)
 }
 
-get.SCE <-  function(m){
-   sce <- SingleCellExperiment::SingleCellExperiment(
-      assays = list(counts = m@matrix),
-      colData = data.frame(ident = m@ident)
-   )
-   #sce <- sce[,Matrix::colSums(SingleCellExperiment::counts(sce)) > 0] # Remove libraries with no counts.
-   # this is taken account in the processing steps
-   sce <- scuttle::logNormCounts(sce)
-   return(sce)
-}
 
 bestHit <- function(mat,
                     ident,
