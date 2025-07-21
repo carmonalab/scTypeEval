@@ -748,6 +748,25 @@ Run.Dissimilarity <- function(scTypeEval,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
+   # split matrix per sample for BestHit, and for celltype & sample for Wasserstein, no need for the rest
+   
+   aggregation <- strsplit(method, ":")[[1]][1] |> tolower()
+   dist.type <- strsplit(method, ":")[[1]][2] |> tolower()
+   
+   dist <- switch(
+      aggregation,
+      "pseudobulk" = get.distance(norm.mat = mat, distance.method = dist.type, verbose = verbose),
+      "wasserstein" = compute_wasserstein(mat = mat, group = mat_ident@group, bparam = param, verbose = verbose),
+      "besthit" = (),
+      stop(aggregation, "is not a supported method.\n")
+      )
+   
+   # build dissimilarity object
+   rr <- 
+      
+   
+   return(scTypeEval)
+   
 }
 
 
