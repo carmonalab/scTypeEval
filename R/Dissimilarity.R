@@ -1,20 +1,3 @@
-distance_methods <- c(
-   "euclidean",
-   "EMD",
-   "maximum",
-   "manhattan",
-   "canberra",
-   "binary",
-   "minkowski",
-   "Jaccard",
-   "Weighted_Jaccard",
-   "gower",
-   "bray-curtis",
-   "cosine",
-   "pearson",
-   "KL",
-   "JS"
-)
 
 dissimilarity_methods <-
    c("WasserStein" = "single-cell",
@@ -30,193 +13,97 @@ no_dr_ds <- c("BestHit:Match",
                "BestHit:Score")
 
 
-compute_fast_euclidean <- function(norm.mat) {
+optimal_transport <- function(A, B,
+                              p = 2,
+                              squared = FALSE){
+   # Ensure required packages are available
+   if (!requireNamespace("transport", quietly = TRUE)) {
+      stop("Please install the 'transport' package first.")
+   }
+   # Check inputs: A and B must be matrices or data frames with same number of columns (features)
+   n <- nrow(A)
+   m <- nrow(B)
+   # Compute pairwise ground cost matrix between all points in A and B
+   # We use Euclidean distance (L2 norm), raised to the power p
+   # This is common for Wasserstein-p distances, especially p = 1 or 2
+   cost_matrix <- compute_fast_euclidean_2obj(A,B)^p
+   # Assign uniform weights to both point sets A and B
+   # This assumes empirical measures where each point has equal weight
+   a_weights <- rep(1 / n, n)
+   b_weights <- rep(1 / m, m)
+   # Compute the optimal transport plan using the "shortsimplex" method
+   # - "shortsimplex" is based on the revised simplex algorithm with enhancements for efficiency
+   # - Recommended by the package for general discrete distributions (class pp)
+   # - Handles moderately large problems well
+   # - Faster than full simplex but more robust than heuristics like "auction"
+   # - Does not require specific conditions (e.g., p=2 or grid-based input)
+   plan <- transport::transport(a_weights,
+                                b_weights,
+                                costm = cost_matrix,
+                                method = "shortsimplex")
    
-   # Compute the dot product (squared sums)
-   diag_norm <- Matrix::rowSums(norm.mat^2)  # Diagonal terms (squared magnitudes)
-   # Compute the squared distance matrix
-   dist_squared <- outer(diag_norm, diag_norm, "+") - 2 * Matrix::tcrossprod(norm.mat)
+   # Compute the total transportation cost using the optimal plan
+   # Multiply transported mass by cost for each (from, to) pair
+   total_cost <- sum(plan$mass * cost_matrix[cbind(plan$from, plan$to)])
    
-   # Fix numerical precision issues: Negative values close to 0 are set to 0
-   dist_squared[dist_squared < 0] <- 0
-   
-   # Return the distance matrix
-   d <- as.dist(sqrt(dist_squared))
-   return(d)
+   # Return the Wasserstein distance:
+   # - If squared = TRUE, or if p != 2, return the raw p-root of the total cost
+   # - Otherwise (default case: p = 2), return the square root for true L2 Wasserstein
+   if (squared || p != 2) {
+      return(total_cost^(1 / p))
+   } else {
+      return(sqrt(total_cost))
+   }
 }
 
-#earth mover distance (emd)
-compute_emd <- function(norm.mat,
-                        dist = "euclidean",
-                        bw = NULL,  # Set NULL to auto-calculate per pseudobulk
-                        grid_size = 100,
-                        max.iter = 1000) {
+
+compute_wasserstein <- function(mat,
+                                group,
+                                transpose = TRUE,
+                                p = 2,
+                                squared = FALSE,
+                                bparam = BiocParallel::SerialParam(),
+                                verbose = TRUE){
    
-   # Check and install required packages if missing
-   required_packages <- c("ks", "emdist")
-   missing_packages <- required_packages[!sapply(required_packages,
-                                                 requireNamespace,
-                                                 quietly = TRUE)]
-   if (length(missing_packages) > 0) {
-      message("Installing missing packages for EMD distance: ",
-              paste(missing_packages, collapse = ", "))
-      install.packages(missing_packages)
+   # split matrix per cell type && sample
+   if(verbose){message("Splitting matrices... \n")}
+   mat_list <- BiocParallel::bplapply(levels(group),
+                                   BPPARAM = bparam,
+                                   function(s){
+                                      k <- group == s
+                                      m <- mat[, k, drop = FALSE]
+                                      if(transpose){
+                                         m <- Matrix::t(m)
+                                      }
+                                      return(m)
+                                   })
+   n <- length(mat_list)
+   combs <- utils::combn(n, 2, simplify = FALSE)
+   
+   # Define the function to compute each pairwise distance
+   if(verbose){message("Computing pairwise WasserStein distance... \n")}
+   dist_list <- BiocParallel::bplapply(combs,
+                                       BPPARAM = bparam,
+                                       function(pair) {
+                                          i <- pair[1]
+                                          j <- pair[2]
+                                          d <- optimal_transport(mat_list[[i]], mat_list[[j]],
+                                                                 p = p,
+                                                                 squared = squared)
+                                          list(i = i, j = j, d = d)
+                                       })
+   
+   # Initialize distance matrix
+   dist_mat <- matrix(0, n, n)
+   rownames(dist_mat) <- colnames(dist_mat) <- levels(group)
+   
+   # Fill in symmetric matrix
+   for (res in dist_list) {
+      i <- res$i
+      j <- res$j
+      d <- res$d
+      dist_mat[i, j] <- dist_mat[j, i] <- d
    }
    
-   n <- nrow(norm.mat)  # Each row is a pseudobulk sample
-   
-   # Convert the matrix to dense if it's sparse
-   if (inherits(norm.mat, "dgCMatrix")) {
-      norm.mat <- as.matrix(norm.mat)
-   }
-   
-   # Define a grid for KDE estimation
-   min_val <- min(norm.mat, na.rm = TRUE)
-   max_val <- max(norm.mat, na.rm = TRUE)
-   grid <- seq(min_val, max_val, length.out = grid_size)
-   
-   # Preallocate KDE matrix
-   kde_matrix <- matrix(0, nrow = grid_size, ncol = n)  
-   rownames(kde_matrix) <- paste0("KDE_", seq_len(grid_size))
-   colnames(kde_matrix) <- rownames(norm.mat)  # Retain original sample names
-   
-   # Compute KDE for each pseudobulk (each row)
-   for (i in 1:n) {
-      data_i <- as.numeric(norm.mat[i, ])  # Ensure it's numeric
-      h_i <- if (is.null(bw)) stats::bw.nrd0(data_i) else bw  # Compute bandwidth if needed
-      kde <- ks::kde(data_i, h = h_i, eval.points = grid)  
-      kde_matrix[, i] <- kde$estimate / sum(kde$estimate)  # Normalize
-   }
-   
-   # Preallocate distance vector
-   emd_distances <- numeric(n * (n - 1) / 2)
-   idx <- 1
-   
-   # Compute pairwise EMD
-   for (i in 1:(n - 1)) {
-      for (j in (i + 1):n) {
-         emd_distances[idx] <- emdist::emd2d(kde_matrix[, i, drop = F],
-                                           kde_matrix[, j, drop = F],
-                                           dist = dist,
-                                           max.iter = max.iter)
-         idx <- idx + 1
-      }
-   }
-   
-   # Convert to `dist` object with rownames
-   dist_object <- structure(
-      emd_distances,
-      Size = n,
-      Labels = rownames(norm.mat),  # Keep original rownames
-      class = "dist",
-      Diag = FALSE,
-      Upper = FALSE
-   )
-   return(dist_object)
-}
-
-
-
-
-# Define sub-functions for specific distance methods
-compute_stat_dist <- function(norm.mat, distance.method) {
-   stats::dist(norm.mat, method = distance.method)
-}
-
-compute_jaccard <- function(mat) {
-   mat[mat != 0] <- 1  # Convert to binary
-   as.dist(1 - Matrix::tcrossprod(mat) / Matrix::rowSums(mat + t(mat)))  # Jaccard distance calculation without extra dependencies
-}
-
-
-# Function to compute the Weighted Jaccard distance
-weighted_jaccard <- function(x, y) {
-   sum_pmin <- sum(pmin(x, y))
-   sum_pmax <- sum(pmax(x, y))
-   return(1 - (sum_pmin / sum_pmax))  # 1 - Jaccard for a distance measure
-}
-
-compute_weighted_jaccard <- function(norm.mat) {
-   n <- nrow(norm.mat)
-   dist_matrix <- matrix(0, n, n)
-   for (i in seq_len(n)) {
-      for (j in seq_len(n)) {
-         dist_matrix[i, j] <- weighted_jaccard(norm.mat[i, ], norm.mat[j, ])
-      }
-   }
-   as.dist(dist_matrix)
-}
-
-compute_gower <- function(mat, norm.mat) {
-   mat[mat != 0] <- 1  # Convert to binary
-   cdata <- cbind(mat, norm.mat)
-   cluster::daisy(cdata, metric = "gower")  # `cluster` is already used in Bioconductor
-}
-
-compute_bray_curtis <- function(norm.mat) {
-   row_sums <- Matrix::rowSums(norm.mat)
-   as.dist(1 - Matrix::tcrossprod(norm.mat) / outer(row_sums, row_sums, "+"))
-}
-
-compute_cosine <- function(norm.mat) {
-   dot_product <- Matrix::tcrossprod(norm.mat)
-   magnitude <- sqrt(Matrix::rowSums(norm.mat^2))
-   cosine_similarity <- dot_product / outer(magnitude, magnitude)
-   as.dist(1 - cosine_similarity)
-}
-
-compute_pearson <- function(norm.mat) {
-   # Compute row means
-   row_means <- Matrix::rowMeans(norm.mat)
-   
-   # Center the matrix (subtract row means)
-   norm.mat_centered <- norm.mat - row_means
-   norm.mat_centered <- Matrix::drop0(norm.mat_centered)  # Keep sparsity
-   
-   # Compute covariance matrix
-   cov_mat <- Matrix::tcrossprod(norm.mat_centered) / (ncol(norm.mat) - 1)
-   
-   # Compute standard deviations
-   std_dev <- sqrt(Matrix::diag(cov_mat))
-   
-   # Normalize to Pearson correlation matrix
-   corr <- cov_mat / (Matrix::tcrossprod(std_dev) + 1e-9)  # Avoid division by zero
-   
-   # Convert to distance matrix
-   as.dist(1 - corr)
-}
-
-
-# Main function with dispatcher
-get.distance <- function(mat = NULL,
-                         norm.mat = NULL,
-                         transpose = TRUE,
-                         distance.method = "euclidean") {
-   # Handle transposition
-   if (transpose) {
-      if(!is.null(mat)){mat <- Matrix::t(mat)}
-      if(!is.null(norm.mat)){norm.mat <- Matrix::t(norm.mat)}
-   }
-   
-   # Dispatcher to call the appropriate function
-   dist <- switch(
-      distance.method,
-      "euclidean" = compute_fast_euclidean(norm.mat),
-      "EMD" = compute_emd(norm.mat),
-      "maximum" = compute_stat_dist(norm.mat, distance.method),
-      "manhattan" = compute_stat_dist(norm.mat, distance.method),
-      "canberra" = compute_stat_dist(norm.mat, distance.method),
-      "binary" = compute_stat_dist(norm.mat, distance.method),
-      "minkowski" = compute_stat_dist(norm.mat, distance.method),
-      "Jaccard" = compute_jaccard(mat),
-      "Weighted_Jaccard" = compute_weighted_jaccard(norm.mat),
-      "gower" = compute_gower(mat, norm.mat),
-      "bray-curtis" = compute_bray_curtis(norm.mat),
-      "cosine" = compute_cosine(norm.mat),
-      "pearson" = compute_pearson(norm.mat),
-      
-      stop(distance.method, " is not a supported distance method.")
-   )
-   
-   return(dist)
+   return(as.dist(dist_mat))
 }
