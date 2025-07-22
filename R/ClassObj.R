@@ -4,7 +4,7 @@ methods::setClass("scTypeEval",
                      counts = "dgCMatrix", # raw counts
                      metadata = "data.frame", # data.frame with metadata
                      data = "list",
-                     distances = "list",
+                     dissimilarity = "list",
                      consistency = "list", # actual consistency results assays
                      gene.lists = "list", # list of either HGV, markers
                      black.list = "character", # list of genes in black list
@@ -61,13 +61,12 @@ methods::setClass("DataAssay",
 
 methods::setClass("DissimilarityAssay",
                   slots = c(
-                     measure = "ANY",
-                     consistency.metric = "character",
-                     distance.method = "ANY",
+                     dissimilarity = "dist",
+                     method = "character",
+                     aggregation = "character",
                      gene.list = "character",
                      black.list = "character",
                      ident = "list",
-                     data.type = "character",
                      sample = "factor"
                   )
 )
