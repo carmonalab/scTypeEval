@@ -697,6 +697,7 @@ Run.Dissimilarity <- function(scTypeEval,
                               reduction = TRUE,
                               gene.list = NULL,
                               black.list = NULL,
+                              BestHit.classifier = "SingleR",
                               ncores = 1,
                               bparam = NULL,
                               progressbar = FALSE,
@@ -726,6 +727,8 @@ Run.Dissimilarity <- function(scTypeEval,
               ". Please run before `Run.PCA()` or add a valid dimensional reduction assay.\n")
       }
       mat <- mat_ident@embeddings
+      gene.list <- mat_ident@gene.list
+      black.list <- mat_ident@black.list
       
    } else {
       mat_ident <- scTypeEval@data[[slot]]
@@ -757,12 +760,21 @@ Run.Dissimilarity <- function(scTypeEval,
       aggregation,
       "pseudobulk" = get.distance(norm.mat = mat, distance.method = dist.type, verbose = verbose),
       "wasserstein" = compute_wasserstein(mat = mat, group = mat_ident@group, bparam = param, verbose = verbose),
-      "besthit" = (),
+      "besthit" = bestHit(mat = mat, classifier = BestHit.classifier, method = dist.type, bparam = param, verbose = verbose),
       stop(aggregation, "is not a supported method.\n")
       )
    
    # build dissimilarity object
-   rr <- 
+   rr <- methods::new("DissimilarityAssay",
+                      dissimilarity = dist,
+                      method = method,
+                      gene.list = gene.list,
+                      black.list = black.list,
+                      aggregation = aggregation,
+                      ident = mat_ident@ident,
+                      sample = mat_ident@sample)
+   
+   scTypeEval@dissimilarity[[method]] <- rr
       
    
    return(scTypeEval)
