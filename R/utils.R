@@ -33,9 +33,8 @@ set_parallel_params <- function(ncores = NULL,
 
 
 split_matrix <- function(mat,
-                         ident,
+                         ident = NULL,
                          sample = NULL,
-                         min.cells = 10,
                          bparam = BiocParallel::SerialParam()){
    if (length(sample) != ncol(mat)) {
       stop("The length of 'sample' must match the number of columns in 'mat'")
@@ -51,9 +50,11 @@ split_matrix <- function(mat,
                                            new.mat <- mat[, sample == s, drop = FALSE]
                                            new.ident <- ident[sample == s]
                                            
-                                           ret <- valid.sc(mat = new.mat,
-                                                           ident = factor(new.ident),
-                                                           min.cells = min.cells)
+                                           ret <- new("Mat_ident",
+                                                      matrix = new.mat,
+                                                      group = NULL,
+                                                      ident = factor(new.ident),
+                                                      sample = s)
                                            
                                            return(ret)
                                         })
