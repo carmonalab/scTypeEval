@@ -232,7 +232,7 @@ load_sc <- function(path,
    counts <- NULL
    metadata <- NULL
    
-   if (grepl("rds$", path)) {
+   if (grepl("rds$", path, ignore.case = T)) {
       object <- readRDS(path)
       
       if (inherits(object, "Seurat")) {
@@ -251,7 +251,7 @@ load_sc <- function(path,
          stop("Unsupported .rds object type: ", class(object))
       }
       
-   } else if (grepl("h5ad$", path)) {
+   } else if (grepl("h5ad$", path, ignore.case = T)) {
       if (!requireNamespace("anndata", quietly = TRUE)) {
          stop("The 'anndata' package is required to read .h5ad files. Please install it.")
       }
