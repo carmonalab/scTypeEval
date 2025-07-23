@@ -571,7 +571,7 @@ Run.PCA <- function(scTypeEval,
    
    pca.list <- lapply(names(scTypeEval@data),
                       function(ag){
-                         if(verbose){message("# Computing PCA data for", ag, " ... \n")}
+                         if(verbose){message("# Computing PCA data for ", ag, " ... \n")}
                          # normalized matrix
                          mat <- scTypeEval@data[[ag]]
                          if(is.null(mat)){
@@ -603,8 +603,11 @@ Run.PCA <- function(scTypeEval,
                       })
    
    names(pca.list) <- names(scTypeEval@data)
+   
    # add to scTypeEval object
-   scTypeEval@reductions <- pca.list
+   for(n in names(pca.list)){
+      scTypeEval@consistency[[n]] <- pca.list[[n]]
+   }
    
    return(scTypeEval)
    
@@ -878,15 +881,16 @@ Run.Dissimilarity <- function(scTypeEval,
 #' 
 #' @importClassesFrom Matrix dgCMatrix
 #'
-#' @export Run.Consistency
+#' @export get.Consistency
 
 
-Run.Consistency <- function(scTypeEval,
+get.Consistency <- function(scTypeEval,
                             dissimilarity.slot, 
-                            IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                              "ward.PropMatch", "Leiden.PropMatch",
-                                              "modularity", "Orbital.medoid",
-                                              "Orbital.centroid"),
+                            IntVal.metric = c("silhouette",
+                                              "NeighborhoodPurity",
+                                              "ward.PropMatch",
+                                              "Orbital.medoid",
+                                              "Average.similarity"),
                             KNNGraph_k = 5,
                             verbose = TRUE
                             
@@ -897,526 +901,39 @@ Run.Consistency <- function(scTypeEval,
    consist.list <- lapply(diss.assays,
                           function(da){
                              assay <- scTypeEval@dissimilarity[[da]]
-                           
                              
-                             return(pl)
-                          })
-   
-   names(consist.list) <- diss.assays
-   
-   # add to scTypeEval object
-   scTypeEval@consistency <- consist.list
-   
-   return(scTypeEval)
-   
-}
-
-
-#' @title Perform Mutual Best Hit Consistency Evaluation
-#'
-#' @description This function evaluates the consistency of cell type annotations across multiple samples 
-#' using a Mutual Best Hit approach. It applies a classifier bidirectionally between 
-#' sample pairs to assess inter-sample reciprocal similarity.
-#'
-#' @param scTypeEval An scTypeEval object containing single-cell expression data, metadata, and gene lists.
-#' @param ident A character string specifying the metadata column containing the cell type 
-#' annotations. Default is `NULL`, which uses the active identity in `scTypeEval`.
-#' @param ident_GroundTruth (Optional) A character string specifying the metadata column 
-#' containing the ground truth annotations. Default is `NULL`, meaning `ident` is used.
-#' @param method A character vector specifying which Mutual Best Hit method(s) quantification to use. 
-#'   Supported options, by default both are run if possible:
-#'   - `"Mutual.Score"`: Computes the product of reciprocal prediction scores from classifier per cell type.
-#'   - `"Mutual.Match"`: Calculates the normalized proportion of reciprocal matches. 
-#'   between the two sample classifications per cell type. Only supported by `"pseudobulk"` data.type.
-#' @param classifier Method to classify or annotated cell type. Supported option are:
-#'   - `Spearman_correlation`: Assigns cell types by computing the Spearman correlation between each cell's expression profile and reference profiles (e.g., averaged marker gene expression per cell type). The label with the highest correlation is assigned.
-#'   - \link[SingleR]{SingleR}: Automatic annotation method introduced by Aran et al., 2019, implemented in \link[SingleR]{SingleR}. Compares each cell to reference datasets and assigns the most similar cell type label.
-#' @param sample A character string specifying the metadata column that identifies sample IDs. 
-#' This is required for consistency evaluation.
-#' @param data.type Character. Type of data input to perform.
-#'   Options, one of:
-#'   - `"sc"`: Single-cell data, where each cell is treated as an individual observation.
-#'       It supports only `"Mutual.Score"` metric.
-#'   - `"pseudobulk"`: Aggregated expression values per cell type and sample, useful to capture inter-sample variability.
-#'       It supports `"Mutual.Score"` and `"Mutual.Match"` metrics.
-#' @param gene.list (Optional) A named list of gene sets to use for Mutual Best Hit consistency evaluation. 
-#' If `NULL`, the function uses recursively precomputed gene lists from `scTypeEval`.
-#' @param black.list (Optional) A vector of gene names to exclude from the analysis. 
-#' If `NULL`, the function uses the blacklist from `scTypeEval`.
-#' @param min.cells An integer specifying the minimum number of cells required per cell type. 
-#' Default is `10`.
-#' @param min.samples An integer specifying the minimum number of samples required per cell type. 
-#' Default is `5`.
-#' @param black.list Character vector. Genes to exclude from consistency analysis. Defaults to `scTypeEval@black.list`.
-#' @param ncores Integer. Number of CPU cores to use for parallel processing. Default: `1`.
-#' @param bparam Parallel backend parameter object for BiocParallel. If provided, overrides `ncores`.
-#' @param progressbar Logical. Whether to display a progress bar during computation. Default: `TRUE`.
-#' @param verbose Logical. Whether to print messages during execution. Default: `TRUE`.
-#'
-#' @details
-#' This function uses a classifier to assess inter-sample reciprocal similarity, results are stored 
-#' within `scTypeEval` \code{consistency} slot.
-#'
-#' @return An updated `scTypeEval` object containing the consistency evaluation results. 
-#' The results are stored in `scTypeEval@consistency` and can be accessed per gene list.
-#'
-#' @examples
-#' \dontrun{
-#' sceval <- Run.BestHit(scTypeEval = sceval, 
-#'                       ident = "cell_type", 
-#'                       sample = "sample_id", 
-#'                       data.type = "pseudobulk", 
-#'                       ncores = 4)
-#' }
-#' 
-#' @importClassesFrom Matrix dgCMatrix
-#'
-#' @export Run.BestHit
-
-
-Run.BestHit <- function(scTypeEval,
-                        ident = NULL,
-                        ident_GroundTruth = NULL,
-                        method = c("Mutual.Score", "Mutual.Match"),
-                        classifier = c("SingleR", "Spearman_correlation"),
-                        sample = NULL,
-                        data.type = "sc",
-                        gene.list = NULL,
-                        black.list = NULL,
-                        min.cells = 10,
-                        min.samples = 5,
-                        ncores = 1,
-                        bparam = NULL,
-                        progressbar = FALSE,
-                        verbose = TRUE
-                        
-){
-   
-   if(!data.type %in% data_type){
-      stop(data.type, " data type conversion method not supported. Pick up one of: ", 
-           paste(data_type[1:2], collapse = ", "))
-   } else if(data.type %in% data_type[3:4]){
-      stop(paste(data_type[3:4], collapse = ", "), "not supported for mutual BestHit.") 
-   }
-   
-   if(is.null(ident)){
-      ident <- scTypeEval@active.ident
-   }
-   
-   if(!ident %in% names(scTypeEval@metadata)){
-      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
-   }
-   
-   # retrieve ident and convert to factor
-   ident.name <- ident
-   ident <- scTypeEval@metadata[[ident]]
-   ident <- purge_label(ident)
-   ident <- factor(ident)
-   
-   if(length(unique(ident)) < 2){
-      stop("Less than 2 cell type detected, Consistency metrics not possible")
-   }
-   
-   if(!is.null(ident_GroundTruth)){
-      ident_GroundTruth <- scTypeEval@metadata[[ident_GroundTruth]]
-      ident_GroundTruth <- purge_label(ident_GroundTruth)
-      ident_GroundTruth <- factor(ident_GroundTruth)
-   }
-   
-   if(!is.null(sample)){
-      if(!sample %in% names(scTypeEval@metadata)){
-         stop("`sample` parameter not found in metadata colnames.")
-      }
-      # retrieve sample and convert to factor
-      sample.name <- sample
-      sample <- scTypeEval@metadata[[sample]]
-      sample <- purge_label(sample)
-      sample <- factor(sample)
-   } else {
-      stop("BestHit consistency requires multiple samples and specify it in `sample` parameter.")
-   }
-   
-   # set gene lists
-   if(is.null(gene.list)){
-      gene.list <- scTypeEval@gene.lists
-      if(length(gene.list) == 0){
-         stop("No gene list found to run consistency metrics.\n
-              Add custom gene list or compute highly variable genes with add.HVG()\n")
-      }
-   } else {
-      if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
-         stop("Some gene list names not included in scTypeEval object")
-      }
-      gene.list <- scTypeEval@gene.lists[gene.list]
-   }
-   
-   if(is.null(black.list)){
-      black.list <- scTypeEval@black.list
-   }
-   
-   # set methods
-   if(any(!method %in% mutual_method)){
-      stop("Not supported Best Hit metrics, please provide both or either: ",
-           paste(mutual_method, collapse = ", "))
-   }
-   
-   # set classifier
-   classifier <- classifier[1]
-   if(!classifier %in% classifiers){
-      stop("Not supported classifier, please provide either: ",
-           paste(classifiers, collapse = ", "))
-   }
-   
-   if(data.type == "sc" && "Mutual.Match" %in% method){
-      warning("Mutual.Match consistency only supported for pseudobulk data.type, not running")
-      method <- method[method != "Mutual.Match"]
-   }
-   
-   
-   param <- set_parallel_params(ncores = ncores,
-                                bparam = bparam,
-                                progressbar = progressbar)
-   
-   # loop over each gene.list
-   consist.list <- lapply(names(gene.list),
-                          function(t){
+                             dist <- assay@dissimilarity
+                             ident <- unlist(assay@ident)
                              
-                             # get matrix
-                             keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
-                             mat <- scTypeEval@counts[keep,]
-                             
-                             # remove black list genes
-                             mat <- mat[!rownames(mat) %in% black.list,]
-                             
-                             con <- bestHit(mat = mat,
-                                            ident = ident,
-                                            ident_GroundTruth = ident_GroundTruth,
-                                            sample = sample,
-                                            data.type = data.type,
-                                            method = method,
-                                            classifier = classifier,
-                                            min.cells = min.cells,
-                                            min.samples = min.samples,
-                                            bparam = param)
-                             
-                             # accommodte to ConsistencyAssay
-                             
-                             CA <- lapply(names(con),
-                                          function(cc){
-                                             
-                                             methods::new("ConsistencyAssay",
-                                                          measure = con[[cc]],
-                                                          consistency.metric = paste("BestHit", cc, sep = "-"),
-                                                          distance.method = NA,
-                                                          gene.list = t,
-                                                          black.list = black.list,
-                                                          ident = ident.name,
-                                                          data.type = data.type,
-                                                          sample = NA)
-                                             
+                             # compute internal validation metrics
+                             if(verbose){message("Computing internal validation metrics ", da, " ... \n")}
+                             con <- calculate_IntVal_metric(dist = dist,
+                                                            metrics = IntVal.metric,
+                                                            ident = ident,
+                                                            KNNGraph_k = KNNGraph_k,
+                                                            verbose = verbose)
+                             dfl <- lapply(names(con),
+                                          function(int){
+                                             # build dissimilarity object
+                                             r <- data.frame(measure = con[[int]],
+                                                             consistency.metric = int)
+                                             return(r)
                                           })
                              
-                             # name consistency assays
-                             names(CA) <- lapply(seq_along(CA),
-                                                 function(ca){
-                                                    v <- na.omit(c(CA[[ca]]@data.type,
-                                                                   CA[[ca]]@consistency.metric))
-                                                    paste(v,
-                                                          collapse = "_")
-                                                 })
+                             df <- do.call(rbind, dfl) |>
+                                dplyr::mutate(dissimilarity_method = assay@method,
+                                              ident = names(assay@ident))
                              
-                             
-                             return(CA)
+                             return(df)
                           })
    
-   names(consist.list) <- names(gene.list)
+   consist <- do.call(rbind, consist.list) 
    
-   # add to scTypeEval object
-   for(n in names(consist.list)){
-      for(m in names(consist.list[[n]]))
-         scTypeEval@consistency[[n]][[m]] <- consist.list[[n]][[m]]
-   }
-   
-   return(scTypeEval)
+   return(consist)
    
 }
 
 
-## wrapper of consistency metrics and BestHit
-#' @title Wrapper for Consistency Metrics and BestHit Evaluation for multiple data.type inputs.
-#'
-#' @description This function serves as a wrapper to compute internal validation metrics (\link[scTypeEval]{Run.Consistency})
-#' and Mutual Best Hit consistency (\link[scTypeEval]{Run.BestHit}) evaluations for cell type annotations.
-#' It supports multiple data types in the same run, including single-cell and pseudobulk data.
-#'
-#' @param scTypeEval An scTypeEval object containing single-cell expression data, metadata, and gene lists.
-#' @param ident A character string specifying the metadata column containing the cell type annotations.
-#'   Default is `NULL`, which uses the active identity in `scTypeEval`.
-#' @param ident_GroundTruth (Optional) A character string specifying the metadata column containing the
-#'   ground truth annotations. Default is `NULL`, meaning `ident` is used. See \link[Run.BestHit]{Run.BestHit} for details.
-#' @param sample A character string specifying the metadata column that identifies sample IDs.
-#'   Required for consistency evaluation when using pseudobulk data. For `"sc"` data.type `sample == NULL` is considered, so inter-sample variability is not accounted for.
-#' @param normalization.method Character. Method for normalizing the expression data. See \link[add.HVG]{add.HVG} for more details.
-#'   Options: `"Log1p"`, `"CLR"`, `"pearson"`. Default: `"Log1p"`. 
-#' @param gene.list List. A list of gene sets to compute consistency metrics on.
-#'    By default, each of the gene lists stored in `scTypeEval` are used recursively to compute consistency metrics.
-#' @param pca Logical. Whether to perform PCA before consistency evaluation. Default: `FALSE`. Only applies to \link[Run.Consistency]{Run.Consistency}.
-#' @param ndim Integer. Number of principal components to retain if `pca = TRUE`. Default: `30`. Only applies to \link[Run.Consistency]{Run.Consistency}.
-#' @param distance.method Character. Method to compute distances between samples when running \link[Run.Consistency]{Run.Consistency}. Default is `"euclidean"`.
-#'   See \link[Run.Consistency]{Run.Consistency} for details.
-#' @param IntVal.metric A character vector specifying internal validation metrics to compute. See \link[Run.Consistency]{Run.Consistency} for details.
-#' @param BH.method A character vector specifying Mutual Best Hit methods. 
-#'    Options: `"Mutual.Score"` and `"Mutual.Match"`, by default both are run if posssible.
-#'    See \link[Run.BestHit]{Run.BestHit} for details.
-#' @param classifier Method to classify or annotated cell type. Supported option are:
-#'   - `Spearman_correlation`: Assigns cell types by computing the Spearman correlation between each cell's expression profile and reference profiles (e.g., averaged marker gene expression per cell type). The label with the highest correlation is assigned.
-#'   - \link[SingleR]{SingleR}: Automatic annotation method introduced by Aran et al., 2019 [\doi{10.1038/s41590-018-0276-y}], implemented in \link[SingleR]{SingleR}. Compares each cell to reference datasets and assigns the most similar cell type label.
-#' @param data.type A character vector specifying the type(s) of data input. If multiple are provided, all of them will be run recursively if supported.
-#'   By default all are run. Options:
-#'   - `"sc"`
-#'   - `"pseudobulk"`
-#'   - `"pseudobulk_1vsall"`
-#'   - `"GloScope"`
-#' @param min.samples Integer. Minimum number of samples required per cell type. Default: `5`.
-#' @param min.cells Integer. Minimum number of cells required per cell type. Default: `10`.
-#' @param k.sc Integer. Number of nearest neighbors for single-cell KNN graph. Default: `20`.
-#' @param k.psblk Integer. Number of nearest neighbors for pseudobulk KNN graph. Default: `5`.
-#' @param black.list (Optional) Character vector of genes to exclude from analysis.
-#'   Defaults to `scTypeEval@black.list`.
-#' @param ncores Integer. Number of CPU cores to use for parallel processing. Default: `1`.
-#' @param bparam Parallel backend parameter object for BiocParallel. If provided, overrides `ncores`.
-#' @param progressbar Logical. Whether to display a progress bar during computation. Default: `FALSE`.
-#' @param verbose Logical. Whether to print messages during execution. Default: `TRUE`.
-#'
-#' @details
-#' This function applies sequentially internal validation metrics (\link[scTypeEval]{Run.Consistency})
-#' and Mutual Best Hit consistency (\link[scTypeEval]{Run.BestHit}) on scTypeEval object to assess the consistency of cell type annotations.
-#' Finally, it returns a data frame with the consistency results for each consistency paramter.
-#'
-#' @return A data frame containing consistency evaluation results for each consistency parameter.
-#'
-#' @examples
-#' \dontrun{
-#' consistency_df <- Run.scTypeEval(scTypeEval = sceval,
-#'                                 ident = "cell_type",
-#'                                 sample = "sample_id",
-#'                                 IntVal.metric = c("silhouette", "NeighborhoodPurity"), # specificy one or multiple internal validation metrics
-#'                                 BH.method = c("Mutual.Score","Mutual.Match"), # specificy Run.BestHit methods
-#'                                 data.type = c("sc", "pseudobulk"), # multiples data types will be run sequentially
-#'                                 ncores = 4)
-#' }
-#' 
-#' @seealso \link{Run.Consistency}, \link{Run.BestHit}, \link{get.ConsistencyData}
-#'
-#' @export Run.scTypeEval
-
-Run.scTypeEval <- function(scTypeEval,
-                           ident = NULL,
-                           ident_GroundTruth = NULL,
-                           sample = NULL,
-                           normalization.method = c("Log1p", "CLR", "pearson"),
-                           gene.list = NULL,
-                           pca = FALSE,
-                           ndim = 30,
-                           distance.method = "euclidean",
-                           IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                             "ward.PropMatch", "Leiden.PropMatch",
-                                             "modularity"),
-                           BH.method = c("Mutual.Score", "Mutual.Match"),
-                           classifier = c("SingleR", "Spearman_correlation"),
-                           data.type = c("sc", "pseudobulk",
-                                         "pseudobulk_1vsall",
-                                         "GloScope"),
-                           min.samples = 5,
-                           min.cells = 10,
-                           k.sc = 20,
-                           k.psblk = 5,
-                           black.list = NULL,
-                           ncores = 1,
-                           bparam = NULL,
-                           progressbar = FALSE,
-                           verbose = TRUE){
-   
-   
-   df.res <- list()
-   
-   # only run EMD on pseudobulk data.type
-   if(distance.method == "EMD" && "sc" %in% data.type){
-      warning("Earth mover distance (EMD) for single-cell (sc) data.type is
-              highly computially expensive... not running consistency for sc.\n")
-      data.type <- data.type[data.type != "sc"]
-   }
-   
-   if(length(data.type) == 0 | is.null(data.type)){
-      stop("No data.type provided to run consistency.")
-   }
-   
-   for(dt in data.type){
-      
-      if(dt == "sc"){
-         spl = NULL
-         k <- k.sc
-      } else {
-         spl = sample
-         k <- k.psblk
-      }
-      
-      if(verbose){message("\n------- Running Consistency for ", dt, " ",  format(Sys.time()), "\n")}
-      
-      sc.tmp <- Run.Consistency(scTypeEval,
-                                ident = ident,
-                                sample = spl,
-                                normalization.method = normalization.method,
-                                distance.method = distance.method,
-                                IntVal.metric = IntVal.metric,
-                                gene.list = gene.list,
-                                data.type =  dt,
-                                pca = pca,
-                                ndim = ndim,
-                                min.samples = min.samples,
-                                min.cells = min.cells,
-                                black.list = black.list,
-                                ncores = ncores,
-                                KNNGraph_k = k,
-                                progressbar = progressbar,
-                                verbose = FALSE)
-      
-      if(!dt %in% data_type[3:4] && any(BH.method %in% mutual_method)){
-         
-         if(verbose){message("------- Running BestHit for ", dt, " ",  format(Sys.time()), "\n")}
-         sc.tmp <- Run.BestHit(sc.tmp,
-                               data.type = dt,
-                               ident = ident,
-                               ident_GroundTruth = ident_GroundTruth,
-                               method = BH.method,
-                               classifier = classifier,
-                               gene.list = gene.list,
-                               sample = sample,
-                               min.samples = min.samples,
-                               min.cells = min.cells,
-                               black.list = black.list,
-                               ncores = ncores,
-                               progressbar = progressbar,
-                               verbose = FALSE)
-      }
-      
-      df <- get.ConsistencyData(sc.tmp)
-      df.res[[dt]] <- df
-   }
-   
-   wdf <- do.call(rbind, df.res)
-   
-   return(wdf)
-}
-
-
-#' @title Retrieve Consistency Data from scTypeEval Object
-#'
-#' @description Extracts and filters consistency metrics from an `scTypeEval` object
-#' based on specified criteria.
-#'
-#' @param scTypeEval An `scTypeEval` object containing consistency analysis results.
-#' @param gene.list A character vector of gene.lists names to filter the results. Default is `NULL` (no filtering by gene.lists).
-#' @param consistency.metric A character vector specifying which consistency metric(s) to retrieve. Default is `NULL` (no filtering by metric).
-#' @param distance.method A character string specifying the distance method to filter by. Default is `NULL` (no filtering by distance method).
-#' @param data.type A character vector specifying the type of data to filter by. Default is `NULL` (no filtering by data type).
-#'
-#' @details
-#' This function retrieves consistency assessment results stored in the `scTypeEval` object and stored in \code{consistency} slot.
-#' It allows filtering based on gene lists, consistency metrics, distance methods, and data types.
-#' The extracted data includes both raw and scaled consistency measurements.
-#'
-#' @return A `data.frame` containing the filtered consistency metrics, with columns:
-#' - `celltype`: Cell type names (if applicable, some metrics return global consistency).
-#' - `measure`: Raw consistency metric value.
-#' - `scaled_measure`: Normalized consistency metric value (scaled between 0 and 1).
-#' - `consistency.metric`: The name of the consistency metric used.
-#' - `distance.method`: The distance method used (if applicable).
-#' - `gene.list`: The gene list used in the consistency assessment.
-#' - `ident`: Identifier for cell type annotation.
-#' - `data.type`: Type of data analyzed.
-#' - `sample`: Sample identifier (if available).
-#'
-#' @examples
-#' # Obtain all results
-#' result <- get.ConsistencyData(scTypeEval = sceval) # scTypeEval object previously run for consistency metrics
-#' 
-#' # filtered results
-#' result_filtered <- get.ConsistencyData(scTypeEval = sceval, # scTypeEval object previously run for consistency metrics
-#'                                        gene.list = c("HVG"), # get only the highly variable gene restuls
-#'                                        consistency.metric = c("silhouette", "modularity"), # get only silhouette and modularity results
-#'                                        distance.method = "euclidean", # get only results for euclidean distance
-#'                                        data.type = "pseudobulk") # get only pseudobulk results
-#'
-#'
-#' @export get.ConsistencyData
-
-get.ConsistencyData <- function(scTypeEval,
-                                gene.list = NULL,
-                                consistency.metric = NULL,
-                                distance.method = NULL,
-                                data.type = NULL
-)
-{
-   
-   # Ensure the consistency slot is not empty
-   if (length(scTypeEval@consistency) == 0) {
-      stop("The 'consistency' slot in the 'scTypeEval' object is empty.")
-   }
-   
-   # Initialize an empty list to store filtered data
-   filtered_data <- list()
-   assays <- unlist(scTypeEval@consistency)
-   
-   # Loop through each ConsistencyAssay object in scTypeEval@consistency
-   for (a in seq_along(assays)) {
-      assay <- assays[[a]]
-      # Check for class validity
-      if (!inherits(assay, "ConsistencyAssay")) {
-         stop(paste("Invalid object in consistency slot"))
-      }
-      
-      # Apply filtering:
-      # For `gene.list`, check if it is NULL or if the intersection with the assay's gene list is non-empty
-      if (!is.null(gene.list) && length(intersect(gene.list, assay@gene.list)) == 0) next
-      # For other parameters, check if they are NULL or match any value in the corresponding vector
-      if (!is.null(consistency.metric) && !assay@consistency.metric %in% consistency.metric) next
-      if (!is.null(distance.method) && !identical(assay@distance.method, distance.method)) next
-      if (!is.null(data.type) && !assay@data.type %in% data.type) next
-      
-      cm <- assay@consistency.metric
-      
-      # scale if needed, convert to all metric to a -1 to 1 scale
-      scaled_measure <- normalize_metric(value = assay@measure,
-                                         metric = cm)
-      
-      
-      # Extract relevant information into a named list
-      filtered_data[[a]] <- data.frame(
-         celltype = names(assay@measure),
-         measure = assay@measure,
-         scaled_measure = scaled_measure,
-         consistency.metric = cm,
-         distance.method = if (is.null(assay@distance.method)) NA else assay@distance.method,
-         gene.list = paste(assay@gene.list, collapse = ", "),
-         ident = assay@ident,
-         data.type = assay@data.type,
-         sample = if (is.null(assay@sample)) NA else assay@sample
-      )
-   }
-   
-   # Combine all data frames into one
-   if (length(filtered_data) == 0) {
-      stop("Filters provided yielded no result in current scTypeEval object") # Return an empty data frame if no results
-   }
-   
-   result <- do.call(rbind, filtered_data)
-   
-   
-   return(result)
-   
-   
-}
 
 
 
@@ -2121,6 +1638,11 @@ plot.Heatmap <- function(scTypeEval,
                          dissimilarity.slot = "all",
                          ... # other params for pheatmap
 ) {
+   
+   if (!requireNamespace("pheatmap", quietly = TRUE)) {
+      message("Installing required package pheatmap...\n")
+      install.packages("pheatmap")
+   }
    
    diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
    
