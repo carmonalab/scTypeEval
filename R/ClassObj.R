@@ -71,19 +71,6 @@ methods::setClass("DissimilarityAssay",
                   )
 )
 
-# define consistency assay object
-methods::setClass("ConsistencyAssay",
-                  slots = c(
-                     measure = "ANY",
-                     consistency.metric = "character",
-                     distance.method = "ANY",
-                     gene.list = "character",
-                     black.list = "character",
-                     ident = "character",
-                     data.type = "character",
-                     sample = "ANY"
-                  )
-)
 
 methods::setClass("DimRed",
                   slots = c(
