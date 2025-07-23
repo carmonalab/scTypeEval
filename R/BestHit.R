@@ -302,7 +302,7 @@ bestHit <- function(mat,
    # Filter out NULLs
    df.tmp <- Filter(Negate(is.null), df.tmp)
    
-   # ---- Build pairwise matrix with lists ----
+   # ---- Build pairwise matrix with lists
    n <- length(unlist(df.tmp))
    rcn <- lapply(df.tmp, function(x){x[["i"]]}) |> unique()
    # Initialize distance matrix
