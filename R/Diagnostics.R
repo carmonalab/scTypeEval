@@ -1,65 +1,10 @@
-nn.helper <- function(mat,
+nn.helper <- function(dist,
                       ident,
-                      normalization.method,
-                      distance.method = "euclidean",
-                      KNNGraph_k = 5,
-                      data.type = "pseudobulk",
-                      sample = NULL,
-                      pca = FALSE,
-                      ndim = 30,
-                      min.samples = 5,
-                      min.cells = 10,
-                      verbose = TRUE){
-   
-   mat <- get.matrix(mat,
-                     data.type = data.type,
-                     ident = ident,
-                     sample = sample,
-                     min.samples = min.samples,
-                     min.cells = min.cells)
-   
-   # normalized subetted matrix
-   norm.mat <- Normalize_data(red.mat@matrix,
-                              method = normalization.method)
-   nident <- red.mat@ident
-   if(pca){
-      if(verbose){message("Computing PCA space\n")}
-      pr <- custom_prcomp(norm.mat, pca.dims)
-      mat <- NULL
-      
-      if(data.type == "GloScope"){
-         if(verbose){message("Computing GloScope divergencies\n")}
-         suppressWarnings(
-            {
-               dist <- GloScope::gloscope(embedding_matrix = pr$x,
-                                          cell_sample_ids = red.mat@ident,
-                                          dens = "KNN",
-                                          dist_mat = distance.method,
-                                          k = min.cells-1
-               )
-               nident <- sapply(colnames(dist),
-                                function(x){
-                                   strsplit(x, "_")[[1]][2]
-                                }) |>
-                  factor()
-            })
-         norm.mat <- dist
-         dist <- as.dist(dist)
-      } else {
-         norm.mat <- t(pr$x)
-      }
-   } else{
-      mat <- red.mat@matrix
-   }
-   # get distances
-   if(data.type != "GloScope"){
-      dist <- get.distance(mat = mat,
-                           norm.mat = norm.mat,
-                           distance.method = distance.method)
-   }
-   
+                      KNNGraph_k,
+                      normalize = FALSE
+                      ){
    # set KNNGraph_k
-   KNNGraph_k <- min(KNNGraph_k, max(table(nident)))
+   KNNGraph_k <- min(KNNGraph_k, max(table(ident)))
    # produce KNN
    knn <- compute_KNN(dist,
                       KNNGraph_k = KNNGraph_k)
@@ -69,27 +14,29 @@ nn.helper <- function(mat,
                             knn = knn)
    
    # Get unique cell types
-   cell_types <- unique(nident)
+   cell_types <- unique(ident)
    
    # Initialize a list to store proportions for each cell
-   cell_proportions <- vector("list", length(nident))
+   cell_proportions <- vector("list", length(ident))
    
    prop.ident.table <- table(nident) |> prop.table()
    
-   for (i in seq_along(nident)) {
+   for (i in seq_along(ident)) {
       # Get the neighbors of the current cell
       neighbors <- knn[i, ]
       
       # Count occurrences of each cell type among neighbors
-      neighbor_types <- nident[neighbors]
+      neighbor_types <- ident[neighbors]
       type_counts <- table(factor(neighbor_types, levels = cell_types))
       
       score <- type_counts / KNNGraph_k
       # Convert to proportions
-      score <- minmax_norm(score,
-                           min_value = prop.ident.table[nident[i]],
-                           max_value = 1,
-                           inverse = F)
+      if(normalize){
+         score <- minmax_norm(score,
+                              min_value = prop.ident.table[ident[i]],
+                              max_value = 1,
+                              inverse = F)
+      }
       cell_proportions[[i]] <- score
    }
    
@@ -99,7 +46,7 @@ nn.helper <- function(mat,
    colnames(proportion_df) <- cell_types
    
    # Compute the mean proportion of each cell type within each identity group
-   aggregate_scores <- aggregate(proportion_df, by = list(nident), FUN = mean)
+   aggregate_scores <- aggregate(proportion_df, by = list(ident), FUN = mean)
    colnames(aggregate_scores)[1] <- "celltype"  # Rename grouping column
    
    return(aggregate_scores)
