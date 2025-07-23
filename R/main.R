@@ -893,6 +893,7 @@ get.Consistency <- function(scTypeEval,
                                               "Average.similarity"),
                             KNNGraph_k = 5,
                             hclust.method = "ward.D2",
+                            normalize = FALSE,
                             verbose = TRUE
                             
 ){
@@ -913,7 +914,7 @@ get.Consistency <- function(scTypeEval,
                                                             ident = ident,
                                                             KNNGraph_k = KNNGraph_k,
                                                             hclust.method = hclust.method,
-                                                            verbose = verbose)
+                                                            normalize = normalize)
                              dfl <- lapply(names(con),
                                           function(int){
                                              # build dissimilarity object
