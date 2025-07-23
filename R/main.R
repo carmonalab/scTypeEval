@@ -882,248 +882,30 @@ Run.Dissimilarity <- function(scTypeEval,
 
 
 Run.Consistency <- function(scTypeEval,
-                            ident = NULL,
-                            sample = NULL,
-                            normalization.method = c("Log1p", "CLR", "pearson"),
-                            gene.list = NULL,
-                            pca = FALSE,
-                            ndim = 30,
-                            distance.method = "euclidean",
+                            dissimilarity.slot, 
                             IntVal.metric = c("silhouette", "NeighborhoodPurity",
                                               "ward.PropMatch", "Leiden.PropMatch",
                                               "modularity", "Orbital.medoid",
                                               "Orbital.centroid"),
-                            data.type = c("sc", "pseudobulk",
-                                          "pseudobulk_1vsall",
-                                          "GloScope"),
-                            min.samples = 5,
-                            min.cells = 10,
                             KNNGraph_k = 5,
-                            black.list = NULL,
-                            ncores = 1,
-                            bparam = NULL,
-                            progressbar = FALSE,
                             verbose = TRUE
                             
 ){
-   if(is.null(ident)){
-      ident <- scTypeEval@active.ident
-   }
    
-   if(!ident %in% names(scTypeEval@metadata)){
-      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
-   }
+   diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
    
-   data.type = data.type[1]
+   consist.list <- lapply(diss.assays,
+                          function(da){
+                             assay <- scTypeEval@dissimilarity[[da]]
+                           
+                             
+                             return(pl)
+                          })
    
-   # retrieve ident and convert to factor
-   ident.name <- ident
-   ident <- scTypeEval@metadata[[ident]]
-   ident <- purge_label(ident)
-   ident <- factor(ident)
-   
-   if(length(unique(ident)) < 2){
-      stop("Less than 2 cell type detected, Consistency metrics not possible")
-   }
-   
-   if(!is.null(sample)){
-      if(!sample %in% names(scTypeEval@metadata)){
-         stop("`sample` parameter not found in metadata colnames.")
-      }
-      # retrieve sample and convert to factor
-      sample.name <- sample
-      sample <- scTypeEval@metadata[[sample]]
-      sample <- purge_label(sample)
-      sample <- factor(sample)
-      
-      if(min.samples < 2){
-         stop("For intersample comparison a minimum threshold of cell population
-              in at least 2 samples is required, but more is recommended.")
-      }
-      
-   } else {
-      
-      if(data.type != "sc"){
-         stop("For pseudobulk or GloScope provide a dataset with multiple samples,
-              and specifiy their respective column metadata in `sample` parameter")
-      } else {
-         if(verbose){message("Using dataset as a unique sample, computing consistency across cells.\n")}
-      }
-      sample.name <- NULL
-   }
-   
-   
-   if(!distance.method %in% distance_methods){
-      stop(distance.method, " distance method not supported. Pick up one of: ", 
-           paste(distance_methods, collapse = ", "))
-   }
-   # only run EMD on pseudobulk data.type
-   if(distance.method == "EMD" && data.type == "sc"){
-      warning("Earth mover distance (EMD) for single-cell (sc) data.type is
-              highly computially expensive... not recommended, it will take long")
-   }
-   
-   
-   if(!all(IntVal.metric %in% IntVal_metric)){
-      stop("at least one internal validation metrics(s) method not supported.
-           Pick up one, some or all out of: ", 
-           paste(IntVal_metric, collapse = ", "))
-   }
-   
-   if(!data.type %in% data_type){
-      stop(data.type, " data type conversion method not supported. Pick up one of: ", 
-           paste(data_type, collapse = ", "))
-   }
-   
-   if(data.type == "GloScope" && !pca){
-      warning("data.type GloScope only run in PCA space, switching to pca=TRUE\n")
-      pca <- TRUE
-   }
-   
-   if(data.type == "GloScope" && !distance.method %in% Gloscope_dists){
-      warning("data.type GloScope only possible with ",
-              paste(Gloscope_dists, collapse = ", "),
-              " distances methods. Changing distance to KL")
-      distance.method <- "KL"
-   }
-   
-   if(data.type != "GloScope" && distance.method %in% Gloscope_dists){
-      warning(paste(Gloscope_dists, collapse = ", "),
-              " only supported with GloScope data.type. Changing distance to euclidean")
-      distance.method <- "euclidean"
-   }
-   
-   if(data.type == "GloScope" &&
-      any(centroid.need %in% IntVal.metric)){
-      warning("Centroid-based consistency metrics (",
-              paste(IntVal.metric[IntVal.metric %in% centroid.need], collapse = ", "),
-              ") not supported for data.type GloScope, not running\n")
-      IntVal.metric <- IntVal.metric[!IntVal.metric %in% centroid.need]
-   }
-   
-   # set normalization method
-   normalization.method <- normalization.method[1]
-   
-   # set gene lists
-   if(is.null(gene.list)){
-      gene.list <- scTypeEval@gene.lists
-      if(length(gene.list) == 0){
-         stop("No gene list found to run consistency metrics.\n
-              Add custom gene list or compute highly variable genes with add.HVG()\n")
-      }
-   } else {
-      if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
-         stop("Some gene list names not included in scTypeEval object")
-      }
-      gene.list <- scTypeEval@gene.lists[gene.list]
-   }
-   
-   if(is.null(black.list)){
-      black.list <- scTypeEval@black.list
-   }
-   
-   
-   param <- set_parallel_params(ncores = ncores,
-                                bparam = bparam,
-                                progressbar = progressbar)
-   
-   if(ncores == 1 && is.null(bparam)){
-      param1 <- param
-      param2 <- param
-   } else {
-      if(!is.null(sample) && data.type %in% c("sc", "pseudobulk_1vsall")){
-         if(length(unique(sample))>length(gene.list)){
-            param1 <- BiocParallel::SerialParam()
-            param2 <- param
-         } else {
-            param1 <- param
-            param2 <- BiocParallel::SerialParam()
-         }
-      } else {
-         param1 <- param
-         param2 <- BiocParallel::SerialParam()
-      }
-   }
-   
-   
-   # loop over each gene.list
-   consist.list <- BiocParallel::bplapply(names(gene.list),
-                                          BPPARAM = param1,
-                                          function(t){
-                                             
-                                             # get matrix
-                                             keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
-                                             mat <- scTypeEval@counts[keep,]
-                                             
-                                             # remove black list genes
-                                             mat <- mat[!rownames(mat) %in% black.list,]
-                                             
-                                             con.list <- consistency.helper(mat,
-                                                                            ident = ident,
-                                                                            sample = sample,
-                                                                            normalization.method = normalization.method,
-                                                                            distance.method = distance.method,
-                                                                            IntVal.metric = IntVal.metric,
-                                                                            data.type = data.type,
-                                                                            pca = pca,
-                                                                            ndim = ndim,
-                                                                            bparam = param2,
-                                                                            min.samples = min.samples,
-                                                                            min.cells = min.cells,
-                                                                            KNNGraph_k = KNNGraph_k,
-                                                                            verbose = verbose)
-                                             
-                                             # accommodte to ConsistencyAssay
-                                             if(pca){
-                                                t <- paste(t, "PCA", sep = ".")
-                                             }
-                                             
-                                             CA <- lapply(seq_along(con.list),
-                                                          function(cc){
-                                                             lapply(names(con.list[[cc]]),
-                                                                    function(y){
-                                                                       if(!grepl(dist.need, y)){distance.method <- NULL}
-                                                                       
-                                                                       methods::new("ConsistencyAssay",
-                                                                                    measure = con.list[[cc]][[y]],
-                                                                                    consistency.metric = y,
-                                                                                    distance.method = distance.method,
-                                                                                    gene.list = t,
-                                                                                    black.list = black.list,
-                                                                                    ident = ident.name,
-                                                                                    data.type = data.type,
-                                                                                    sample = names(con.list)[[cc]])
-                                                                       
-                                                                    })
-                                                             
-                                                          }) |> unlist()
-                                             
-                                             
-                                             
-                                             # name consistency assays
-                                             names(CA) <- lapply(seq_along(CA),
-                                                                 function(ca){
-                                                                    v <- na.omit(c(CA[[ca]]@sample,
-                                                                                   CA[[ca]]@data.type,
-                                                                                   CA[[ca]]@distance.method,
-                                                                                   CA[[ca]]@consistency.metric))
-                                                                    paste(v,
-                                                                          collapse = "_")
-                                                                 })
-                                             
-                                             return(CA)
-                                          })
-   if(pca){
-      names(consist.list) <- paste(names(gene.list), "PCA", sep = ".")
-   } else {
-      names(consist.list) <- names(gene.list)
-   }
+   names(consist.list) <- diss.assays
    
    # add to scTypeEval object
-   for(n in names(consist.list)){
-      for(m in names(consist.list[[n]]))
-         scTypeEval@consistency[[n]][[m]] <- consist.list[[n]][[m]]
-   }
+   scTypeEval@consistency <- consist.list
    
    return(scTypeEval)
    
@@ -2257,235 +2039,6 @@ dx.BestHit <- function(scTypeEval,
 
 
 
-#' @title Perform MDS (multidimensional scaling) from a distance matrix on a Gene List and Store Results in scTypeEval object
-#'
-#' @description This function projects your distance matrix into a lower-dimensional Euclidean space (typically 2D or 3D),
-#' while preserving the pairwise distances as closely as possible, based on an specified gene list
-#' and stores the results in the \code{reductions} slot of an scTypeEval object.
-#'
-#' @param scTypeEval A \code{scTypeEval} object containing single-cell expression data.
-#' @param ident Character. Metadata column name used to group cells (e.g., cell type annotation).
-#' If \code{NULL}, the active identity from \code{scTypeEval} is used.
-#' @param sample Character. Metadata column name specifying sample identity for pseudobulk analysis.
-#' Required for \code{pseudobulk}, \code{pseudobulk_1vsall}, and \code{GloScope} data types.
-#' @param normalization.method Character. Method for normalizing gene expression before PCA. See \link[scTypeEval]{add.HVG} for more details.
-#' Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"} (default: \code{"Log1p"}).
-#' @param distance.method Character. Distance metric to use. Must be one of the predefined methods. Default: `"euclidean"`.
-#' @param gene.list Named list of character vectors. Each element is a set of genes for PCA analysis.
-#' If \code{NULL}, all pre-defined gene lists in \code{scTypeEval} are used recursively.
-#' @param data.type Character. Type of data to analyze. Options: \code{"sc"}, \code{"pseudobulk"},
-#' \code{"pseudobulk_1vsall"}, or \code{GloScope}. Default is \code{"sc"}.
-#' @param min.samples Integer. Minimum number of samples required for pseudobulk PCA (default: 5).
-#' @param min.cells Integer. Minimum number of cells required per group for PCA (default: 10).
-#' @param black.list Character vector. Genes to exclude from PCA. If \code{NULL}, defaults to
-#' the blacklist stored in \code{scTypeEval}.
-#' @param ndim Integer. Number of maximum dimensions of the space represented (default: 30).
-#' @param pca Logical. Whether to perform PCA before computing metrics. Default: `FALSE`. This parameter will be turned to `TRUE` for GloScope data.type.
-#'    `FALSE` will build distances directly on the genes within `gene.list`, while `TRUE` will do it on their principal components.
-#' @param pca.dim Integer. Number of maximum dimensions to compute PCA, if distances are computed there (default: 30).
-#' @param ncores Integer. Number of CPU cores to use for parallel processing. Default: `1`.
-#' @param bparam Parallel backend parameter object for BiocParallel. If provided, overrides `ncores`.
-#' @param progressbar Logical. Whether to display a progress bar during computation. Default: `FALSE`.
-#' @param verbose Logical. Whether to print messages during execution. Default: `TRUE`.
-#'
-#' @return The modified \code{scTypeEval} object with MDS results stored in \code{reductions} slot.
-
-#'
-#' @examples
-#' \dontrun{
-#' sceval <- add.MDS(sceval, # scTypeEval object
-#'                  ident = "cell_type",
-#'                  distance.method = "euclidean",
-#'                  sample = "sample_id",
-#'                  data.type = "pseudobulk")
-#' }
-#' 
-#' @seealso \link{add.HVG} \link[stats]{cmdscale} 
-#'
-#' @export add.MDS
-
-
-# obtain PCA from a gene list
-add.MDS <- function(scTypeEval,
-                    ident = NULL,
-                    sample = NULL,
-                    normalization.method = c("Log1p", "CLR", "pearson"),
-                    distance.method = "euclidean",
-                    gene.list = NULL,
-                    data.type = c("sc", "pseudobulk",
-                                  "pseudobulk_1vsall",
-                                  "GloScope"),
-                    min.samples = 5,
-                    min.cells = 10,
-                    black.list = NULL,
-                    ndim = 30,
-                    pca = FALSE,
-                    pca.dim = 30,
-                    ncores = 1,
-                    bparam = NULL,
-                    progressbar = FALSE,
-                    verbose = TRUE){
-   
-   if(is.null(ident)){
-      ident <- scTypeEval@active.ident
-   }
-   
-   if(!ident %in% names(scTypeEval@metadata)){
-      stop("Please provide a ident, i.e. a cell type or annotation to group cells included in metadata")
-   }
-   
-   data.type = data.type[1]
-   
-   # retrieve ident and convert to factor
-   ident.name <- ident
-   ident <- scTypeEval@metadata[[ident]]
-   ident <- purge_label(ident)
-   ident <- factor(ident)
-   
-   if(!is.null(sample)){
-      if(!sample %in% names(scTypeEval@metadata)){
-         stop("`sample` parameter not found in metadata colnames.")
-      }
-      # retrieve sample and convert to factor
-      sample.name <- sample
-      sample <- scTypeEval@metadata[[sample]]
-      sample <- purge_label(sample)
-      sample <- factor(sample)
-      
-      if(min.samples < 2){
-         stop("For intersample comparison a minimum threshold of cell population
-              in at least 2 samples is required, but more is recommended.")
-      }
-      
-   } else {
-      
-      if(data.type != "sc"){
-         stop("For pseudobulk or GloScope provide a dataset with multiple samples,
-              and specifiy their respective column metadata in `sample` parameter")
-      } else {
-         if(verbose){message("Using dataset as a unique sample, computing consistency across cells.\n")}
-      }
-      sample.name <- NULL
-   }
-   
-   
-   if(!distance.method %in% distance_methods){
-      stop(distance.method, " distance method not supported. Pick up one of: ", 
-           paste(distance_methods, collapse = ", "))
-   }
-   # only run EMD on pseudobulk data.type
-   if(distance.method == "EMD" && data.type == "sc"){
-      warning("Earth mover distance (EMD) for single-cell (sc) data.type is
-              highly computially expensive... not recommended, it will take long")
-   }
-   
-   if(!data.type %in% data_type){
-      stop(data.type, " data type conversion method not supported. Pick up one of: ", 
-           paste(data_type, collapse = ", "))
-   }
-   
-   if(data.type == "GloScope" && !pca){
-      warning("data.type GloScope only run in PCA space, switching to pca=TRUE\n")
-      pca <- TRUE
-   }
-   
-   if(data.type == "GloScope" && !distance.method %in% Gloscope_dists){
-      stop("data.type GloScope only possible with ",
-           paste(Gloscope_dists, collapse = ", "),
-           " distances methods.")
-   }
-   
-   if(data.type != "GloScope" && distance.method %in% Gloscope_dists){
-      stop(paste(Gloscope_dists, collapse = ", "),
-           " only supported with GloScope data.type.")
-   }
-   
-   # set normalization method
-   normalization.method <- normalization.method[1]
-   
-   # set gene lists
-   if(is.null(gene.list)){
-      gene.list <- scTypeEval@gene.lists
-      if(length(gene.list) == 0){
-         stop("No gene list found to run MDS\n
-              Add custom gene list or compute highly variable genes with add.HVG()\n")
-      }
-   } else {
-      if(!all(names(gene.list) %in% names(scTypeEval@gene.lists))){
-         stop("Some gene list names not included in scTypeEval object")
-      }
-      gene.list <- scTypeEval@gene.lists[gene.list]
-   }
-   
-   if(is.null(black.list)){
-      black.list <- scTypeEval@black.list
-   }
-   
-   param <- set_parallel_params(ncores = ncores,
-                                bparam = bparam,
-                                progressbar = progressbar)
-   
-   # loop over each gene.list
-   mds.list <- BiocParallel::bplapply(names(gene.list),
-                                      BPPARAM = param,
-                                      function(t){
-                                         
-                                         # get matrix
-                                         keep <- rownames(scTypeEval@counts) %in% gene.list[[t]]
-                                         mat <- scTypeEval@counts[keep,]
-                                         
-                                         # remove black list genes
-                                         mat <- mat[!rownames(mat) %in% black.list,]
-                                         
-                                         # compute PCA
-                                         mds.list <- get.MDS(mat,
-                                                             ident = ident,
-                                                             sample = sample,
-                                                             normalization.method = normalization.method,
-                                                             distance.method = distance.method,
-                                                             data.type = data.type,
-                                                             min.samples = min.samples,
-                                                             min.cells = min.cells,
-                                                             ndim = ndim,
-                                                             pca = pca,
-                                                             pca.dim = pca.dim,
-                                                             verbose = verbose)
-                                         
-                                         # accommodte to DimReduc
-                                         
-                                         mds.list <- lapply(seq_along(mds.list),
-                                                            function(cc){
-                                                               mds.list[[cc]]@gene.list <- t
-                                                               mds.list[[cc]]@black.list <- black.list
-                                                               mds.list[[cc]]@sample <- names(mds.list)[[cc]]
-                                                               return(mds.list[[cc]])
-                                                            })
-                                         
-                                         
-                                         
-                                         # name DimRed assays
-                                         names(mds.list) <- lapply(seq_along(mds.list),
-                                                                   function(ca){
-                                                                      v <- na.omit(c(mds.list[[ca]]@sample,
-                                                                                     mds.list[[ca]]@data.type))
-                                                                      paste(v,
-                                                                            collapse = "_")
-                                                                   })
-                                         
-                                         return(mds.list)
-                                      })
-   
-   names(mds.list) <- names(gene.list)
-   
-   # add to scTypeEval object
-   for(n in names(mds.list)){
-      for(m in names(mds.list[[n]]))
-         scTypeEval@reductions[[n]][[m]] <- mds.list[[n]][[m]]
-   }
-   
-   return(scTypeEval)
-   
-}
 
 #' Plot PCA Results from scTypeEval Object
 #'
@@ -2520,53 +2073,98 @@ add.MDS <- function(scTypeEval,
 
 
 plot.MDS <- function(scTypeEval,
-                     gene.list = NULL,
-                     data.type = NULL,
-                     dims = c(1,2),
+                     dissimilarity.slot = "all",
                      label = TRUE,
+                     dims = c(1,2),
                      show.legend = FALSE) {
    
-   # Ensure the reductions slot is not empty
-   if (length(scTypeEval@reductions) == 0) {
-      stop("The 'reductions' slot in the 'scTypeEval' object is empty.")
-   }
+   diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
    
-   assays <- unlist(scTypeEval@reductions)
-   pls <- list()  # Initialize an empty list to store plots
+   pls <- lapply(diss.assays,
+                 function(da){
+                    assay <- scTypeEval@dissimilarity[[da]]
+                    
+                    dist <- assay@dissimilarity
+                    ident <- unlist(assay@ident)
+                    title <- paste(da, names(assay@ident), sep = " - ")
+                    
+                    mds <- stats::cmdscale(dist,
+                                           k = max(dims),
+                                           list. = FALSE)
+                    
+                    df <- mds[, dims] |>
+                       as.data.frame() |>
+                       dplyr::mutate(ident = ident)
+                    
+                    labs <- paste0("Dim", dims)
+                    
+                    pl <- helper.plot.scatter(df,
+                                              show.legend = show.legend,
+                                              label = label) +
+                       ggplot2::labs(x = labs[1],
+                                     y = labs[2],
+                                     title = title)
+                    return(pl)
+                 })
    
-   # Loop through each ConsistencyAssay object in scTypeEval@reductions
-   for (a in names(assays)) {
-      assay <- assays[[a]]
-      
-      # Check for class validity
-      if (!inherits(assay, "DimRed")) {
-         stop(paste("Invalid object in reductions slot"))
+   names(pls) <- diss.assays
+   
+   if(length(pls) == 1){
+      pls <- unlist(pls)
       }
-      
-      # Apply filtering
-      if (!is.null(gene.list) && length(intersect(gene.list, assay@gene.list)) == 0) next
-      if (!is.null(data.type) && !assay@data.type %in% data.type) next
-      if (assay@key != "MDS") next
-      
-      df <- assay@embeddings[, dims] |>
-         as.data.frame() |>
-         dplyr::mutate(ident = assay@ident)
-      
-      
-      labs <- paste0("Dim", dims)
-      
-      pl <- helper.plot.PCA(df,
-                            show.legend = show.legend,
-                            label = label) +
-         ggplot2::labs(x = labs[1],
-                       y = labs[2],
-                       title = a)
-      
-      pls[[a]] <- pl  # Store plot in the list
-   }
    
-   if(length(pls) == 0){
-      warning("No MDS reductions found, run add.MDS before.\n")
+   return(pls)
+}
+
+
+plot.Heatmap <- function(scTypeEval,
+                         dissimilarity.slot = "all",
+                         ... # other params for pheatmap
+) {
+   
+   diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
+   
+   pls <- lapply(diss.assays,
+                 function(da){
+                    assay <- scTypeEval@dissimilarity[[da]]
+                    title <- paste(da, names(assay@ident), sep = " - ")
+                    
+                    d_mat <- as.matrix(assay@dissimilarity)
+                    
+                    annot <- data.frame(id = colnames(d_mat)) %>% 
+                       mutate(ident = factor(unlist(assay@ident)),
+                              sample = assay@sample) %>% 
+                       tibble::column_to_rownames("id") %>% 
+                       arrange(ident) %>% 
+                       select(ident)
+                    
+                    pmat <- d_mat[rownames(annot), rownames(annot)]
+                    
+                    gaps <- table(annot$ident) %>% as.vector()
+                    gaps <- cumsum(gaps)
+                  
+                    # Create the heatmap
+                    pheatmap::pheatmap(pmat, 
+                                       scale = scale,
+                                       cluster_rows = F,
+                                       cluster_cols = F,
+                                       annotation_row = annot,
+                                       annotation_col = annot,
+                                       show_rownames = F,
+                                       show_colnames = F,
+                                       gaps_row = gaps,
+                                       gaps_col = gaps,
+                                       main = title,
+                                       ...
+                    )
+                    
+                    return(pl)
+                 })
+   
+   names(pls) <- diss.assays
+   
+   if(length(pls) == 1){
+      pls <- unlist(pls)
    }
    
    return(pls)
