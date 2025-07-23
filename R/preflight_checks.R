@@ -111,3 +111,19 @@ purge_label <- function(label){
    }
    return(diss.assays)
 }
+
+.check_DimRedAssays <- function(scTypeEval,
+                                slot = "all"){
+   red.assays <- names(scTypeEval@reduction)
+   if(length(red.assays)<1){
+      stop("No reduction slots found. Please run before `Run.PCA()` or `add.DimReduction()` to add dimensional reductions slots.\n")
+   }
+   
+   if(slot!= "all"){
+      red.assays <- red.assays[red.assays %in% slot]
+      if(length(red.assays)<1){
+         stop("No reduction slots found for ", slot, ". Please run before `Run.PCA()` or `add.DimReduction()` to add dimensional reductions slots.\n")
+      }
+   }
+   return(red.assays)
+}
