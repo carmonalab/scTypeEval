@@ -1,15 +1,12 @@
 IntVal_metric <- c("silhouette", "NeighborhoodPurity",
                    "ward.PropMatch", "Orbital.medoid",
                    "Average.similarity")
-
-dist.need <- "silhouette|NeighborhoodPurity|ward|Orbital.medoid|Average.similarity"
-
 knn.need <- "NeighborhoodPurity"
 
 # compute medoid based on distances
 # expecting symmetric distances
-compute_medoid_indices <- function(ident,
-                                   dist) {
+compute_medoid_indices <- function(dist,
+                                   ident) {
    dist_mat <- as.matrix(dist)  # full symmetric matrix
    medoid_indices <- tapply(seq_along(ident), ident, function(idx) {
       sub_dists <- dist_mat[idx, idx, drop = FALSE]
@@ -19,40 +16,17 @@ compute_medoid_indices <- function(ident,
    return(unlist(medoid_indices[!is.na(medoid_indices)]))
 }
 
-compute_orbital_proportion <- function(norm.mat = NULL,
+compute_orbital_proportion <- function(dist,
                                        ident,
-                                       dist,
-                                       centroids = NULL,
-                                       use = "medoid") {
-   use <- use[1]
+                                       normalize = FALSE) {
    
-   medoid_idx <- NULL
-   d_to_reps <- NULL
+   dist_mat <- as.matrix(dist)
+
+   medoid_idx <- compute_medoid_indices(dist, ident)
    
-   if (use == "centroid") {
-      # Get or compute centroids
-      reps <- if (is.null(centroids)) {
-         compute_centroids(norm.mat, ident)
-      } else {
-         centroids
-      }
-      
-      # Compute pairwise Euclidean distances from all cells to centroids
-      x <- as.matrix(Matrix::t(norm.mat))
-      y <- as.matrix(reps)
-      d_to_reps <- sqrt(
-         outer(rowSums(x^2), colSums(y^2), "+") - 2 * x %*% y
-      )
-      colnames(d_to_reps) <- colnames(y)
-      
-   } else if (use == "medoid") {
-      dist_mat <- as.matrix(dist)
-      medoid_idx <- compute_medoid_indices(ident, dist)
-      
-      # Subset distance matrix: rows = all cells, columns = medoids
-      d_to_reps <- dist_mat[, medoid_idx, drop = FALSE]
-      colnames(d_to_reps) <- names(medoid_idx)
-   }
+   # Subset distance matrix: rows = all samples, columns = medoids
+   d_to_reps <- dist_mat[, medoid_idx, drop = FALSE]
+   colnames(d_to_reps) <- names(medoid_idx)
    
    # Rows: samples, Columns: cluster representatives
    own_clusters <- as.character(ident)
@@ -70,19 +44,33 @@ compute_orbital_proportion <- function(norm.mat = NULL,
    
    closer_to_own <- own_dist < min_other_dist
    
-   # If using medoids, exclude the medoid samples themselves
-   if (use == "medoid") {
-      medoid_cells <- as.vector(medoid_idx)
-      ident <- ident[-medoid_cells]
-      closer_to_own <- closer_to_own[-medoid_cells]
-   }
+   # Exclude the medoid cells themselves
+   keep_idx <- setdiff(seq_along(closer_to_own), medoid_idx)
+   ident <- ident[keep_idx]
+   closer_to_own <- closer_to_own[keep_idx]
    
-   # Compute and return the proportion vector
+   # Compute raw proportion per cluster
    prop_vector <- tapply(closer_to_own, ident, mean)
    prop_vector <- setNames(as.numeric(prop_vector), names(prop_vector))
    prop_vector <- prop_vector[!is.na(prop_vector)]
+   
+   # Normalization by expected proportion (like compute_NeighborhoodPurity)
+   if(normalize) {
+      prop.ident <- table(ident)
+      prop.ident.table <- prop.ident |> prop.table()
+      
+      for (cl in names(prop_vector)) {
+         expected <- prop.ident.table[cl]
+         prop_vector[cl] <- minmax_norm(prop_vector[cl],
+                                        min_value = expected,
+                                        max_value = 1,
+                                        inverse = FALSE)
+      }
+   }
+   
    return(prop_vector)
 }
+
 
 # Silhouette Calculation
 compute_silhouette <- function(dist, ident) {
@@ -112,55 +100,6 @@ compute_KNN <- function(dist, KNNGraph_k){
    return(knn)
 }
 
-# moudularity
-compute_snn_graph <- function(dist, KNNGraph_k = 5, knn = NULL) {
-   
-   if(is.null(knn)){
-      knn <- compute_KNN(dist = dist, KNNGraph_k = KNNGraph_k)
-   }
-   
-   # Initialize adjacency matrix
-   n <- attr(dist, "Size")
-   adj_matrix <- matrix(0, n, n)
-   
-   # Count shared neighbors
-   for (i in seq_len(n)) {
-      for (j in knn[i, ]) {
-         shared_neighbors <- length(intersect(knn[i, ], knn[j, ]))
-         adj_matrix[i, j] <- shared_neighbors
-         adj_matrix[j, i] <- shared_neighbors  # Ensure symmetry
-      }
-   }
-   
-   # Create graph object
-   g <- igraph::graph_from_adjacency_matrix(adj_matrix,
-                                            mode = "undirected",
-                                            weighted = TRUE,
-                                            diag = FALSE)
-   return(g)
-}
-
-
-compute_modularity_global <- function(dist,
-                                      ident,
-                                      KNNGraph_k = 5,
-                                      knn = NULL,
-                                      snn = NULL) {
-   # Create a graph object
-   if(is.null(snn)){
-      snn <- compute_snn_graph(dist = dist,
-                               KNNGraph_k = KNNGraph_k,
-                               knn = knn)
-   }
-   
-   # Compute modularity
-   modularity_score <- igraph::modularity(snn, membership = as.numeric(factor(ident)))
-   names(modularity_score) <- "global"
-   
-   return(modularity_score)
-}
-
-
 
 # NeighborhoodPurity 
 # What it measures:
@@ -170,7 +109,8 @@ compute_modularity_global <- function(dist,
 compute_NeighborhoodPurity <- function(dist,
                                        ident,
                                        KNNGraph_k = 5,
-                                       knn = NULL) {
+                                       knn = NULL,
+                                       normalize = FALSE) {
    if(is.null(knn)){
       knn <- compute_KNN(dist = dist,
                          KNNGraph_k = KNNGraph_k)
@@ -187,10 +127,12 @@ compute_NeighborhoodPurity <- function(dist,
       neighbors <- knn[i, ]
       score <- sum(ident[neighbors] == ident[i]) / KNNGraph_k
       # normalize by random chance
-      score <- minmax_norm(score,
-                           min_value = prop.ident.table[ident[i]],
-                           max_value = 1,
-                           inverse = F)
+      if(normalize){
+         score <- minmax_norm(score,
+                              min_value = prop.ident.table[ident[i]],
+                              max_value = 1,
+                              inverse = F)
+      }
       
       modularities[i] <- score
    }
@@ -208,7 +150,7 @@ compute_NeighborhoodPurity <- function(dist,
 }
 
 
-custom_PropMatch <- function(ident, clusters){
+custom_PropMatch <- function(ident, clusters, normalize = FALSE){
    # Unique cell types
    idents <- unique(ident)
    scores <- numeric(length(idents))
@@ -229,10 +171,12 @@ custom_PropMatch <- function(ident, clusters){
       # Observed proportion in the dominant cluster and normalize for the expected proportion
       score <- (cluster_counts[major_cluster] / prop.ident[ct]) 
       # normalize by random chance
-      score <- minmax_norm(score,
-                           min_value = prop.ident.table[ct],
-                           max_value = 1,
-                           inverse = F)
+      if(normalize){
+         score <- minmax_norm(score,
+                              min_value = prop.ident.table[ct],
+                              max_value = 1,
+                              inverse = F)
+      }
       scores[ct] <- score
    }
    
@@ -241,12 +185,14 @@ custom_PropMatch <- function(ident, clusters){
 
 compute_PropMatch <- function(ident,
                               clusters,
-                              label.conservation = c("PropMatch", "NMI", "ARI")){
+                              label.conservation = c("PropMatch", "NMI", "ARI"),
+                              normalize = FALSE){
    
    label.conservation <- label.conservation[1]
    scores <- switch(label.conservation,
                     "PropMatch" = custom_PropMatch(ident,
-                                                   clusters),
+                                                   clusters,
+                                                   normalize),
                     "NMI" = aricode::NMI(factor(ident),
                                          factor(clusters)),
                     "ARI" = aricode::ARI(factor(ident),
@@ -264,7 +210,8 @@ compute_PropMatch <- function(ident,
 compute_ward <- function(dist,
                          ident,
                          method = "ward.D2",
-                         label.conservation = "PropMatch") {
+                         label.conservation = "PropMatch",
+                         normalize = FALSE) {
    
    hclust_result <- stats::hclust(dist,
                                   method = method)
@@ -272,42 +219,60 @@ compute_ward <- function(dist,
                              k = length(unique(ident)))
    scores <- compute_PropMatch(ident,
                                clusters,
-                               label.conservation)
+                               label.conservation,
+                               normalize = normalize)
    return(scores)
 }
 
+# similar to one-label silhouette
+compute_averageSimilarity <- function(dist, ident) {
+   dist_mat <- as.matrix(dist)
+   ident <- as.character(ident)  # ensure consistent indexing
+   
+   unique_idents <- unique(ident)
+   ratio_vector <- numeric(length(ident))
+   
+   for (i in seq_along(ident)) {
+      this_ident <- ident[i]
+      
+      same_group_idx <- which(ident == this_ident & seq_along(ident) != i)
+      other_group_idx <- which(ident != this_ident)
+      
+      # Handle edge cases: if only one cell in group, skip
+      if (length(same_group_idx) == 0 || length(other_group_idx) == 0) {
+         ratio_vector[i] <- NA
+         next
+      }
+      
+      avg_own_dist <- mean(dist_mat[i, same_group_idx])
+      avg_other_dist <- mean(dist_mat[i, other_group_idx])
+      
+      ratio_vector[i] <- avg_own_dist / avg_other_dist
+   }
+   
+   # Aggregate: mean per cluster
+   similarity_score <- tapply(ratio_vector, ident, mean, na.rm = TRUE)
+   
+   similarity_score <- similarity_score[!is.na(similarity_score)]
+   similarity_score <- setNames(as.numeric(similarity_score), names(similarity_score))
+   
+   return(similarity_score)
+}
 
 
 
 # Main dispatcher for internal validation metrics
 # Return a vector as long as the number of ident with the consistency value
-calculate_IntVal_metric <- function(mat = NULL,
-                                    norm.mat = NULL,
-                                    metrics,  # Accept a vector of metric names
-                                    distance.method = "euclidean",
-                                    ident, 
-                                    dist = NULL, 
-                                    centroids = NULL, 
-                                    inertia = NULL, 
-                                    knn = NULL,
-                                    snn = NULL,
+calculate_IntVal_metric <- function(dist,
+                                    ident,
+                                    metrics, 
                                     KNNGraph_k = 5, 
                                     hclust.method = "ward.D2",
-                                    verbose = T) {
+                                    normalize = FALSE) {
    
    # Validate metrics input
    if (!all(metrics %in% IntVal_metric)) {
       stop("One or more requested metrics are not supported.")
-   }
-   
-   
-   # Precompute distance if needed
-   
-   if (is.null(dist) && any(grepl(dist.need, metrics))) {
-      if(verbose){message("Computing distances...\n")}
-      dist <- get.distance(mat = mat,
-                           norm.mat = norm.mat,
-                           distance.method = distance.method)
    }
    
    if(any(grepl(knn.need, metrics))){
@@ -327,18 +292,20 @@ calculate_IntVal_metric <- function(mat = NULL,
          switch(metric,
                 "silhouette" = compute_silhouette(dist,
                                                   ident),
-                "NeighborhoodPurity" = compute_NeighborhoodPurity(dist,
-                                                                  ident,
-                                                                  KNNGraph_k,
-                                                                  knn),
+                "NeighborhoodPurity" = compute_NeighborhoodPurity(dist = dist,
+                                                                  ident = ident,
+                                                                  KNNGraph_k = KNNGraph_k,
+                                                                  knn = knn,
+                                                                  normalize = normalize),
                 "ward.PropMatch" = compute_ward(dist,
                                                 ident,
                                                 hclust.method,
-                                                label.conservation = "PropMatch"),
+                                                label.conservation = "PropMatch",
+                                                normalize = normalize),
                 "Orbital.medoid" = compute_orbital_proportion(ident = ident,
                                                               dist = dist,
-                                                              use = "medoid"),
-                "Average.similarity" = compute_averageSimilarity(),
+                                                              normalize = normalize),
+                "Average.similarity" = compute_averageSimilarity(dist, ident),
                 stop(metric, " is not a supported consistency method.")
          )
    }
