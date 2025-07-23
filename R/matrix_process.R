@@ -168,7 +168,7 @@ get.matrix <- function(matrix,
                        ident,
                        sample,
                        min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
-                       min.cells = 10, # Minimum cells per sample-ident to be included 
+                       min.cells = 10 # Minimum cells per sample-ident to be included 
                        ){
    
    
