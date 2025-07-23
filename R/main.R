@@ -970,56 +970,42 @@ get.Consistency <- function(scTypeEval,
 
 
 plot.PCA <- function(scTypeEval,
-                     gene.list = NULL,
-                     data.type = NULL,
-                     dims = c(1,2),
+                     reduction.slot = "all",
                      label = TRUE,
+                     dims = c(1,2),
                      show.legend = FALSE) {
    
-   # Ensure the reductions slot is not empty
-   if (length(scTypeEval@reductions) == 0) {
-      stop("The 'reductions' slot in the 'scTypeEval' object is empty.")
-   }
+   red.assays <- .check_DimRedAssays(scTypeEval, slot = reduction.slot)
    
-   assays <- unlist(scTypeEval@reductions)
-   pls <- list()  # Initialize an empty list to store plots
+   pls <- lapply(red.assays,
+                 function(da){
+                    assay <- scTypeEval@reductions[[da]]
+                    ident <- unlist(assay@ident)
+                    title <- paste(da, names(assay@ident), sep = " - ")
+                    
+                    df <- assay@embeddings[, dims] |>
+                       as.data.frame() |>
+                       dplyr::mutate(ident = assay@ident)
+                    
+                    # compute variance of PCs
+                    vrs <- var_PCA(assay@embeddings)[dims]
+                    vrs <- round(vrs*100, 2)
+                    
+                    labs <- paste0("PC", dims, " (", vrs, "%)")
+                    
+                    pl <- helper.plot.scatter(df,
+                                              show.legend = show.legend,
+                                              label = label) +
+                       ggplot2::labs(x = labs[1],
+                                     y = labs[2],
+                                     title = title)
+                    return(pl)
+                 })
    
-   # Loop through each ConsistencyAssay object in scTypeEval@reductions
-   for (a in names(assays)) {
-      assay <- assays[[a]]
-      
-      # Check for class validity
-      if (!inherits(assay, "DimRed")) {
-         stop(paste("Invalid object in reductions slot"))
-      }
-      
-      # Apply filtering
-      if (!is.null(gene.list) && length(intersect(gene.list, assay@gene.list)) == 0) next
-      if (!is.null(data.type) && !assay@data.type %in% data.type) next
-      if (assay@key != "PCA") next
-      
-      df <- assay@embeddings[, dims] |>
-         as.data.frame() |>
-         dplyr::mutate(ident = assay@ident)
-      
-      # compute variance of PCs
-      vrs <- var_PCA(assay@embeddings)[dims]
-      vrs <- round(vrs*100, 2)
-      
-      labs <- paste0("PC", dims, " (", vrs, "%)")
-      
-      pl <- helper.plot.PCA(df,
-                            show.legend = show.legend,
-                            label = label) +
-         ggplot2::labs(x = labs[1],
-                       y = labs[2],
-                       title = a)
-      
-      pls[[a]] <- pl  # Store plot in the list
-   }
+   names(pls) <- red.assays
    
-   if(length(pls) == 0){
-      warning("No PCA reductions found, run add.PCA before.\n")
+   if(length(pls) == 1){
+      pls <- unlist(pls)
    }
    
    return(pls)
