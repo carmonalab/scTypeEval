@@ -187,86 +187,8 @@ minmax_norm <- function(value, min_value, max_value, inverse = FALSE) {
    }
 }
 
-normalize_metric <- function(value, metric) {
-   # Define metric groups
-   rm0_metrics <- c(
-      "silhouette", "modularity", "modularity_pct",
-      "NeighborhoodPurity", "ward.PropMatch", "Leiden.PropMatch",
-      "Orbital.centroid", "Orbital.medoid",
-      "ward.ARI", "Leiden.ARI",
-      "GraphConnectivity", "ward.NMI", "Leiden.NMI",
-      "BestHit-Mutual.Match"
-   )
-   
-   minmax_inverse_metrics <- c("inertia", "Xie-Beni", "S.Dbw")
-   minmax_direct_metrics <- c("I")
-   
-   # Normalize based on the metric group
-   if (metric %in% rm0_metrics) {
-      return(rm0(value))
-   } else if (metric == "BestHit-Mutual.Score") {
-      return(value)
-   } else if (metric %in% minmax_inverse_metrics) {
-      return(minmax_norm(value, min_value = min(value), max_value = max(value), inverse = TRUE))
-   } else if (metric %in% minmax_direct_metrics) {
-      return(minmax_norm(value, min_value = min(value), max_value = max(value), inverse = FALSE))
-   } else {
-      stop("Unknown metric: ", metric)
-   }
-}
 
-get.PCA <- function(mat,
-                    ident,
-                    normalization.method = "Log1p",
-                    aggregation = c("single-cell"),
-                    sample = NULL,
-                    gene.list,
-                    min.samples = 5,
-                    min.cells = 10,
-                    black.list = NULL,
-                    bparam = BiocParallel::SerialParam(),
-                    ndim = 30)
-{
-   mats <- get.matrix(mat,
-                      data.type = data.type,
-                      ident = ident,
-                      sample = sample,
-                      min.samples = min.samples,
-                      min.cells = min.cells,
-                      bparam = bparam)
-   
-   if(!is.list(mats)){
-      mats <- list(mats)
-   }
-   
-   pcas <- BiocParallel::bplapply(mats,
-                                  BPPARAM = bparam,
-                                  function(red.mat){
-                                     
-                                     # normalized subetted matrix
-                                     norm.mat <- Normalize_data(red.mat@matrix,
-                                                                method = normalization.method)
-                                     
-                                     pr <- custom_prcomp(norm.mat, ndim)
-                                     
-                                     rr <- methods::new("DimRed",
-                                                        embeddings = pr$x,
-                                                        feature.loadings = pr$rotation,
-                                                        gene.list = "tmp",
-                                                        black.list = "tmp",
-                                                        data.type = as.character(data.type),
-                                                        ident = red.mat@ident,
-                                                        key = "PCA")
-                                     
-                                     return(rr)
-                                     
-                                  })
-   
-   names(pcas) <- names(mats)
-   
-   return(pcas)
-   
-}
+
 
 custom_prcomp <- function(norm.mat,
                           ndim, 
@@ -284,20 +206,6 @@ custom_prcomp <- function(norm.mat,
    return(pr)
 }
 
-
-# function to compute variance captured in PC components
-
-var_PCA <- function(pca_embeddings){
-   # Compute variance per PC
-   n_samples <- nrow(pca_embeddings)  # Number of samples
-   variance_per_pc <- colSums(pca_embeddings^2) / (n_samples - 1)
-   
-   # Compute proportion of variance explained
-   total_variance <- sum(variance_per_pc)
-   variance_explained <- variance_per_pc / total_variance
-   
-   return(variance_explained)
-}
 
 # function to load single-cell objects
 load_sc <- function(path,
