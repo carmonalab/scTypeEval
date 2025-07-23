@@ -1,7 +1,7 @@
 # Plot PCA
-helper.plot.PCA <- function(df,
-                            show.legend = FALSE,
-                            label = TRUE) {
+helper.plot.scatter <- function(df,
+                                show.legend = FALSE,
+                                label = TRUE) {
    pl <- ggplot2::ggplot() +
       ggplot2::geom_point(
          data = df,
@@ -36,7 +36,6 @@ helper.plot.PCA <- function(df,
             show.legend = FALSE # Avoid duplicate legends for labels
          )
    }
-   
    
    return(pl)
 }
