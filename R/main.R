@@ -892,6 +892,7 @@ get.Consistency <- function(scTypeEval,
                                               "Orbital.medoid",
                                               "Average.similarity"),
                             KNNGraph_k = 5,
+                            hclust.method = "ward.D2",
                             verbose = TRUE
                             
 ){
@@ -911,6 +912,7 @@ get.Consistency <- function(scTypeEval,
                                                             metrics = IntVal.metric,
                                                             ident = ident,
                                                             KNNGraph_k = KNNGraph_k,
+                                                            hclust.method = hclust.method,
                                                             verbose = verbose)
                              dfl <- lapply(names(con),
                                           function(int){
