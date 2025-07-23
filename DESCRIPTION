@@ -44,4 +44,5 @@ Imports:
   transport (>= 0.15-4)
 Suggests:
   transformGamPoi (>= 1.8.0),
-  glmGamPoi (>= 1.14.3)
+  glmGamPoi (>= 1.14.3),
+  pheatmap (>= 1.0.12)
