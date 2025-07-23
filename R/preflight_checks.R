@@ -95,3 +95,19 @@ purge_label <- function(label){
    
    return(gl)
 }
+
+.check_dissimilarityAssays <- function(scTypeEval,
+                                       slot = "all"){
+   diss.assays <- names(scTypeEval@dissimilarity)
+   if(length(diss.assays)<1){
+      stop("No Dissimilarity slots found. Please run before `Run.Dissimilarity()`.\n")
+   }
+   
+   if(slot!= "all"){
+      diss.assays <- diss.assays[diss.assays %in% slot]
+      if(length(diss.assays)<1){
+         stop("No Dissimilarity slots found for ", slot, ". Please run before `Run.Dissimilarity()` or specific proper slot.\n")
+      }
+   }
+   return(diss.assays)
+}
