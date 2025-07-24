@@ -52,7 +52,7 @@ split_matrix <- function(mat,
                                            
                                            ret <- new("Mat_ident",
                                                       matrix = new.mat,
-                                                      group = NULL,
+                                                      group = factor(),
                                                       ident = factor(new.ident),
                                                       sample = s)
                                            
@@ -85,18 +85,22 @@ minmax_norm <- function(value, min_value, max_value, inverse = FALSE) {
 
 
 custom_prcomp <- function(norm.mat,
-                          ndim, 
+                          ndim = 30, 
                           verbose = TRUE){
    # if ncol or nrow is below given ndim use this number
-   ndim <- min(dim(norm.mat)-1, ndim)
+   ndim <- min(c((dim(norm.mat)-1), ndim))
    
-   if(verbose){message("Returning ", ndim, "dimensions for PCA")}
+   if(verbose){message("   > Returning ", ndim, " dimensions for PCA")}
    
    # compute PCA
-   pr <- irlba::prcomp_irlba(Matrix::t(norm.mat),
+   pr <- irlba::prcomp_irlba(as.matrix(Matrix::t(norm.mat)),
                              n = ndim,
                              center = TRUE,
                              scale. = FALSE)
+   
+   # keep colnames
+   rownames(pr$x) <- colnames(norm.mat)
+   
    return(pr)
 }
 
