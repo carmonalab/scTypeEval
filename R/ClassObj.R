@@ -51,7 +51,7 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
 
 methods::setClass("DataAssay",
                   slots = c(
-                     data = 'matrix',
+                     data = 'dgCMatrix',
                      aggregation = "character",
                      group = "factor",
                      sample = "factor",
@@ -88,8 +88,8 @@ methods::setClass("DimRed",
 
 methods::setClass("Mat_ident",
                   slots = c(
-                     matrix = 'matrix',
-                     groups = 'factor',
+                     matrix = 'dgCMatrix',
+                     group = 'factor',
                      ident = 'factor',
                      sample = 'factor'
                   )
