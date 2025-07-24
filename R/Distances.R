@@ -54,7 +54,7 @@ compute_pearson <- function(norm.mat) {
 get.distance <- function(norm.mat = NULL,
                          transpose = TRUE,
                          distance.method = "euclidean",
-                         verboe = TRUE) {
+                         verbose = TRUE) {
    # Handle transposition
    if (transpose) {
       norm.mat <- Matrix::t(norm.mat)
@@ -62,7 +62,7 @@ get.distance <- function(norm.mat = NULL,
    
    distance.method <- tolower(distance.method)
    
-   if(verbose){message("   Running distance for" , distance.method, "... \n")}
+   if(verbose){message("   Running distance for " , distance.method, "... \n")}
    # Dispatcher to call the appropriate function
    dist <- switch(
       distance.method,
