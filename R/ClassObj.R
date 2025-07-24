@@ -7,10 +7,9 @@ methods::setClass("scTypeEval",
                      dissimilarity = "list",
                      consistency = "list", # actual consistency results assays
                      gene.lists = "list", # list of either HGV, markers
-                     black.list = "character", # list of genes in black list
+                     black.list = "ANY", # list of genes in black list
                      active.ident = "ANY", # default grouping variable
                      reductions = "list", # list of dim reductions
-                     misc = "list", # miscellaneous
                      version = "character" # package version
                   )
 )
@@ -51,7 +50,7 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
 
 methods::setClass("DataAssay",
                   slots = c(
-                     data = 'dgCMatrix',
+                     matrix = 'dgCMatrix',
                      aggregation = "character",
                      group = "factor",
                      sample = "factor",
