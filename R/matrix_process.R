@@ -172,7 +172,7 @@ get.matrix <- function(matrix,
                        ){
    
    
-   mat <- switch(data.type,
+   mat <- switch(aggregation,
                  "single-cell" = get_singlecell(mat = matrix,
                                         ident = ident,
                                         sample = sample,
