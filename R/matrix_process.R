@@ -210,13 +210,15 @@ filter_empty <- function(mat_ident){
    # Filter metadata
    group_filtered <- factor(group[keep_cols])
    ident_filtered <- factor(ident[keep_cols])
+   names(ident_filtered) <- group_filtered
    sample_filtered <- factor(sample[keep_cols])
+   names(sample_filtered) <- group_filtered
    
    # Return new Mat_ident object
    ret <- new("Mat_ident",
               matrix = mat_filtered,
               group = group_filtered,
-              ident = list(ident.name = ident_filtered),
+              ident = ident_filtered,
               sample = sample_filtered)
    
    return(ret)
