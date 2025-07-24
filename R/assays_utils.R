@@ -63,5 +63,11 @@ fit.Constant <- function(x, y) {
    return(ret)
 }
 
+monotonicity_score <- function(x) {
+   if (length(x) < 2) return(1)
+   diffs <- diff(x)
+   sum(diffs > 0) / (length(x) - 1)
+}
+
 
 
