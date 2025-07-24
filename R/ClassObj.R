@@ -24,8 +24,8 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
    }
    
    # Set default for consistency if not provided
-   if (is.null(args$distances)) {
-      args$distances <- list()
+   if (is.null(args$dissimilarity)) {
+      args$dissimilarity <- list()
    }
    
    # Set default for consistency if not provided
@@ -41,7 +41,7 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
    # Pass the updated arguments to the default initialize method
    .Object <- callNextMethod(.Object, ..., 
                              data = args$data,
-                             distances = args$distances,
+                             dissimilarity = args$dissimilarity,
                              consistency = args$consistency, 
                              reductions = args$reductions)
    
