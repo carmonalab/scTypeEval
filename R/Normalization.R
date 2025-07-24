@@ -90,7 +90,6 @@ get.Normalization_params <- function(mat,
 }
 
 
-########################################################################################################
 # Normalization 
 
 Log_Normalize <- function(mat,
