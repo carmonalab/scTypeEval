@@ -765,7 +765,7 @@ Run.Dissimilarity <- function(scTypeEval,
       "wasserstein" = compute_wasserstein(mat = mat, group = mat_ident@group, bparam = param, verbose = verbose),
       "besthit" = bestHit(mat = mat, classifier = BestHit.classifier, method = dist.type, bparam = param, verbose = verbose),
       stop(aggregation, "is not a supported method.\n")
-      )
+   )
    
    # build dissimilarity object
    rr <- methods::new("DissimilarityAssay",
@@ -778,7 +778,7 @@ Run.Dissimilarity <- function(scTypeEval,
                       sample = mat_ident@sample)
    
    scTypeEval@dissimilarity[[method]] <- rr
-      
+   
    
    return(scTypeEval)
    
@@ -916,12 +916,12 @@ get.Consistency <- function(scTypeEval,
                                                             hclust.method = hclust.method,
                                                             normalize = normalize)
                              dfl <- lapply(names(con),
-                                          function(int){
-                                             # build dissimilarity object
-                                             r <- data.frame(measure = con[[int]],
-                                                             consistency.metric = int)
-                                             return(r)
-                                          })
+                                           function(int){
+                                              # build dissimilarity object
+                                              r <- data.frame(measure = con[[int]],
+                                                              consistency.metric = int)
+                                              return(r)
+                                           })
                              
                              df <- do.call(rbind, dfl) |>
                                 dplyr::mutate(dissimilarity_method = assay@method,
@@ -1067,21 +1067,21 @@ get.hierarchy <- function(scTypeEval,
    diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
    
    hier.list <- lapply(diss.assays,
-                          function(da){
-                             assay <- scTypeEval@dissimilarity[[da]]
-                             
-                             dist <- assay@dissimilarity
-                             ident <- unlist(assay@ident)
-                             
-                             # compute internal validation metrics
-                             if(verbose){message("Computing hierarchical clustering for ", da, " ... \n")}
-                             attr(dist, "Labels") <- ident
-                             
-                             hclust_result <- stats::hclust(dist,
-                                                            method = hierarchy.method)
-                             
-                             return(hclust_result)
-                          })
+                       function(da){
+                          assay <- scTypeEval@dissimilarity[[da]]
+                          
+                          dist <- assay@dissimilarity
+                          ident <- unlist(assay@ident)
+                          
+                          # compute internal validation metrics
+                          if(verbose){message("Computing hierarchical clustering for ", da, " ... \n")}
+                          attr(dist, "Labels") <- ident
+                          
+                          hclust_result <- stats::hclust(dist,
+                                                         method = hierarchy.method)
+                          
+                          return(hclust_result)
+                       })
    
    names(hier.list) <- diss.assays
    
@@ -1145,23 +1145,23 @@ get.NN <- function(scTypeEval,
    diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
    
    nn.list <- lapply(diss.assays,
-                       function(da){
-                          assay <- scTypeEval@dissimilarity[[da]]
-                          
-                          dist <- assay@dissimilarity
-                          ident <- unlist(assay@ident)
-                          
-                          # compute internal validation metrics
-                          if(verbose){message("Computing hierarchical clustering for ", da, " ... \n")}
-                          attr(dist, "Labels") <- ident
-                          
-                          nn <- nn.helper(dist = dist,
-                                          ident = ident,
-                                          KNNGraph_k = KNNGraph_k,
-                                          normalize = normalize)
-                          
-                          return(nn)
-                       })
+                     function(da){
+                        assay <- scTypeEval@dissimilarity[[da]]
+                        
+                        dist <- assay@dissimilarity
+                        ident <- unlist(assay@ident)
+                        
+                        # compute internal validation metrics
+                        if(verbose){message("Computing hierarchical clustering for ", da, " ... \n")}
+                        attr(dist, "Labels") <- ident
+                        
+                        nn <- nn.helper(dist = dist,
+                                        ident = ident,
+                                        KNNGraph_k = KNNGraph_k,
+                                        normalize = normalize)
+                        
+                        return(nn)
+                     })
    
    names(nn.list) <- diss.assays
    
@@ -1364,7 +1364,7 @@ plot.MDS <- function(scTypeEval,
    
    if(length(pls) == 1){
       pls <- unlist(pls)
-      }
+   }
    
    return(pls)
 }
@@ -1400,7 +1400,7 @@ plot.Heatmap <- function(scTypeEval,
                     
                     gaps <- table(annot$ident) %>% as.vector()
                     gaps <- cumsum(gaps)
-                  
+                    
                     # Create the heatmap
                     pheatmap::pheatmap(pmat, 
                                        scale = scale,
@@ -1426,4 +1426,62 @@ plot.Heatmap <- function(scTypeEval,
    }
    
    return(pls)
+}
+
+
+# function to load single-cell objects
+load_singleCell_object <- function(path,
+                                   split = TRUE) {
+   
+   if (!file.exists(path)) stop("File does not exist: ", path)
+   
+   # Initialize
+   object <- NULL
+   counts <- NULL
+   metadata <- NULL
+   
+   if (grepl("rds$", path, ignore.case = T)) {
+      object <- readRDS(path)
+      
+      if (inherits(object, "Seurat")) {
+         rcounts <- Seurat::GetAssayData(object,
+                                         assay = "RNA",
+                                         layer = "counts")
+         counts <- as(rcounts, "dgCMatrix")
+         metadata <- as.data.frame(object@meta.data)
+         
+      } else if (inherits(object, "SingleCellExperiment")) {
+         rcounts <- SummarizedExperiment::assay(object, "counts")
+         counts <- as(rcounts, "dgCMatrix")
+         metadata <- as.data.frame(SummarizedExperiment::colData(object))
+         
+      } else {
+         stop("Unsupported .rds object type: ", class(object))
+      }
+      
+   } else if (grepl("h5ad$", path, ignore.case = T)) {
+      if (!requireNamespace("anndata", quietly = TRUE)) {
+         stop("The 'anndata' package is required to read .h5ad files. Please install it.")
+      }
+      
+      object <- anndata::read_h5ad(path)
+      
+      if (!"counts" %in% names(object$layers)) {
+         stop("The .h5ad file does not contain a 'counts' layer.")
+      }
+      
+      rcounts <- Matrix::t(object$layers[["counts"]])
+      counts <- as(as(rcounts, "CsparseMatrix"), "dgCMatrix")
+      metadata <- as.data.frame(object$obs)
+      
+   } else {
+      stop("Unsupported file format. Please provide a .rds or .h5ad file.")
+   }
+   
+   if (split) {
+      return(list(counts = counts,
+                  metadata = metadata))
+   } else {
+      return(object)
+   }
 }
