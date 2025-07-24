@@ -59,7 +59,7 @@ purge_label <- function(label){
    return(sample)
 }
 
-.check_blacklist <- function(scTypeEval, black.list, verbose = T){
+.check_blacklist <- function(scTypeEval, black.list = NULL, verbose = T){
    
    if(is.null(black.list)){
       black.list <- scTypeEval@black.list
@@ -71,23 +71,23 @@ purge_label <- function(label){
    return(black.list)
 }
 
-.check_genelist <- function(scTypeEval, gene.list, verbose = TRUE){
+.check_genelist <- function(scTypeEval, gene.list = NULL, verbose = TRUE){
    # set gene lists
    if(is.null(gene.list)){
       if(length(scTypeEval@gene.lists) == 0){
-         stop("No gene list found to run consistency metrics.\n
+         stop("No gene list found.\n
               Add custom gene list or compute highly variable genes with add.HVG()\n")
       }
       
       gene.list <- names(scTypeEval@gene.lists)[1]
    } 
    
-   if(gl %in% names(scTypeEval@gene.lists)){
-      stop("Some gene list names not included in scTypeEval object")
+   if(!gene.list %in% names(scTypeEval@gene.lists)){
+      stop("gene.list not included in scTypeEval object")
    }
    
-   if(verbose){message("Using ", gene.list, "gene list.\n")}
-   gl <- scTypeEval@gene.lists[gene.list]
+   if(verbose){message("Using ", gene.list, " gene list.\n")}
+   gl <- scTypeEval@gene.lists[[gene.list]]
    
    if(length(gl)>5000){
       warning("Large number of genes selected for downstream analyses, this may increase computing time.\n")
@@ -103,7 +103,7 @@ purge_label <- function(label){
       stop("No Dissimilarity slots found. Please run before `Run.Dissimilarity()`.\n")
    }
    
-   if(slot!= "all"){
+   if(length(slot)>1 || slot != "all"){
       diss.assays <- diss.assays[diss.assays %in% slot]
       if(length(diss.assays)<1){
          stop("No Dissimilarity slots found for ", slot, ". Please run before `Run.Dissimilarity()` or specific proper slot.\n")
@@ -114,12 +114,12 @@ purge_label <- function(label){
 
 .check_DimRedAssays <- function(scTypeEval,
                                 slot = "all"){
-   red.assays <- names(scTypeEval@reduction)
+   red.assays <- names(scTypeEval@reductions)
    if(length(red.assays)<1){
       stop("No reduction slots found. Please run before `Run.PCA()` or `add.DimReduction()` to add dimensional reductions slots.\n")
    }
    
-   if(slot!= "all"){
+   if(length(slot)>1 || slot != "all"){
       red.assays <- red.assays[red.assays %in% slot]
       if(length(red.assays)<1){
          stop("No reduction slots found for ", slot, ". Please run before `Run.PCA()` or `add.DimReduction()` to add dimensional reductions slots.\n")
