@@ -148,10 +148,12 @@ Run.ProcessingData <- function(scTypeEval,
                                normalization.method = "Log1p",
                                min.samples = 5,
                                min.cells = 10,
-                               ndim = 30,
                                verbose = TRUE){
    #### preflights checks
    ident.name <- ident
+   if(is.null(ident.name)){
+      ident.name <- scTypeEval@active.ident
+   }
    ident <- .check_ident(scTypeEval, ident, verbose = verbose)
    sample <- .check_sample(scTypeEval, sample, verbose = verbose)
    
@@ -167,7 +169,7 @@ Run.ProcessingData <- function(scTypeEval,
                           mat <- get.matrix(scTypeEval@counts,
                                             ident = ident,
                                             sample = sample,
-                                            aggregation = aggregation,
+                                            aggregation = ag,
                                             min.samples = min.samples,
                                             min.cells = min.cells)
                           
@@ -180,7 +182,7 @@ Run.ProcessingData <- function(scTypeEval,
                                              data = norm.mat,
                                              aggregation = ag,
                                              group = mat@group,
-                                             ident = list(ident.name = mat@ident),
+                                             ident = setNames(list(mat@ident), ident.name),
                                              sample = mat@sample)
                           return(rr)
                        })
@@ -257,7 +259,7 @@ Add.ProcessedData <- function(scTypeEval,
                       data = data,
                       aggregation = aggregation,
                       group = group,
-                      ident = list(ident.name = ident),
+                      ident = setNames(list(ident), ident.name),
                       sample = sample)
    
    # add to scTypeEval object
@@ -683,7 +685,7 @@ add.DimReduction <- function(scTypeEval,
                       black.list = black.list,
                       aggregation = aggregation,
                       group = groups,
-                      ident = list(ident.name = ident),
+                      ident = setNames(list(ident), ident.name),
                       sample = sample,
                       key = key)
    
