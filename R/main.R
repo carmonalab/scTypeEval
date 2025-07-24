@@ -179,7 +179,7 @@ Run.ProcessingData <- function(scTypeEval,
                                                      method = normalization.method)
                           
                           rr <- methods::new("DataAssay",
-                                             data = norm.mat,
+                                             matrix = norm.mat,
                                              aggregation = ag,
                                              group = mat@group,
                                              ident = setNames(list(mat@ident), ident.name),
@@ -256,7 +256,7 @@ Add.ProcessedData <- function(scTypeEval,
    
    # Create Data assay
    rr <- methods::new("DataAssay",
-                      data = data,
+                      matrix = data,
                       aggregation = aggregation,
                       group = group,
                       ident = setNames(list(ident), ident.name),
@@ -322,10 +322,10 @@ Add.ProcessedData <- function(scTypeEval,
 
 
 Run.HVG <- function(scTypeEval,
-                    normalization.method = c("Log1p", "CLR", "pearson"),
-                    var.method = c("scran", "basic"),
-                    sample = NULL,
+                    normalization.method = "Log1p",
+                    var.method = "scran",
                     ngenes = 2000,
+                    sample = TRUE,
                     black.list = NULL,
                     ncores = 1,
                     bparam = NULL,
@@ -346,8 +346,11 @@ Run.HVG <- function(scTypeEval,
       stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
    }
    mat <- norm.mat@matrix
-   if(!is.null(sample)){
+   
+   if(sample){
       sample <- norm.mat@sample
+   } else {
+      warning("Not leveraging sample information for computing HVG.\n")
    }
    
    # remove blacked listed genes
@@ -439,14 +442,14 @@ Run.GeneMarkers <- function(scTypeEval,
       stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
    }
    mat <- norm.mat@matrix
-   ident <- unlist(norm.mat@ident)
+   ident <- norm.mat@ident[[1]]
    sample <- norm.mat@sample
    
    # remove blacked listed genes
    if(!is.null(black.list) && verbose){message("Filtering out black listed genes... \n")}
-   norm.mat <- norm.mat[!rownames(norm.mat) %in% black.list,]
+   mat <- mat[!rownames(mat) %in% black.list,]
    
-   if(verbose){message("Computing cell type markers for", names(norm.mat@ident),  "... \n")}
+   if(verbose){message("Computing cell type markers for ", names(norm.mat@ident),  "... \n")}
    markers <- switch(method,
                      "scran.findMarkers" = get.DEG(mat = mat,
                                                    ident = ident,
@@ -559,8 +562,8 @@ add.GeneList <- function(scTypeEval,
 
 # obtain PCA from a gene list
 Run.PCA <- function(scTypeEval,
-                    gene.list,
-                    black.list,
+                    gene.list = NULL,
+                    black.list = NULL,
                     ndim = 30,
                     verbose = TRUE){
    
@@ -579,6 +582,7 @@ Run.PCA <- function(scTypeEval,
                          if(is.null(mat)){
                             stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
                          }
+                         ident.name <- names(mat@ident)
                          
                          mat <- .general_filtering(mat,
                                                    black.list = black.list,
@@ -599,16 +603,17 @@ Run.PCA <- function(scTypeEval,
                                             black.list = black.list,
                                             aggregation = ag,
                                             group = mat@group,
-                                            ident = mat@ident,
+                                            ident = setNames(list(mat@ident), ident.name),
                                             sample = mat@sample,
                                             key = "PCA")
+                         return(rr)
                       })
    
    names(pca.list) <- names(scTypeEval@data)
    
    # add to scTypeEval object
    for(n in names(pca.list)){
-      scTypeEval@consistency[[n]] <- pca.list[[n]]
+      scTypeEval@reductions[[n]] <- pca.list[[n]]
    }
    
    return(scTypeEval)
@@ -719,9 +724,9 @@ Run.Dissimilarity <- function(scTypeEval,
    
    slot <- dissimilarity_methods[method]
    
-   if(reduction && !method %in% no_dr_ds){
-      warning("No dimensional reduction dissimilarity computationg supported for: ",
-              paste(no_dr_ds, collapse = ", "), "swithcing `reduction=FALSE`")
+   if(reduction && method %in% no_dr_ds){
+      warning("No dimensional reduction dissimilarity computation supported for: ",
+              paste(no_dr_ds, collapse = ", "), ". Swithcing `reduction=FALSE`\n")
       reduction <- FALSE
    }
    
@@ -743,11 +748,29 @@ Run.Dissimilarity <- function(scTypeEval,
       }
       gene.list <- .check_genelist(scTypeEval, gene.list, verbose = verbose)
       black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
+      ident.name <- names(mat_ident@ident)
       mat_ident <- .general_filtering(mat_ident,
                                       black.list = black.list,
                                       gene.list = gene.list,
                                       verbose = verbose)
-      mat <- mat_ident@data
+      mat <- mat_ident@matrix
+   }
+   
+   # inheret ident and sample
+   if(slot == "single-cell") {
+      group_levels <- levels(mat_ident@group)
+      ident <- sapply(group_levels, function(x){strsplit(x, "_")[[1]][2]}) |>
+         factor()
+      ident <- setNames(list(ident), names(mat_ident@ident))
+      sample <- sapply(group_levels, function(x){strsplit(x, "_")[[1]][1]}) |>
+         factor()
+      
+   } else if(slot == "pseudobulk"){
+      ident <- mat_ident@ident
+      if(!is.list(ident)){
+         ident <- setNames(list(ident), ident.name)
+      }
+      sample <- mat_ident@sample
    }
    
    
@@ -765,7 +788,7 @@ Run.Dissimilarity <- function(scTypeEval,
       aggregation,
       "pseudobulk" = get.distance(norm.mat = mat, distance.method = dist.type, verbose = verbose),
       "wasserstein" = compute_wasserstein(mat = mat, group = mat_ident@group, bparam = param, verbose = verbose),
-      "besthit" = bestHit(mat = mat, classifier = BestHit.classifier, method = dist.type, bparam = param, verbose = verbose),
+      "besthit" = bestHit(mat = mat, ident = ident[[1]], sample = sample, classifier = BestHit.classifier, method = dist.type, bparam = param, verbose = verbose),
       stop(aggregation, "is not a supported method.\n")
    )
    
@@ -776,8 +799,8 @@ Run.Dissimilarity <- function(scTypeEval,
                       gene.list = gene.list,
                       black.list = black.list,
                       aggregation = aggregation,
-                      ident = mat_ident@ident,
-                      sample = mat_ident@sample)
+                      ident = ident,
+                      sample = sample)
    
    scTypeEval@dissimilarity[[method]] <- rr
    
@@ -907,7 +930,7 @@ get.Consistency <- function(scTypeEval,
                              assay <- scTypeEval@dissimilarity[[da]]
                              
                              dist <- assay@dissimilarity
-                             ident <- unlist(assay@ident)
+                             ident <- assay@ident[[1]]
                              
                              # compute internal validation metrics
                              if(verbose){message("Computing internal validation metrics ", da, " ... \n")}
@@ -985,15 +1008,15 @@ plot.PCA <- function(scTypeEval,
    pls <- lapply(red.assays,
                  function(da){
                     assay <- scTypeEval@reductions[[da]]
-                    ident <- unlist(assay@ident)
+                    ident <- assay@ident[[1]]
                     title <- paste(da, names(assay@ident), sep = " - ")
                     
-                    df <- assay@embeddings[, dims] |>
+                    df <- t(assay@embeddings[dims,]) |>
                        as.data.frame() |>
-                       dplyr::mutate(ident = assay@ident)
+                       dplyr::mutate(ident = ident)
                     
                     # compute variance of PCs
-                    vrs <- var_PCA(assay@embeddings)[dims]
+                    vrs <- var_PCA(t(assay@embeddings))[dims]
                     vrs <- round(vrs*100, 2)
                     
                     labs <- paste0("PC", dims, " (", vrs, "%)")
@@ -1073,7 +1096,7 @@ get.hierarchy <- function(scTypeEval,
                           assay <- scTypeEval@dissimilarity[[da]]
                           
                           dist <- assay@dissimilarity
-                          ident <- unlist(assay@ident)
+                          ident <- assay@ident[[1]]
                           
                           # compute internal validation metrics
                           if(verbose){message("Computing hierarchical clustering for ", da, " ... \n")}
@@ -1151,7 +1174,7 @@ get.NN <- function(scTypeEval,
                         assay <- scTypeEval@dissimilarity[[da]]
                         
                         dist <- assay@dissimilarity
-                        ident <- unlist(assay@ident)
+                        ident <- assay@ident[[1]]
                         
                         # compute internal validation metrics
                         if(verbose){message("Computing hierarchical clustering for ", da, " ... \n")}
@@ -1219,7 +1242,7 @@ plot.MDS <- function(scTypeEval,
                     assay <- scTypeEval@dissimilarity[[da]]
                     
                     dist <- assay@dissimilarity
-                    ident <- unlist(assay@ident)
+                    ident <- assay@ident[[1]]
                     title <- paste(da, names(assay@ident), sep = " - ")
                     
                     mds <- stats::cmdscale(dist,
@@ -1244,7 +1267,7 @@ plot.MDS <- function(scTypeEval,
    names(pls) <- diss.assays
    
    if(length(pls) == 1){
-      pls <- unlist(pls)
+      pls <- pls[[1]]
    }
    
    return(pls)
@@ -1270,40 +1293,37 @@ plot.Heatmap <- function(scTypeEval,
                     
                     d_mat <- as.matrix(assay@dissimilarity)
                     
-                    annot <- data.frame(id = colnames(d_mat)) %>% 
-                       mutate(ident = factor(unlist(assay@ident)),
-                              sample = assay@sample) %>% 
-                       tibble::column_to_rownames("id") %>% 
-                       arrange(ident) %>% 
+                    annot <- data.frame(id = colnames(d_mat)) |> 
+                       mutate(ident = factor(assay@ident[[1]]),
+                              sample = assay@sample) |> 
+                       tibble::column_to_rownames("id") |> 
+                       arrange(ident) |> 
                        select(ident)
                     
                     pmat <- d_mat[rownames(annot), rownames(annot)]
                     
-                    gaps <- table(annot$ident) %>% as.vector()
+                    gaps <- table(annot$ident) |> as.vector()
                     gaps <- cumsum(gaps)
                     
                     # Create the heatmap
                     pheatmap::pheatmap(pmat, 
-                                       scale = scale,
-                                       cluster_rows = F,
-                                       cluster_cols = F,
-                                       annotation_row = annot,
-                                       annotation_col = annot,
-                                       show_rownames = F,
-                                       show_colnames = F,
-                                       gaps_row = gaps,
-                                       gaps_col = gaps,
-                                       main = title,
-                                       ...
+                                             cluster_rows = F,
+                                             cluster_cols = F,
+                                             annotation_row = annot,
+                                             annotation_col = annot,
+                                             show_rownames = F,
+                                             show_colnames = F,
+                                             gaps_row = gaps,
+                                             gaps_col = gaps,
+                                             main = title,
+                                             ...
                     )
-                    
-                    return(pl)
                  })
    
    names(pls) <- diss.assays
    
    if(length(pls) == 1){
-      pls <- unlist(pls)
+      pls <- pls[[1]]
    }
    
    return(pls)
