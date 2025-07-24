@@ -201,7 +201,7 @@ match.tidy <- function(pred, .true){
    
    pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
       dplyr::group_by(true) |>
-      dplyr::mutate(score = score.x * score.y) |>
+      dplyr::mutate(score = (score.x + score.y) / 2) |>
       dplyr::select(true, score) |>
       dplyr::rename("celltype" = "true")
    
@@ -271,19 +271,24 @@ bestHit <- function(mat,
                                        }
                                        
                                        # Perform classification
-                                       pred1 <- classifier(mat.split[[a]], mat.splitGT[[b]])
-                                       pred2 <- classifier(mat.split[[b]], mat.splitGT[[a]])
+                                       pred1 <- classifier(mat.split[[a]]@matrix,
+                                                           mat.splitGT[[b]]@matrix,
+                                                           ref.ident = mat.splitGT[[b]]@ident)
+                                       pred2 <- classifier(mat.split[[b]]@matrix,
+                                                           mat.splitGT[[a]]@matrix,
+                                                           ref.ident = mat.splitGT[[a]]@ident)
                                        
                                        true1 <- mat.splitGT[[a]]@ident
                                        true2 <- mat.splitGT[[b]]@ident
                                        
                                        # Evaluate metrics
-                                       results <- switch(tolower(method),
-                                                 "Score" = .score(pred1 = pred1,
+                                       meth <- tolower(method)
+                                       results <- switch(meth,
+                                                 "score" = .score(pred1 = pred1,
                                                                   pred2 = pred2,
                                                                   true1 = true1,
                                                                   true2 = true2),
-                                                 "Match" = .match(pred1 = pred1,
+                                                 "match" = .match(pred1 = pred1,
                                                                   pred2 = pred2,
                                                                   true1 = true1,
                                                                   true2 = true2),
@@ -301,10 +306,12 @@ bestHit <- function(mat,
    
    # Filter out NULLs
    df.tmp <- Filter(Negate(is.null), df.tmp)
+   df.tmp <- unlist(df.tmp, recursive = F)
    
    # ---- Build pairwise matrix with lists
-   n <- length(unlist(df.tmp))
-   rcn <- lapply(df.tmp, function(x){x[["i"]]}) |> unique()
+   n <- length(df.tmp)
+   rcn <- lapply(unlist(df.tmp, recursive = F),
+                 function(x){x[["i"]]}) |> unique()
    # Initialize distance matrix
    dist_mat <- matrix(0, n, n)
    rownames(dist_mat) <- colnames(dist_mat) <- rcn
