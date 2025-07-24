@@ -1,16 +1,28 @@
 
 dissimilarity_methods <-
    c("WasserStein" = "single-cell",
-     "Pseudobulk:Euclidean" = "Pseudobulk",
-     "Pseudobulk:Cosine" = "Pseudobulk",
-     "Pseudobulk:Pearson" = "Pseudobulk",
-     "BestHit:Match" = "Pseudobulk",
-     "BestHit:Score" = "Pseudobulk"
+     "Pseudobulk:Euclidean" = "pseudobulk",
+     "Pseudobulk:Cosine" = "pseudobulk",
+     "Pseudobulk:Pearson" = "pseudobulk",
+     "BestHit:Match" = "pseudobulk",
+     "BestHit:Score" = "pseudobulk"
    )
 
 
 no_dr_ds <- c("BestHit:Match",
-               "BestHit:Score")
+              "BestHit:Score")
+
+quiet_transport <- function(...) {
+   suppressWarnings(
+      suppressMessages(
+         capture.output(
+            result <- transport::transport(...),
+            file = NULL
+         )
+      )
+   )
+   result
+}
 
 
 optimal_transport <- function(A, B,
@@ -37,10 +49,15 @@ optimal_transport <- function(A, B,
    # - Handles moderately large problems well
    # - Faster than full simplex but more robust than heuristics like "auction"
    # - Does not require specific conditions (e.g., p=2 or grid-based input)
-   plan <- transport::transport(a_weights,
-                                b_weights,
-                                costm = cost_matrix,
-                                method = "shortsimplex")
+   suppressWarnings(
+      {
+         suppressMessages(
+            {
+               plan <- quiet_transport(a_weights,
+                                       b_weights,
+                                       costm = cost_matrix,
+                                       method = "shortsimplex")
+            })})
    
    # Compute the total transportation cost using the optimal plan
    # Multiply transported mass by cost for each (from, to) pair
@@ -68,15 +85,15 @@ compute_wasserstein <- function(mat,
    # split matrix per cell type && sample
    if(verbose){message("Splitting matrices... \n")}
    mat_list <- BiocParallel::bplapply(levels(group),
-                                   BPPARAM = bparam,
-                                   function(s){
-                                      k <- group == s
-                                      m <- mat[, k, drop = FALSE]
-                                      if(transpose){
-                                         m <- Matrix::t(m)
-                                      }
-                                      return(m)
-                                   })
+                                      BPPARAM = bparam,
+                                      function(s){
+                                         k <- group == s
+                                         m <- mat[, k, drop = FALSE]
+                                         if(transpose){
+                                            m <- Matrix::t(m)
+                                         }
+                                         return(m)
+                                      })
    n <- length(mat_list)
    combs <- utils::combn(n, 2, simplify = FALSE)
    
