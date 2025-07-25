@@ -786,9 +786,21 @@ Run.Dissimilarity <- function(scTypeEval,
    
    dist <- switch(
       aggregation,
-      "pseudobulk" = get.distance(norm.mat = mat, distance.method = dist.type, verbose = verbose),
-      "wasserstein" = compute_wasserstein(mat = mat, group = mat_ident@group, bparam = param, verbose = verbose),
-      "besthit" = bestHit(mat = mat, ident = ident[[1]], sample = sample, classifier = BestHit.classifier, method = dist.type, bparam = param, verbose = verbose),
+      "pseudobulk" = get.distance(norm.mat = mat,
+                                  distance.method = dist.type,
+                                  verbose = verbose),
+      "wasserstein" = compute_wasserstein(mat = mat,
+                                          group = mat_ident@group,
+                                          bparam = param,
+                                          verbose = verbose),
+      "besthit" = bestHit(mat = mat,
+                          ident = ident[[1]],
+                          sample = sample,
+                          group = mat_ident@group,
+                          classifier = BestHit.classifier,
+                          method = dist.type,
+                          bparam = param,
+                          verbose = verbose),
       stop(aggregation, "is not a supported method.\n")
    )
    

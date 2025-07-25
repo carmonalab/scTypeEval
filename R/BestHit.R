@@ -180,14 +180,22 @@ score.tidy <- function(pred,
    return(pred)
 }
 
-match.tidy <- function(pred, .true){
-   pred <- pred |>
+match.tidy <- function(predi, true1, true2){
+   pred0 <- predi |>
       dplyr::select("label") |>
-      dplyr::mutate(true = .true,
-                    score = ifelse(true == label,
-                                   0, 1
-                    )
-      )
+      dplyr::mutate(true = true1,
+                    score_r = 0
+      ) |>
+      tibble::rownames_to_column("id")
+   
+   pred <- tidyr::expand_grid(true = unique(pred0$true),
+                              label = true2) |>
+      dplyr::mutate(score_base = 1) |>
+      left_join(pred0, by = c("true", "label")) |>
+      dplyr::mutate(score_r = tidyr::replace_na(score_r, 1)) |>
+      rowwise() |>
+      dplyr::mutate(score = min(score_r, score_base)) |>
+      dplyr::select(-score_base, -score_r)
    
    return(pred)
 }
@@ -196,14 +204,17 @@ match.tidy <- function(pred, .true){
 .match <- function(pred1, pred2,
                    true1, true2){
    
-   pred1 <- match.tidy(pred1, true1)
-   pred2 <- match.tidy(pred2, true2)
+   pred1 <- match.tidy(pred1, true1 = true1, true2 = true2)
+   pred2 <- match.tidy(pred2, true1 = true2, true2 = true1)
+   names(pred2)[1:2] <- c("label", "true")
    
-   pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
-      dplyr::group_by(true) |>
-      dplyr::mutate(score = (score.x + score.y) / 2) |>
-      dplyr::select(true, score) |>
-      dplyr::rename("celltype" = "true")
+   pred <- dplyr::inner_join(pred1, pred2, by = c("true", "label")) |>
+      dplyr::mutate(score.x = tidyr::replace_na(score.x, 1),
+                    score.y = tidyr::replace_na(score.y, 1)) |>
+      rowwise() |>
+      dplyr::mutate(score = max(score.x, score.y)) |>
+      dplyr::select(i = id.x, j = id.y, score)
+   pred <- pred[complete.cases(pred),]
    
    return(pred)
 }
@@ -215,6 +226,7 @@ bestHit <- function(mat,
                     ident,
                     ident_GroundTruth = NULL,
                     sample,
+                    group,
                     method = "Score",
                     classifier = "SingleR",
                     ncores = 1,
@@ -294,10 +306,6 @@ bestHit <- function(mat,
                                                                   true2 = true2),
                                                  stop(meth, " is not a supported Mutual Besthit method."))
                                        
-                                       results <- results |>
-                                          dplyr::mutate(i = paste(names(mat.split)[a], celltype, sep = "_"),
-                                                        j = paste(names(mat.split)[b], celltype, sep = "_"))
-                                       
                                        lst <- apply(results, 1, as.list)
                                        
                                        # return a data frame with one column with cell type and one column with score
@@ -309,20 +317,22 @@ bestHit <- function(mat,
    df.tmp <- unlist(df.tmp, recursive = F)
    
    # ---- Build pairwise matrix with lists
-   n <- length(df.tmp)
-   rcn <- lapply(unlist(df.tmp, recursive = F),
-                 function(x){x[["i"]]}) |> unique()
+   n <- length(group)
    # Initialize distance matrix
-   dist_mat <- matrix(0, n, n)
-   rownames(dist_mat) <- colnames(dist_mat) <- rcn
+   dist_mat <- matrix(1, n, n)
+   rownames(dist_mat) <- colnames(dist_mat) <- group
+   
    
    # Fill in symmetric matrix
-   for (res in df.tmp) {
+   for (a in seq_along(df.tmp)) {
+      res <- df.tmp[[a]]
       i <- res$i
       j <- res$j
       d <- res$score
-      dist_mat[i, j] <- dist_mat[j, i] <- d
+      dist_mat[i, j] <- dist_mat[j, i] <- as.numeric(d)
    }
+   
+   diag(dist_mat) <- 0
    
    return(as.dist(dist_mat))
    
