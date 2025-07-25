@@ -9,17 +9,13 @@ nn.helper <- function(dist,
    knn <- compute_KNN(dist,
                       KNNGraph_k = KNNGraph_k)
    
-   snn <- compute_snn_graph(dist = dist,
-                            KNNGraph_k = KNNGraph_k,
-                            knn = knn)
-   
    # Get unique cell types
    cell_types <- unique(ident)
    
    # Initialize a list to store proportions for each cell
    cell_proportions <- vector("list", length(ident))
    
-   prop.ident.table <- table(nident) |> prop.table()
+   prop.ident.table <- table(ident) |> prop.table()
    
    for (i in seq_along(ident)) {
       # Get the neighbors of the current cell
