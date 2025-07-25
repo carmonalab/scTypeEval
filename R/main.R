@@ -922,7 +922,7 @@ Run.Dissimilarity <- function(scTypeEval,
 
 
 get.Consistency <- function(scTypeEval,
-                            dissimilarity.slot, 
+                            dissimilarity.slot = "all", 
                             IntVal.metric = c("silhouette",
                                               "NeighborhoodPurity",
                                               "ward.PropMatch",
@@ -955,7 +955,8 @@ get.Consistency <- function(scTypeEval,
                              dfl <- lapply(names(con),
                                            function(int){
                                               # build dissimilarity object
-                                              r <- data.frame(measure = con[[int]],
+                                              r <- data.frame(celltype = names(con[[int]]),
+                                                              measure = con[[int]],
                                                               consistency.metric = int)
                                               return(r)
                                            })
@@ -1116,8 +1117,11 @@ get.hierarchy <- function(scTypeEval,
                           
                           hclust_result <- stats::hclust(dist,
                                                          method = hierarchy.method)
+                          clusters <- stats::cutree(hclust_result,
+                                                    k = length(unique(ident)))
                           
-                          return(hclust_result)
+                          t <- table(clusters, names(clusters))
+                          return(t)
                        })
    
    names(hier.list) <- diss.assays
