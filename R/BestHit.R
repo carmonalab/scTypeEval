@@ -147,21 +147,16 @@ singleR.helper <- function(test,
    return(pred)
 }
 
-score.tidy <- function(pred,
-                       .true,
-                       filter = FALSE){
-   pred <- pred |>
+score.tidy <- function(predi,
+                       .true){
+   pred <- predi |>
       dplyr::select(dplyr::starts_with("score")) |>  
-      dplyr::mutate(true = .true) |>
+      tibble::rownames_to_column("true") |>
       tidyr::pivot_longer(-c(true),
                           names_to = "celltype",
-                          values_to = "score") 
-   if (filter) {
-      pred <- pred |> 
-         dplyr::filter(true == gsub("scores[.]", "", celltype)) |> 
-         dplyr::group_by(true) |> 
-         dplyr::summarize(score = mean(score))
-   }
+                          values_to = "score") |>
+      dplyr::mutate(celltype = gsub("scores[.]", "", celltype),
+                    celltype = names(.true)[match(celltype, .true)]) 
    
    return(pred)
 }
@@ -169,13 +164,17 @@ score.tidy <- function(pred,
 .score <- function(pred1, true1,
                    pred2, true2){
    
-   pred1 <- score.tidy(pred1, true1)
-   pred2 <- score.tidy(pred2, true2)
+   pred1 <- score.tidy(pred1, true2)
+   pred2 <- score.tidy(pred2, true1)
+   names(pred2)[1:2] <- c("celltype", "true")
    
-   pred <- dplyr::inner_join(pred1, pred2, by = "true") |>
-      dplyr::mutate(score = (1-score.x) * (1-score.y)) |>
-      dplyr::select(true, score) |>
-      dplyr::rename("celltype" = "true")
+   pred <- dplyr::inner_join(pred1, pred2,
+                            by = c("true", "celltype")) |>
+      dplyr::mutate(
+         score0 = score.x * score.y,
+         score = 1 - score0
+      ) |>
+      dplyr::select(i = true, j = celltype, score)
    
    return(pred)
 }
@@ -254,7 +253,7 @@ bestHit <- function(mat,
    
    
    n <- length(mat.split)
-   combs <- utils::combn(n, 2, simplify = FALSE)
+   combs <- split(expand.grid(1:n, 1:n), seq_len(n^2))
    
    # set classifier
    classifier <- switch(classifier,
@@ -267,6 +266,7 @@ bestHit <- function(mat,
    df.tmp <- BiocParallel::bplapply(combs,
                                     BPPARAM = param,
                                     function(i) {
+                                       i <- unlist(i)
                                        a <- i[1]
                                        b <- i[2]
                                        
@@ -332,7 +332,6 @@ bestHit <- function(mat,
       dist_mat[i, j] <- dist_mat[j, i] <- as.numeric(d)
    }
    
-   diag(dist_mat) <- 0
    
    return(as.dist(dist_mat))
    
