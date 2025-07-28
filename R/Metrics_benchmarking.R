@@ -90,6 +90,92 @@ geo_mean_se <- function(x) {
 }
 
 
+wrapper_dissimilarity <- function(scTypeEval,
+                                  ident,
+                                  sample,
+                                  gene.list,
+                                  reduction = TRUE,
+                                  ndim = 30,
+                                  normalization.method = "Log1p",
+                                  dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                                                           "Pseudobulk:Cosine", "Pseudobulk:Pearson",
+                                                           "BestHit:Match", "BestHit:Score"),
+                                  min.samples = 5,
+                                  min.cells = 10,
+                                  bparam = BiocParallel::SerialParam(),
+                                  verbose = TRUE){
+   
+   scTypeEval <- Run.ProcessingData(scTypeEval,
+                                    ident = ident,
+                                    sample = sample,
+                                    normalization.method = normalization.method,
+                                    min.samples = min.samples,
+                                    min.cells = min.cells,
+                                    verbose = verbose)
+   scTypeEval <- add.GeneList(scTypeEval, gene.list)
+   scTypeEval <- Run.PCA(scTypeEval,
+                         ndim = ndim)
+   
+   for(m in dissimilarity.methods){
+      if(verbose){message(">.  Running ", m, "\n")}
+      scTypeEval <- Run.Dissimilarity(scTypeEval,
+                                      reduction = reduction,
+                                      method = m,
+                                      bparam = bparam,
+                                      verbose = verbose)
+   }
+   
+   return(scTypeEval)
+   
+}
+
+wrapper_plots <- function(scTypeEval,
+                          reduction.slot = "all", 
+                          dissimilarity.slot = "all",
+                          label = TRUE,
+                          dims = c(1,2),
+                          show.legend = FALSE,
+                          dir.path,
+                          height =15,
+                          width = 15,
+                          ...){
+   pca <- plot.PCA(scTypeEval,
+                   reduction.slot = reduction.slot,
+                   label = label,
+                   dims = dims,
+                   show.legend = show.legend)
+   
+   mds <- plot.MDS(scTypeEval,
+                   dissimilarity.slot = dissimilarity.slot,
+                   label = label,
+                   dims = dims,
+                   show.legend = show.legend)
+   
+   ph <- plot.Heatmap(scTypeEval,
+                      dissimilarity.slot = dissimilarity.slot,
+                      ...)
+   
+   # Export as PDF
+   dir <- paste0(dir.path, ".pdf")
+   # List of plots to print
+   all_plots <- c(pca, mds, ph)
+   pdf(dir, width = width, height = height)
+   
+   for (pl in plot_list) {
+      if (inherits(pl, "pheatmap")) {
+         grid::grid.newpage()
+         grid::grid.draw(pl$gtable)
+      } else if (inherits(pl, "ggplot")) {
+         print(pl)
+      } else {
+         warning("Unknown plot type: skipping.")
+      }
+   }
+   
+   dev.off()
+}
+
+
 # wrapper to evaluate the missclassifiction rate 
 wr.missclasify <- function(count_matrix,
                            metadata,
@@ -98,38 +184,34 @@ wr.missclasify <- function(count_matrix,
                            rates = c(1, 0.9, 0.75, 0.5, 0.25, 0), # proportion of cell labels kept
                            replicates = 3,
                            gene.list = NULL,
-                           pca = FALSE,
+                           reduction = TRUE,
                            ndim = 30,
                            black.list = NULL,
                            dir = NULL,
                            normalization.method = "Log1p",
-                           distance.method = "euclidean",
-                           data.type = c("pseudobulk", "pseudobulk_1vsall", "sc"),
+                           dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                                                    "Pseudobulk:Cosine", "Pseudobulk:Pearson",
+                                                    "BestHit:Match", "BestHit:Score"),
                            IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                             "ward.PropMatch", "Leiden.PropMatch",
-                                             "modularity"),
-                           BH.method = c("Mutual.Score", "Mutual.Match"),
-                           classifier = c("SingleR", "Spearman_correlation"),
+                                             "ward.PropMatch", "Orbital.medoid",
+                                             "Average.similarity"),
                            min.samples = 5,
                            min.cells = 10,
                            ncores = 1,
                            bparam = NULL,
                            progressbar = FALSE,
                            seed = 22,
-                           k.sc = 20,
-                           k.psblk = 5,
-                           save.PCA = TRUE,
-                           dims = c(1,2),
-                           show.legend = FALSE,
-                           label = TRUE,
+                           KNNGraph_k = 5,
+                           hclust.method = "ward.D2",
+                           save.plots = TRUE,
                            verbose = TRUE){
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
       dir.create(dir, showWarnings = F)
       
-      if(save.PCA){
-         pca.dir <- file.path(dir, "PCA_Missclassify")
+      if(save.plots){
+         pca.dir <- file.path(dir, "Plots_Missclassify")
          dir.create(pca.dir, showWarnings = F)
       }
    }
@@ -161,15 +243,21 @@ wr.missclasify <- function(count_matrix,
    ## Create sc object
    sc <- create.scTypeEval(matrix = count_matrix,
                            metadata = metadata,
+                           active.ident = ident,
                            black.list = black.list)
+   # get the gene list, the same for every run
    if(is.null(gene.list)){
-      sc <- add.HVG(sc,
-                    sample = sample,
-                    ncores = ncores,
-                    progressbar = progressbar)
-      gl <- sc@gene.lists
+      sc.gl <- Run.ProcessingData(sc,
+                                  sample = sample,
+                                  normalization.method = normalization.method,
+                                  min.samples = min.samples,
+                                  min.cells = min.cells,
+                                  verbose = verbose)
+      sc.gl <- Run.HVG(sc.gl,
+                       ncores = ncores)
+      gl <- sc.gl@gene.lists
    } else {
-      sc@gene.lists <- gene.list
+      gl <- gene.list
    }
    
    param <- set_parallel_params(ncores = ncores,
@@ -181,28 +269,21 @@ wr.missclasify <- function(count_matrix,
                                     function(ann){
                                        tryCatch(
                                           {
-                                             res <- Run.scTypeEval(scTypeEval = sc,
-                                                                   ident = ann,
-                                                                   ident_GroundTruth = ident,
-                                                                   sample = sample,
-                                                                   normalization.method = normalization.method,
-                                                                   gene.list = NULL, # Run all gene.lists in the object
-                                                                   pca = pca,
-                                                                   ndim = ndim,
-                                                                   distance.method = distance.method,
-                                                                   IntVal.metric = IntVal.metric,
-                                                                   BH.method = BH.method,
-                                                                   classifier = classifier,
-                                                                   data.type = data.type,
-                                                                   min.samples = min.samples,
-                                                                   min.cells = min.cells,
-                                                                   k.sc = k.sc,
-                                                                   k.psblk = k.psblk,
-                                                                   black.list = black.list,
-                                                                   ncores = 1,
-                                                                   bparam = NULL,
-                                                                   progressbar = progressbar,
-                                                                   verbose = verbose)
+                                             sc.tmp <- wrapper_dissimilarity(sc,
+                                                                             ident = ann,
+                                                                             sample = sample,
+                                                                             gene.list = gl,
+                                                                             reduction = reduction,
+                                                                             ndim = ndim,
+                                                                             normalization.method = normalization.method,
+                                                                             dissimilarity.method = dissimilarity.method,
+                                                                             min.samples = min.samples,
+                                                                             min.cells = min.cells,
+                                                                             bparam = bparam,
+                                                                             verbose = TRUE
+                                                                             )
+                                             # data.frame with consistency outcome
+                                             res <- get.Consistency(sc.tmp)
                                              
                                              # accommodate extra data
                                              res <- res |>
@@ -216,33 +297,10 @@ wr.missclasify <- function(count_matrix,
                                              # only produce for one replicate of the seeds
                                              if(stringr::str_split(ann, "_")[[1]][2] == 1){
                                                 # save pdf if indicated
-                                                if(save.PCA){
-                                                   
-                                                   if(verbose){message("\nProducing PCAs for ", ann, "\n")}
-                                                   pcs <- wr.pca(scTypeEval = sc,
-                                                                 ident = ann,
-                                                                 sample = sample,
-                                                                 normalization.method = normalization.method,
-                                                                 gene.list = NULL,
-                                                                 data.type = data.type,
-                                                                 min.samples = min.samples,
-                                                                 min.cells = min.cells,
-                                                                 black.list = black.list,
-                                                                 ndim = 50,
-                                                                 dims = dims,
-                                                                 show.legend = show.legend,
-                                                                 label = label,
-                                                                 ncores = 1,
-                                                                 bparam = NULL,
-                                                                 progressbar = progressbar,
-                                                                 verbose = verbose)
-                                                   
-                                                   for (p in names(pcs)){
-                                                      pdf(file.path(pca.dir, paste0(p, "_", ann, ".pdf")),
-                                                          width = 4, height = 4)
-                                                      print(pcs[[p]])
-                                                      dev.off()
-                                                   }
+                                                if(save.plots){
+                                                   if(verbose){message("\nProducing Plots for ", ann, "\n")}
+                                                   fp <- file.path(pca.dir, ann)
+                                                   wrapper_plots(sc.tmp, dir.path = fp)
                                                 }
                                              }
                                              
@@ -296,7 +354,7 @@ wr.NSamples <- function(count_matrix,
                         seed = 22,
                         k.sc = 20,
                         k.psblk = 5,
-                        save.PCA = TRUE,
+                        save.plots = TRUE,
                         dims = c(1,2),
                         show.legend = FALSE,
                         label = TRUE,
@@ -306,7 +364,7 @@ wr.NSamples <- function(count_matrix,
       if(verbose){message("\nResults will be stored at ", dir)}
       dir.create(dir, showWarnings = F)
       
-      if(save.PCA){
+      if(save.plots){
          pca.dir <- file.path(dir, "PCA_NSamples")
          dir.create(pca.dir, showWarnings = F)
       }
@@ -399,7 +457,7 @@ wr.NSamples <- function(count_matrix,
                                              # only produce for one replicate of the seeds
                                              if(strsplit(ns, "_")[[1]][2] == 1){
                                                 # save pdf if indicated
-                                                if(save.PCA){
+                                                if(save.plots){
                                                    if(verbose){message("\nProducing PCAs for ", ns, "\n")}
                                                    pcs <- wr.pca(scTypeEval = sct,
                                                                  ident = ident,
@@ -477,7 +535,7 @@ wr.Nct <- function(count_matrix,
                    k.psblk = 5,
                    down.sample.comb = 30,
                    seed = 22,
-                   save.PCA = TRUE,
+                   save.plots = TRUE,
                    dims = c(1,2),
                    show.legend = FALSE,
                    label = TRUE,
@@ -487,7 +545,7 @@ wr.Nct <- function(count_matrix,
       if(verbose){message("Results will be stored at ", dir)}
       dir.create(dir, showWarnings = F)
       
-      if(save.PCA){
+      if(save.plots){
          pca.dir <- file.path(dir, "PCA_Nct")
          dir.create(pca.dir, showWarnings = F)
       }
@@ -570,7 +628,7 @@ wr.Nct <- function(count_matrix,
                                                 )
                                              
                                              # render PCAs
-                                             if(save.PCA){
+                                             if(save.plots){
                                                 if(verbose){message("\nProducing PCAs for ", ns, "\n")}
                                                 pcs <- wr.pca(scTypeEval = sct,
                                                               ident = ident,
@@ -653,7 +711,7 @@ wr.NCell <- function(count_matrix,
                      seed = 22,
                      k.sc = 20,
                      k.psblk = 5,
-                     save.PCA = TRUE,
+                     save.plots = TRUE,
                      dims = c(1,2),
                      show.legend = FALSE,
                      label = TRUE,
@@ -663,7 +721,7 @@ wr.NCell <- function(count_matrix,
       if(verbose){message("\nResults will be stored at ", dir)}
       dir.create(dir, showWarnings = F)
       
-      if(save.PCA){
+      if(save.plots){
          pca.dir <- file.path(dir, "PCA_NCell")
          dir.create(pca.dir, showWarnings = F)
       }
@@ -764,7 +822,7 @@ wr.NCell <- function(count_matrix,
                                              # only produce for one replicate of the seeds
                                              if(s == 1){
                                                 # save pdf if indicated
-                                                if(save.PCA){
+                                                if(save.plots){
                                                    if(verbose){message("\nProducing PCAs for ", as.character(ns), "\n")}
                                                    pcs <- wr.pca(scTypeEval = sct,
                                                                  ident = ident,
@@ -899,7 +957,7 @@ wr.mergeCT <- function(count_matrix,
                        progressbar = FALSE,
                        k.sc = 20,
                        k.psblk = 5,
-                       save.PCA = TRUE,
+                       save.plots = TRUE,
                        dims = c(1,2),
                        show.legend = FALSE,
                        label = TRUE,
@@ -909,7 +967,7 @@ wr.mergeCT <- function(count_matrix,
       if(verbose){message("\nResults will be stored at ", dir)}
       dir.create(dir, showWarnings = F)
       
-      if(save.PCA){
+      if(save.plots){
          pca.dir <- file.path(dir, "PCA_mergeCT")
          dir.create(pca.dir, showWarnings = F)
       }
@@ -1029,7 +1087,7 @@ wr.mergeCT <- function(count_matrix,
                                              
                                              # render PCAs
                                              # save pdf if indicated
-                                             if(save.PCA){
+                                             if(save.plots){
                                                 if(verbose){message("\nProducing PCAs for ", ann, "\n")}
                                                 pcs <- wr.pca(scTypeEval = sc,
                                                               ident = ann,
