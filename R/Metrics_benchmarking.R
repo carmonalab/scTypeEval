@@ -1,23 +1,3 @@
-downsample_factors <- function(df, factor_col, threshold, seed = 22) {
-   set.seed(seed) # Set seed for reproducibility
-   
-   # Group by the factor column and apply downsampling
-   df_downsampled <- df |> 
-      tibble::rownames_to_column("cellid") |> 
-      dplyr::group_by(!!rlang::sym(factor_col)) |> 
-      dplyr::group_map(~ { 
-         if (nrow(.x) > threshold) { 
-            .x[sample(nrow(.x), threshold), ] # Randomly sample rows if exceeding threshold 
-         } else { 
-            .x # Keep all rows if below threshold 
-         } 
-      }, .keep = TRUE) |> # Ensure the grouping column is kept 
-      dplyr::bind_rows() |> 
-      dplyr::ungroup() |> 
-      tibble::column_to_rownames("cellid")
-   
-   return(df_downsampled)
-}
 
 downsample_factor_level <- function(df, factor_col, level, threshold, seed = 22) {
    set.seed(seed) # Set seed for reproducibility
@@ -38,102 +18,34 @@ downsample_factor_level <- function(df, factor_col, level, threshold, seed = 22)
    return(result_df)
 }
 
-rand.shuffling <- function(vector,
-                           rate = 0.1, # proportion of labels to shuffle
-                           prob = NULL,
-                           seed = 22) {
-   set.seed(seed)
-   
-   # Calculate the number of labels to shuffle
-   n <- length(vector)
-   shuffle_n <- round(n * rate)
-   
-   # Get the proportions of cells
-   proportions_cells <- table(vector) |> prop.table()
-   
-   # Indices to shuffle
-   shuffle_indices <- sample(n, shuffle_n)
-   
-   # Extract the values to shuffle
-   original_values <- vector[shuffle_indices]
-   
-   # Ensure no value remains in its original label
-   shuffled_values <- original_values
-   while (any(shuffled_values == original_values)) {
-      ind_diff <- shuffled_values == original_values
-      if (is.null(prob)) {
-         shuffled_values[ind_diff] <- sample(vector,
-                                             length(shuffled_values[ind_diff]),
-                                             replace = TRUE)
-      } else {
-         # Create a matrix of probabilities for each value
-         prob_matrix <- sapply(unique(vector), function(l) {
-            prob.custom <- prob[, as.character(l)]
-            prob.custom <- 1 / prob.custom
-            prob.custom[is.infinite(prob.custom)] <- 0
-            # Get weights based on distance to centroids and proportions
-            prob.custom <- prob.custom * proportions_cells
-            # Normalize probabilities
-            prob.custom <- prob.custom / sum(prob.custom)
-            prob.custom
-         })
-         
-         colnames(prob_matrix) <- unique(vector)
-         
-         svals <- shuffled_values[ind_diff]
-         
-         for (l in unique(svals)) {
-            svals[svals == l] <- sample(unique(vector),
-                                        length(svals[svals == l]),
-                                        replace = TRUE,
-                                        prob = prob_matrix[, l])
-         }
-         
-         shuffled_values[ind_diff] <- svals
-      }
-   }
-   
-   # Replace original values with shuffled values
-   vector[shuffle_indices] <- shuffled_values
-   
-   return(vector)
-}
 
-rand.shuffling2 <- function(vector,
-                            rate = 0.1, # proportion of labels to shuffle
-                            seed = 22) {
+
+rand.shuffling_group <- function(vector,
+                                 group,
+                                 rate = 0.1, # proportion of labels to shuffle within each group
+                                 seed = 22) {
    set.seed(seed)
    
    nvector <- vector
-   # Calculate the number of labels to shuffle
-   n <- length(vector)
-   shuffle_n <- floor(round(n * rate))
-   its <- sample(1:n, shuffle_n)  # instances to shuffle
    
-   nvector[its] <- sample(vector, shuffle_n)
+   # Iterate over each unique group
+   for (g in unique(group)) {
+      idx <- which(group == g)  # indices for the current group
+      n <- length(idx)
+      
+      # Number of labels to shuffle in this group
+      shuffle_n <- floor(n * rate)
+      
+      if (shuffle_n > 0) {
+         its <- sample(idx, shuffle_n)  # positions to replace within this group
+         nvector[its] <- sample(vector[idx], shuffle_n)  # shuffle labels within group
+      }
+   }
    
    return(nvector)
 }
 
-df.missclassify <- function(metadata,
-                            annotations,
-                            rates,
-                            prefix = "R-") {
-   for (a in annotations) {
-      original_vector <- metadata[[a]]
-      
-      for (r in rates) {
-         ra <- 1 - r # proportion of cells to shuffle
-         new_vector <- rand.shuffling(original_vector,
-                                      rate = ra)
-         new_name <- paste0("R-", r, "_", a)
-         metadata[[new_name]] <- new_vector
-         
-      }
-   }
-   
-   return(metadata)
-}
+
 
 trim_mean_se <- function(x,
                          trim = 0) {
@@ -235,9 +147,10 @@ wr.missclasify <- function(count_matrix,
       
       for(r in rates){
          ra <- 1-r # proportion of cells to shuffle
-         new_vector <- rand.shuffling2(original_vector,
-                                       rate = ra,
-                                       seed = sds[[s]])
+         new_vector <- rand.shuffling_group(vector = original_vector,
+                                            group = sample,
+                                            rate = ra,
+                                            seed = sds[[s]])
          new_name <- paste("R", s, r, ident, sep = "_")
          metadata[[new_name]] <- new_vector
          annotations <- c(annotations, new_name)
