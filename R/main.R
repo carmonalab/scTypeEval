@@ -174,7 +174,7 @@ Run.ProcessingData <- function(scTypeEval,
                                             min.cells = min.cells)
                           
                           # Normalize data
-                          if(verbose){message("   Normalizing count matrix... \n")}
+                          if(verbose){message("   Normalizing count matrix via " , normalization.method, "... \n")}
                           norm.mat <- Normalize_data(mat@matrix,
                                                      method = normalization.method)
                           
@@ -944,7 +944,7 @@ get.Consistency <- function(scTypeEval,
                              ident <- assay@ident[[1]]
                              
                              # compute internal validation metrics
-                             if(verbose){message("Computing internal validation metrics ", da, " ... \n")}
+                             if(verbose){message("Computing internal validation metrics for ", da, " ... \n")}
                              con <- calculate_IntVal_metric(dist = dist,
                                                             metrics = IntVal.metric,
                                                             ident = ident,
