@@ -322,7 +322,6 @@ Add.ProcessedData <- function(scTypeEval,
 
 
 Run.HVG <- function(scTypeEval,
-                    normalization.method = "Log1p",
                     var.method = "scran",
                     ngenes = 2000,
                     sample = TRUE,
