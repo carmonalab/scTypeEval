@@ -47,11 +47,11 @@ purge_label <- function(label){
    sample <- purge_label(sample)
    sample <- factor(sample)
    
-   if(length(sample)<2){
+   if(length(levels(sample))<2){
       stop("For inter-sample comparison at least 2 samples is required, but more is recommended.\n")
    }
    
-   if(length(sample)<5){
+   if(length(levels(sample))<5){
       warning("Only ", length(sample), " samples detected.\n",
               "For inter-sample comparison 5 or more samples is recommended.\n")
    }
