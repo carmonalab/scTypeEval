@@ -273,57 +273,55 @@ wr.missclasify <- function(count_matrix,
                                 progressbar = progressbar)
    
    if(verbose){message("Running loop of annotations ")}
-   df.res <- BiocParallel::bplapply(annotations,
-                                    BPPARAM = BiocParallel::SerialParam(),
-                                    function(ann){
-                                       tryCatch(
-                                          {
-                                             sc.tmp <- wrapper_dissimilarity(sc,
-                                                                             ident = ann,
-                                                                             sample = sample,
-                                                                             gene.list = gl,
-                                                                             reduction = reduction,
-                                                                             ndim = ndim,
-                                                                             normalization.method = normalization.method,
-                                                                             dissimilarity.method = dissimilarity.method,
-                                                                             min.samples = min.samples,
-                                                                             min.cells = min.cells,
-                                                                             bparam = param,
-                                                                             verbose = verbose
-                                                                             )
-                                             # data.frame with consistency outcome
-                                             res <- get.Consistency(sc.tmp)
-                                             
-                                             # accommodate extra data
-                                             res <- res |>
-                                                dplyr::mutate(rate = as.numeric(as.character(strsplit(ann, "_")[[1]][3])),
-                                                              rep = strsplit(ann, "_")[[1]][2],
-                                                              original.ident = !!ident,
-                                                              task = "Missclassification"
-                                                )
-                                             
-                                             # render PCAs
-                                             # only produce for one replicate of the seeds
-                                             if(stringr::str_split(ann, "_")[[1]][2] == 1){
-                                                # save pdf if indicated
-                                                if(save.plots){
-                                                   if(verbose){message("\nProducing Plots for ", ann, "\n")}
-                                                   fp <- file.path(pca.dir, ann)
-                                                   wrapper_plots(sc.tmp,
-                                                                 dir.path = fp,
-                                                                 reduction = reduction)
-                                                }
-                                             }
-                                             
-                                             return(res)
-                                          },
-                                          error = function(e){
-                                             message("\n-X- scTypeEval failed for", ann, "\n")
-                                             message(e)
-                                          }
-                                       )
-                                       
-                                    })
+   df.res <- lapply(annotations,
+                    function(ann){
+                       tryCatch(
+                          {
+                             sc.tmp <- wrapper_dissimilarity(sc,
+                                                             ident = ann,
+                                                             sample = sample,
+                                                             gene.list = gl,
+                                                             reduction = reduction,
+                                                             ndim = ndim,
+                                                             normalization.method = normalization.method,
+                                                             dissimilarity.method = dissimilarity.method,
+                                                             min.samples = min.samples,
+                                                             min.cells = min.cells,
+                                                             bparam = param,
+                                                             verbose = verbose
+                             )
+                             # data.frame with consistency outcome
+                             res <- get.Consistency(sc.tmp)
+                             
+                             # accommodate extra data
+                             res <- res |>
+                                dplyr::mutate(rate = as.numeric(as.character(strsplit(ann, "_")[[1]][3])),
+                                              rep = strsplit(ann, "_")[[1]][2],
+                                              original.ident = !!ident,
+                                              task = "Missclassification"
+                                )
+                             
+                             # render PCAs
+                             # only produce for one replicate of the seeds
+                             if(stringr::str_split(ann, "_")[[1]][2] == 1){
+                                # save pdf if indicated
+                                if(save.plots){
+                                   if(verbose){message("\nProducing Plots for ", ann, "\n")}
+                                   fp <- file.path(pca.dir, ann)
+                                   wrapper_plots(sc.tmp,
+                                                 dir.path = fp,
+                                                 reduction = reduction)
+                                }
+                             }
+                             
+                             return(res)
+                          },
+                          error = function(e){
+                             message("\n-X- scTypeEval failed for ", ann, "\n", e)
+                          }
+                       )
+                       
+                    })
    
    # concatenate all results
    df.res <- do.call(rbind, df.res)
@@ -342,33 +340,29 @@ wr.NSamples <- function(count_matrix,
                         metadata,
                         ident,
                         sample,
-                        rates = c(1, 0.9, 0.7, 0.5), # proportion of total samples kept
+                        rates = c(1, 0.9, 0.75, 0.5, 0.25, 0), # proportion of cell labels kept
                         replicates = 3,
                         gene.list = NULL,
-                        pca = FALSE,
+                        reduction = TRUE,
                         ndim = 30,
                         black.list = NULL,
                         dir = NULL,
                         normalization.method = "Log1p",
-                        distance.method = "euclidean",
-                        data.type = c("pseudobulk", "pseudobulk_1vsall", "sc"),
+                        dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                                                 "Pseudobulk:Cosine", "Pseudobulk:Pearson",
+                                                 "BestHit:Match", "BestHit:Score"),
                         IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                          "ward.PropMatch", "Leiden.PropMatch",
-                                          "modularity"),
-                        BH.method = c("Mutual.Score", "Mutual.Match"),
-                        classifier = c("SingleR", "Spearman_correlation"),
+                                          "ward.PropMatch", "Orbital.medoid",
+                                          "Average.similarity"),
                         min.samples = 5,
                         min.cells = 10,
                         ncores = 1,
                         bparam = NULL,
                         progressbar = FALSE,
                         seed = 22,
-                        k.sc = 20,
-                        k.psblk = 5,
+                        KNNGraph_k = 5,
+                        hclust.method = "ward.D2",
                         save.plots = TRUE,
-                        dims = c(1,2),
-                        show.legend = FALSE,
-                        label = TRUE,
                         verbose = TRUE){
    
    if(!is.null(dir)){
@@ -376,7 +370,7 @@ wr.NSamples <- function(count_matrix,
       dir.create(dir, showWarnings = F)
       
       if(save.plots){
-         pca.dir <- file.path(dir, "PCA_NSamples")
+         pca.dir <- file.path(dir, "Plots_Nsamples")
          dir.create(pca.dir, showWarnings = F)
       }
    }
@@ -396,22 +390,28 @@ wr.NSamples <- function(count_matrix,
       for(r in nsamples){
          set.seed(sds[[s]])
          dos <- sample(ss, size = r)
-         nn <- paste("N", s, r, ident, sep = "_")
+         nn <- paste("N", s, r, sep = "_")
          nss[[nn]] <- dos
       }
    }
    
-   # gene list should be the same in all the iterations
+   
+   # get the gene list, the same for every run
    if(is.null(gene.list)){
       ## Create sc object
       sc <- create.scTypeEval(matrix = count_matrix,
                               metadata = metadata,
-                              black.list = bl)
-      sc <- add.HVG(sc,
-                    sample = sample,
-                    ncores = ncores,
-                    progressbar = progressbar)
-      gl <- sc@gene.lists
+                              active.ident = ident,
+                              black.list = black.list)
+      sc.gl <- Run.ProcessingData(sc,
+                                  sample = sample,
+                                  normalization.method = normalization.method,
+                                  min.samples = min.samples,
+                                  min.cells = min.cells,
+                                  verbose = verbose)
+      sc.gl <- Run.HVG(sc.gl,
+                       ncores = ncores)
+      gl <- sc.gl@gene.lists
    } else {
       gl <- gene.list
    }
@@ -419,92 +419,63 @@ wr.NSamples <- function(count_matrix,
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
-   
-   df.res <- BiocParallel::bplapply(names(nss),
-                                    BPPARAM = param,
-                                    function(ns){
-                                       tryCatch(
-                                          {
-                                             ## run scTypeEval
-                                             # create scTypeEval object with the number of samples
-                                             md <- metadata[metadata[[sample]] %in% nss[[ns]],]
-                                             sct <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
-                                                                      metadata = md,
-                                                                      gene.lists = gl,
-                                                                      black.list = bl)
-                                             
-                                             res <- Run.scTypeEval(scTypeEval = sct,
-                                                                   ident = ident,
-                                                                   ident_GroundTruth = ident,
-                                                                   sample = sample,
-                                                                   normalization.method = normalization.method,
-                                                                   gene.list = NULL, # fixed gene list earlier
-                                                                   pca = pca,
-                                                                   ndim = ndim,
-                                                                   distance.method = distance.method,
-                                                                   IntVal.metric = IntVal.metric,
-                                                                   BH.method = BH.method,
-                                                                   classifier = classifier,
-                                                                   data.type = data.type,
-                                                                   min.samples = min.samples,
-                                                                   min.cells = min.cells,
-                                                                   k.sc = k.sc,
-                                                                   k.psblk = k.psblk,
-                                                                   black.list = black.list,
-                                                                   ncores = 1,
-                                                                   bparam = NULL,
-                                                                   progressbar = progressbar,
-                                                                   verbose = verbose)
-                                             
-                                             # accommodate extra data
-                                             res <- res |>
-                                                dplyr::mutate(rate = as.numeric(as.character(strsplit(ns, "_")[[1]][3])),
-                                                              rep = strsplit(ns, "_")[[1]][2],
-                                                              original.ident = ident,
-                                                              task = "NSamples"
-                                                )
-                                             
-                                             # render PCAs
-                                             # only produce for one replicate of the seeds
-                                             if(strsplit(ns, "_")[[1]][2] == 1){
-                                                # save pdf if indicated
-                                                if(save.plots){
-                                                   if(verbose){message("\nProducing PCAs for ", ns, "\n")}
-                                                   pcs <- wr.pca(scTypeEval = sct,
-                                                                 ident = ident,
-                                                                 sample = sample,
-                                                                 normalization.method = normalization.method,
-                                                                 gene.list = NULL, # fixed gene list earlier
-                                                                 data.type = data.type,
-                                                                 min.samples = min.samples,
-                                                                 min.cells = min.cells,
-                                                                 black.list = black.list,
-                                                                 ndim = 50,
-                                                                 dims = dims,
-                                                                 show.legend = show.legend,
-                                                                 label = label,
-                                                                 ncores = 1,
-                                                                 bparam = NULL,
-                                                                 progressbar = progressbar,
-                                                                 verbose = verbose)
-                                                   
-                                                   
-                                                   for (p in names(pcs)){
-                                                      pdf(file.path(pca.dir, paste0(p, "_", ns, ".pdf")),
-                                                          width = 4, height = 4)
-                                                      print(pcs[[p]])
-                                                      dev.off()
-                                                   }
-                                                }
-                                             }
-                                             return(res)
-                                          },
-                                          error = function(e){
-                                             message("\n-X- scTypeEval failed for", ns, "\n")
-                                             message(e)
-                                          }
-                                       )
-                                    })
+   if(verbose){message("Running loop of annotations ")}
+   df.res <- lapply(names(nss),
+                    function(ns){
+                       tryCatch(
+                          {
+                             ## run scTypeEval
+                             # create scTypeEval object with the number of samples
+                             md <- metadata[metadata[[sample]] %in% nss[[ns]],]
+                             sc.tmp <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
+                                                         metadata = md,
+                                                         gene.lists = gl,
+                                                         black.list = bl)
+                             
+                             sc.tmp <- wrapper_dissimilarity(sc.tmp,
+                                                             ident = ident,
+                                                             sample = sample,
+                                                             gene.list = gl,
+                                                             reduction = reduction,
+                                                             ndim = ndim,
+                                                             normalization.method = normalization.method,
+                                                             dissimilarity.method = dissimilarity.method,
+                                                             min.samples = min.samples,
+                                                             min.cells = min.cells,
+                                                             bparam = param,
+                                                             verbose = verbose
+                             )
+                             # data.frame with consistency outcome
+                             res <- get.Consistency(sc.tmp)
+                             
+                             # accommodate extra data
+                             res <- res |>
+                                dplyr::mutate(rate = as.numeric(as.character(strsplit(ns, "_")[[1]][3])),
+                                              rep = strsplit(ns, "_")[[1]][2],
+                                              original.ident = !!ident,
+                                              task = "NSamples"
+                                )
+                             
+                             # render PCAs
+                             # only produce for one replicate of the seeds
+                             if(stringr::str_split(ann, "_")[[1]][2] == 1){
+                                # save pdf if indicated
+                                if(save.plots){
+                                   if(verbose){message("\nProducing Plots for ", ns, "\n")}
+                                   fp <- file.path(pca.dir, ns)
+                                   wrapper_plots(sc.tmp,
+                                                 dir.path = fp,
+                                                 reduction = reduction)
+                                }
+                             }
+                             
+                             return(res)
+                          },
+                          error = function(e){
+                             message("\n-X- scTypeEval failed for ", ns, "\n", e)
+                          }
+                       )
+                    })
    
    # concatenate all results
    df.res <- do.call(rbind, df.res)
