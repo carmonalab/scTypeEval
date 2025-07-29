@@ -95,10 +95,11 @@ create.scTypeEval <- function(matrix = NULL,
                                   black.list = black.list,
                                   active.ident = active.ident,
                                   version = version)
-   
-   tmp <- .check_ident(scTypeEval_obj,
-                       active.ident,
-                       verbose = FALSE)
+   if(!is.null(active.ident)){
+      tmp <- .check_ident(scTypeEval_obj,
+                          active.ident,
+                          verbose = FALSE)
+   }
    
    return(scTypeEval_obj)
 }
