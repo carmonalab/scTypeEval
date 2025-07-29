@@ -113,10 +113,13 @@ wrapper_dissimilarity <- function(scTypeEval,
                                     min.cells = min.cells,
                                     verbose = verbose)
    scTypeEval <- add.GeneList(scTypeEval, gene.list)
-   scTypeEval <- Run.PCA(scTypeEval,
-                         ndim = ndim)
    
-   for(m in dissimilarity.methods){
+   if(reduction){
+      scTypeEval <- Run.PCA(scTypeEval,
+                            ndim = ndim)
+   }
+   
+   for(m in dissimilarity.method){
       if(verbose){message(">.  Running ", m, "\n")}
       scTypeEval <- Run.Dissimilarity(scTypeEval,
                                       reduction = reduction,
@@ -132,18 +135,23 @@ wrapper_dissimilarity <- function(scTypeEval,
 wrapper_plots <- function(scTypeEval,
                           reduction.slot = "all", 
                           dissimilarity.slot = "all",
+                          reduction = TRUE,
                           label = TRUE,
                           dims = c(1,2),
                           show.legend = FALSE,
                           dir.path,
                           height =15,
-                          width = 15,
+                          width = 18,
                           ...){
-   pca <- plot.PCA(scTypeEval,
-                   reduction.slot = reduction.slot,
-                   label = label,
-                   dims = dims,
-                   show.legend = show.legend)
+   if(reduction){
+      pca <- plot.PCA(scTypeEval,
+                      reduction.slot = reduction.slot,
+                      label = label,
+                      dims = dims,
+                      show.legend = show.legend)
+   } else {
+      pca <- c()
+   }
    
    mds <- plot.MDS(scTypeEval,
                    dissimilarity.slot = dissimilarity.slot,
@@ -158,7 +166,7 @@ wrapper_plots <- function(scTypeEval,
    # Export as PDF
    dir <- paste0(dir.path, ".pdf")
    # List of plots to print
-   all_plots <- c(pca, mds, ph)
+   plot_list <- c(pca, mds, ph)
    pdf(dir, width = width, height = height)
    
    for (pl in plot_list) {
@@ -230,7 +238,7 @@ wr.missclasify <- function(count_matrix,
       for(r in rates){
          ra <- 1-r # proportion of cells to shuffle
          new_vector <- rand.shuffling_group(vector = original_vector,
-                                            group = sample,
+                                            group = metadata[[sample]],
                                             rate = ra,
                                             seed = sds[[s]])
          new_name <- paste("R", s, r, ident, sep = "_")
@@ -264,8 +272,9 @@ wr.missclasify <- function(count_matrix,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
+   if(verbose){message("Running loop of annotations ")}
    df.res <- BiocParallel::bplapply(annotations,
-                                    BPPARAM = param,
+                                    BPPARAM = BiocParallel::SerialParam(),
                                     function(ann){
                                        tryCatch(
                                           {
@@ -279,8 +288,8 @@ wr.missclasify <- function(count_matrix,
                                                                              dissimilarity.method = dissimilarity.method,
                                                                              min.samples = min.samples,
                                                                              min.cells = min.cells,
-                                                                             bparam = bparam,
-                                                                             verbose = TRUE
+                                                                             bparam = param,
+                                                                             verbose = verbose
                                                                              )
                                              # data.frame with consistency outcome
                                              res <- get.Consistency(sc.tmp)
@@ -289,7 +298,7 @@ wr.missclasify <- function(count_matrix,
                                              res <- res |>
                                                 dplyr::mutate(rate = as.numeric(as.character(strsplit(ann, "_")[[1]][3])),
                                                               rep = strsplit(ann, "_")[[1]][2],
-                                                              original.ident = ident,
+                                                              original.ident = !!ident,
                                                               task = "Missclassification"
                                                 )
                                              
@@ -300,7 +309,9 @@ wr.missclasify <- function(count_matrix,
                                                 if(save.plots){
                                                    if(verbose){message("\nProducing Plots for ", ann, "\n")}
                                                    fp <- file.path(pca.dir, ann)
-                                                   wrapper_plots(sc.tmp, dir.path = fp)
+                                                   wrapper_plots(sc.tmp,
+                                                                 dir.path = fp,
+                                                                 reduction = reduction)
                                                 }
                                              }
                                              
