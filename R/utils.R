@@ -198,3 +198,13 @@ sample_variable_length_combinations <- function(elements,
    return(mat)
 }
 
+# Helper function to compute centroids for each cluster
+compute_centroids <- function(norm.mat, ident) {
+   centroid.list <- tapply(seq_len(ncol(norm.mat)), ident, function(idx) {
+      Matrix::rowMeans(norm.mat[, idx, drop = FALSE])
+   })
+   # Combine the list of centroids into a matrix
+   centroids <- do.call(cbind, centroid.list) 
+   return(centroids)
+}
+
