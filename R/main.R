@@ -736,6 +736,7 @@ Run.Dissimilarity <- function(scTypeEval,
               ". Please run before `Run.PCA()` or add a valid dimensional reduction assay.\n")
       }
       mat <- mat_ident@embeddings
+      ident.name <- names(mat_ident@ident)
       gene.list <- mat_ident@gene.list
       black.list <- mat_ident@black.list
       
@@ -760,7 +761,7 @@ Run.Dissimilarity <- function(scTypeEval,
       group_levels <- levels(mat_ident@group)
       ident <- sapply(group_levels, function(x){strsplit(x, "_")[[1]][2]}) |>
          factor()
-      ident <- setNames(list(ident), names(mat_ident@ident))
+      ident <- setNames(list(ident), ident.name)
       sample <- sapply(group_levels, function(x){strsplit(x, "_")[[1]][1]}) |>
          factor()
       
