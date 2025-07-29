@@ -517,7 +517,7 @@ wr.Nct <- function(count_matrix,
                    hclust.method = "ward.D2",
                    save.plots = TRUE,
                    verbose = TRUE,
-                   down.sample.comb = 40){
+                   down.sample.comb = 30){
    
    if(!is.null(dir)){
       if(verbose){message("Results will be stored at ", dir)}
@@ -762,7 +762,7 @@ wr.NCell <- function(count_matrix,
                              res <- res |>
                                 dplyr::mutate(rate = as.numeric(as.character(ns)),
                                               rep = s,
-                                              original.ident = ident,
+                                              original.ident = !!ident,
                                               task = "NCell"
                                 )
                              
@@ -779,14 +779,13 @@ wr.NCell <- function(count_matrix,
                                                  reduction = reduction)
                                 }
                              }
-                          return(res)
-                    },
-                    error = function(e){
-                       message("\n-X- scTypeEval failed for", i, "\n")
-                       message(e)
-                    }
+                             return(res)
+                          },
+                          error = function(e){
+                             message("\n-X- scTypeEval failed for", i, "\n", e)
+                          }
                        )
-})
+                    })
    
    # concatenate all results
    df.res <- do.call(rbind, df.res)
@@ -800,7 +799,7 @@ wr.NCell <- function(count_matrix,
    
    return(df.res)
    
-   }
+}
 
 
 
@@ -809,30 +808,28 @@ wr.mergeCT <- function(count_matrix,
                        metadata,
                        ident,
                        sample,
+                       distance.method = "euclidean",
                        gene.list = NULL,
-                       pca = FALSE,
+                       reduction = TRUE,
                        ndim = 30,
                        black.list = NULL,
                        dir = NULL,
                        normalization.method = "Log1p",
-                       distance.method = "euclidean",
-                       data.type = c("pseudobulk", "pseudobulk_1vsall", "sc"),
+                       dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                                                "Pseudobulk:Cosine", "Pseudobulk:Pearson",
+                                                "BestHit:Match", "BestHit:Score"),
                        IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                         "ward.PropMatch", "Leiden.PropMatch",
-                                         "modularity"),
-                       BH.method = c("Mutual.Score", "Mutual.Match"),
-                       classifier = c("SingleR", "Spearman_correlation"),
+                                         "ward.PropMatch", "Orbital.medoid",
+                                         "Average.similarity"),
                        min.samples = 5,
                        min.cells = 10,
                        ncores = 1,
                        bparam = NULL,
                        progressbar = FALSE,
-                       k.sc = 20,
-                       k.psblk = 5,
+                       seed = 22,
+                       KNNGraph_k = 5,
+                       hclust.method = "ward.D2",
                        save.plots = TRUE,
-                       dims = c(1,2),
-                       show.legend = FALSE,
-                       label = TRUE,
                        verbose = TRUE){
    
    if(!is.null(dir)){
@@ -840,7 +837,7 @@ wr.mergeCT <- function(count_matrix,
       dir.create(dir, showWarnings = F)
       
       if(save.plots){
-         pca.dir <- file.path(dir, "PCA_mergeCT")
+         pca.dir <- file.path(dir, "Plots_mergeCT")
          dir.create(pca.dir, showWarnings = F)
       }
    }
@@ -848,45 +845,48 @@ wr.mergeCT <- function(count_matrix,
    ## Create sc object
    sc <- create.scTypeEval(matrix = count_matrix,
                            metadata = metadata,
+                           active.ident = ident,
                            black.list = black.list)
    
-   sc <- add.HVG(sc,
-                 sample = sample,
-                 ncores = ncores,
-                 progressbar = progressbar)
-   gl <- sc@gene.lists
+   sc <- Run.ProcessingData(sc,
+                            sample = sample,
+                            normalization.method = normalization.method,
+                            min.samples = min.samples,
+                            min.cells = min.cells,
+                            verbose = verbose)
+   if(is.null(gene.list)){
+      
+      sc <- Run.HVG(sc,
+                    ncores = ncores)
+      gl <- sc@gene.lists
+   } else {
+      gl <- gene.list
+   }
    
-   original_vector <- factor(gsub(" |_", ".", metadata[[ident]]))
+   gene.list <- .check_genelist(sc, gene.list, verbose = verbose)
+   black.list <- .check_blacklist(sc, black.list, verbose = verbose)
+   mat_ident <- .general_filtering(sc@data[["single-cell"]],
+                                   black.list = black.list,
+                                   gene.list = gene.list,
+                                   verbose = verbose)
+   mat <- mat_ident@matrix
+   
+   idents <- as.character(mat_ident@ident)
+   # keep only celltypes fulfulling min.samples and min.cells conditions
+   metadata <- metadata[colnames(mat),]
+   
+   original_vector <- factor(purge_label(metadata[[ident]]))
    j <- length(unique(original_vector))
    new_name <- paste("J", j, ident, sep = "_")
    metadata[[new_name]] <- original_vector
    annotations <- new_name
    
-   keep <- rownames(sc@counts) %in% gl[["HVG"]]
-   mat <- sc@counts[keep,]
-   
-   # remove black list genes
-   mat <- mat[!rownames(mat) %in% sc@black.list,]
-   
-   mats <- get.matrix(mat,
-                      data.type = "sc",
-                      ident = original_vector,
-                      sample = NULL,
-                      min.samples = min.samples,
-                      min.cells = min.cells)
-   
-   # get distance
-   norm.matrix <- Normalize_data(mats@matrix,
-                                 normalization.method = normalization.method)
-   
-   idents <- as.character(mats@ident)
-   # keep only celltypes fulfulling min.samples and min.cells conditions
-   metadata <- metadata[metadata[[new_name]] %in% unique(idents),]
-   
    while(length(unique(idents))>2){
-      centroids <- compute_centroids(norm.matrix, idents)
+      centroids <- compute_centroids(norm.mat = mat,
+                                     ident = idents)
       dist <- get.distance(norm.mat = centroids,
-                           distance.method = distance.method)
+                           distance.method = distance.method,
+                           verbose = F)
       dist_mat <- as.matrix(dist)
       diag(dist_mat) <- Inf  # Ignore self-distance
       # Find the closest pair of cell types
@@ -906,96 +906,59 @@ wr.mergeCT <- function(count_matrix,
    ## ReCreate sc object
    sc <- create.scTypeEval(matrix = count_matrix[,rownames(metadata)],
                            metadata = metadata,
+                           gene.lists = gl,
                            black.list = black.list)
-   if(is.null(gene.list)){
-      sc <- add.HVG(sc,
-                    sample = sample,
-                    ncores = ncores,
-                    progressbar = progressbar)
-      gl <- sc@gene.lists
-   } else {
-      sc@gene.lists <- gene.list
-   }
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
-   df.res <- BiocParallel::bplapply(annotations,
-                                    BPPARAM = param,
-                                    function(ann){
-                                       tryCatch(
-                                          {
-                                             res <- Run.scTypeEval(scTypeEval = sc,
-                                                                   ident = ann,
-                                                                   sample = sample,
-                                                                   normalization.method = normalization.method,
-                                                                   gene.list = NULL, # Run all gene.lists in the object
-                                                                   pca = pca,
-                                                                   ndim = ndim,
-                                                                   distance.method = distance.method,
-                                                                   IntVal.metric = IntVal.metric,
-                                                                   BH.method = BH.method,
-                                                                   classifier = classifier,
-                                                                   data.type = data.type,
-                                                                   min.samples = min.samples,
-                                                                   min.cells = min.cells,
-                                                                   k.sc = k.sc,
-                                                                   k.psblk = k.psblk,
-                                                                   black.list = black.list,
-                                                                   ncores = 1,
-                                                                   bparam = NULL,
-                                                                   progressbar = progressbar,
-                                                                   verbose = verbose)
-                                             
-                                             # accommodate extra data
-                                             res <- res |>
-                                                dplyr::mutate(
-                                                   rate = as.numeric(as.character(strsplit(ann, "_")[[1]][2])),
-                                                   rep = NA,
-                                                   original.ident = ident,
-                                                   task = "mergeCT"
-                                                )
-                                             
-                                             # render PCAs
-                                             # save pdf if indicated
-                                             if(save.plots){
-                                                if(verbose){message("\nProducing PCAs for ", ann, "\n")}
-                                                pcs <- wr.pca(scTypeEval = sc,
-                                                              ident = ann,
-                                                              sample = sample,
-                                                              normalization.method = normalization.method,
-                                                              gene.list = NULL,
-                                                              data.type = data.type,
-                                                              min.samples = min.samples,
-                                                              min.cells = min.cells,
-                                                              black.list = black.list,
-                                                              ndim = 50,
-                                                              dims = dims,
-                                                              show.legend = show.legend,
-                                                              label = label,
-                                                              ncores = 1,
-                                                              bparam = NULL,
-                                                              progressbar = progressbar,
-                                                              verbose = verbose)
-                                                
-                                                
-                                                for (p in names(pcs)){
-                                                   pdf(file.path(pca.dir, paste0(p, "_", ann, ".pdf")),
-                                                       width = 4, height = 4)
-                                                   print(pcs[[p]])
-                                                   dev.off()
-                                                }
-                                                
-                                             }
-                                             return(res)
-                                          },
-                                          error = function(e){
-                                             message("\n-X- scTypeEval failed for", ann, "\n")
-                                             message(e)
-                                          }
-                                       )
-                                    })
+   df.res <- lapply(annotations,
+                    function(ann){
+                       tryCatch(
+                          {
+                             sc.tmp <- wrapper_dissimilarity(sc,
+                                                             ident = ann,
+                                                             sample = sample,
+                                                             gene.list = gl,
+                                                             reduction = reduction,
+                                                             ndim = ndim,
+                                                             normalization.method = normalization.method,
+                                                             dissimilarity.method = dissimilarity.method,
+                                                             min.samples = min.samples,
+                                                             min.cells = min.cells,
+                                                             bparam = param,
+                                                             verbose = verbose
+                             )
+                             # data.frame with consistency outcome
+                             res <- get.Consistency(sc.tmp)
+                             
+                             # accommodate extra data
+                             res <- res |>
+                                dplyr::mutate(
+                                   rate = as.numeric(as.character(strsplit(ann, "_")[[1]][2])),
+                                   rep = NA,
+                                   original.ident = !!ident,
+                                   task = "mergeCT"
+                                )
+                             
+                             # render PCAs
+                             # save pdf if indicated
+                             if(save.plots){
+                                if(verbose){message("\nProducing Plots for ", ann, "\n")}
+                                fp <- file.path(pca.dir, ann)
+                                wrapper_plots(sc.tmp,
+                                              dir.path = fp,
+                                              reduction = reduction)
+                                
+                             }
+                             return(res)
+                          },
+                          error = function(e){
+                             message("\n-X- scTypeEval failed for", ann, "\n, e")
+                          }
+                       )
+                    })
    
    # concatenate all results
    df.res <- do.call(rbind, df.res)
