@@ -247,7 +247,8 @@ compute_averageSimilarity <- function(dist, ident) {
       avg_own_dist <- mean(dist_mat[i, same_group_idx])
       avg_other_dist <- mean(dist_mat[i, other_group_idx])
       
-      ratio_vector[i] <- avg_own_dist / avg_other_dist
+      # Compute normalized score: higher is better (self-similar and dissimilar to others)
+      similarity_vector[i] <- 1 - (avg_own_dist / (avg_own_dist + avg_other_dist))
    }
    
    # Aggregate: mean per cluster
