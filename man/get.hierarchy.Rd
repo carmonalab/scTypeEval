@@ -2,87 +2,48 @@
 % Please edit documentation in R/main.R
 \name{get.hierarchy}
 \alias{get.hierarchy}
-\title{Perform Hierarchical Clustering on scRNA-seq Data}
+\title{Perform Hierarchical Clustering on scTypeEval Dissimilarity Matrices}
 \usage{
 get.hierarchy(
   scTypeEval,
-  ident,
-  sample,
-  normalization.method = c("Log1p", "CLR", "pearson"),
-  gene.list = NULL,
-  pca = FALSE,
-  ndim = 30,
-  distance.method = "euclidean",
+  dissimilarity.slot = "all",
   hierarchy.method = "ward.D2",
-  data.type = c("pseudobulk", "sc", "GloScope"),
-  min.samples = 5,
-  min.cells = 10,
-  black.list = NULL,
-  ncores = 1,
-  bparam = NULL,
-  progressbar = TRUE,
   verbose = TRUE
 )
 }
 \arguments{
-\item{scTypeEval}{An object containing the scRNA-seq data, metadata, and gene lists.}
+\item{scTypeEval}{An \code{scTypeEval} object containing dissimilarity matrices in the \code{dissimilarity} slot.}
 
-\item{ident}{A character string specifying the metadata column used to group cells (e.g., cell type or annotation).}
+\item{dissimilarity.slot}{Character string. Specifies which dissimilarity assays to cluster.
+Use \code{"all"} (default) to include all available assays.}
 
-\item{sample}{An optional character string specifying the metadata column for sample identification (required for pseudobulk analysis).}
+\item{hierarchy.method}{Character string specifying the hierarchical clustering method
+(default: \code{"ward.D2"}). See \link[stats]{hclust} for available options.}
 
-\item{normalization.method}{A character vector specifying the normalization method. Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"} (default: \code{"Log1p"}).}
-
-\item{gene.list}{A named list of gene sets to be used for clustering. If \code{NULL}, gene lists stored in \code{scTypeEval} are used.}
-
-\item{pca}{Logical; if \code{TRUE}, performs PCA dimensionality reduction before clustering (default: \code{FALSE}).}
-
-\item{ndim}{Integer; number of principal components to retain if \code{pca = TRUE} (default: \code{30}).}
-
-\item{distance.method}{A character string specifying the distance metric for clustering (default: \code{"euclidean"}).}
-
-\item{hierarchy.method}{A character string specifying the hierarchical clustering method. Default is \code{"ward.D2"}. For more option see \link[stats]{hclust}.}
-
-\item{data.type}{A character string indicating whether to use \code{"pseudobulk"} (aggregated samples), \verb{"GloScope}, or \code{"sc"} (single-cell) data (default: \code{"pseudobulk"}).}
-
-\item{min.samples}{Integer; minimum number of samples required for pseudobulk analysis (default: \code{5}).}
-
-\item{min.cells}{Integer; minimum number of cells required per group for inclusion in the analysis (default: \code{10}).}
-
-\item{black.list}{A vector of gene names to exclude from clustering. If \code{NULL}, uses the blacklist stored in \code{scTypeEval}.}
-
-\item{ncores}{Integer; number of CPU cores to use for parallel processing (default: \code{1}).}
-
-\item{bparam}{An optional \code{BiocParallelParam} object for controlling parallel execution. If provided, overrides ncores.}
-
-\item{progressbar}{Logical; if \code{TRUE}, displays a progress bar during computation (default: \code{TRUE}).}
-
-\item{verbose}{Logical; if \code{TRUE}, prints messages about progress and warnings (default: \code{TRUE}).}
+\item{verbose}{Logical. If \code{TRUE}, prints messages about progress (default: \code{TRUE}).}
 }
 \value{
-A list of hierarchical clustering results, where each element corresponds to a different gene list.
+A list of clustering results, one per dissimilarity assay. Each element
+contains a contingency table of cluster assignments versus input labels.
 }
 \description{
-This function performs hierarchical clustering on single-cell RNA sequencing (scRNA-seq) data
-using specified normalization, distance, and clustering methods. It allows for analysis at
-both the single-cell and pseudobulk levels.
+This function performs hierarchical clustering using precomputed dissimilarity
+matrices stored in the \code{dissimilarity} slot of an \code{scTypeEval} object.
+Each dissimilarity assay is clustered independently using the specified hierarchical
+clustering method.
 }
 \details{
-The function retrieves expression data for specified gene lists, applies normalization,
-and performs hierarchical clustering using the chosen distance metric and clustering method.
-If \code{pca = TRUE}, PCA is performed before clustering to reduce dimensionality.
+For each dissimilarity assay, the function applies \link[stats]{hclust}
+to the stored dissimilarity matrix. The number of clusters is set equal
+to the number of unique identities provided in the assay metadata.
 }
 \examples{
 \dontrun{
-result <- get.hierarchy(scTypeEval = sceval, 
-                        ident = "celltype",
-                        sample = "sample_id",
-                        normalization.method = "Log1p",
-                        data.type = "pseudobulk",
-                        distance.method = "euclidean",
-                        hierarchy.method = "ward.D2")
-# explore results
-clusters <- stats::cutree(result[[HVG]], k = length(cell_types))
+# Perform hierarchical clustering on all available dissimilarity matrices
+hier_results <- get.hierarchy(sceval)
 }
 
+}
+\seealso{
+\link{compute.dissimilarity}, \link[stats]{hclust}
 }

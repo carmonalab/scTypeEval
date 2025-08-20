@@ -2,86 +2,53 @@
 % Please edit documentation in R/main.R
 \name{get.NN}
 \alias{get.NN}
-\title{Compute K-Nearest Neighbors (KNN) Graph on scRNA-seq Data}
+\title{Compute K-Nearest Neighbor (KNN) Composition from Dissimilarity Assays}
 \usage{
 get.NN(
   scTypeEval,
-  ident,
-  sample,
-  normalization.method = c("Log1p", "CLR", "pearson"),
-  gene.list = NULL,
-  pca = FALSE,
-  ndim = 30,
-  distance.method = "euclidean",
+  dissimilarity.slot = "all",
   KNNGraph_k = 5,
-  data.type = c("pseudobulk", "sc", "GloScope"),
-  min.samples = 5,
-  min.cells = 10,
-  black.list = NULL,
-  ncores = 1,
-  bparam = NULL,
-  progressbar = TRUE,
+  normalize = FALSE,
   verbose = TRUE
 )
 }
 \arguments{
-\item{scTypeEval}{An object containing scRNA-seq expression data, metadata, and gene lists.}
+\item{scTypeEval}{An object containing dissimilarity matrices and metadata.}
 
-\item{ident}{A character string specifying the metadata column used to group cells (e.g., cell type or annotation).}
-
-\item{sample}{An optional character string specifying the metadata column for sample identification (required for pseudobulk analysis).}
-
-\item{normalization.method}{A character vector specifying the normalization method. Options: \code{"Log1p"}, \code{"CLR"}, \code{"pearson"} (default: \code{"Log1p"}).}
-
-\item{gene.list}{A named list of gene sets to be used for clustering. If \code{NULL}, the gene lists stored in \code{scTypeEval} are used.}
-
-\item{pca}{Logical; if \code{TRUE}, performs PCA dimensionality reduction before computing distances (default: \code{FALSE}).}
-
-\item{ndim}{Integer; number of principal components to retain if \code{pca = TRUE} (default: \code{30}).}
-
-\item{distance.method}{A character string specifying the distance metric for computing the KNN graph (default: \code{"euclidean"}).}
+\item{dissimilarity.slot}{A character string specifying which dissimilarity assay(s)
+to use. If \code{"all"}, all available dissimilarity assays are processed (default: \code{"all"}).}
 
 \item{KNNGraph_k}{Integer; the number of neighbors to consider in the KNN graph (default: \code{5}).}
 
-\item{data.type}{A character string indicating whether to use \code{"pseudobulk"} (aggregated samples), \verb{"GloScope}, or \code{"sc"} (single-cell) data (default: \code{"pseudobulk"}).}
+\item{normalize}{Logical; if \code{TRUE}, normalizes neighbor proportions relative to expected
+frequencies of each cell type (default: \code{FALSE}).}
 
-\item{min.samples}{Integer; minimum number of samples required for pseudobulk analysis (default: \code{5}).}
-
-\item{min.cells}{Integer; minimum number of cells required per group for inclusion in the analysis (default: \code{10}).}
-
-\item{black.list}{A vector of gene names to exclude from analysis. If \code{NULL}, uses the blacklist stored in \code{scTypeEval}.}
-
-\item{ncores}{Integer; number of CPU cores to use for parallel processing (default: \code{1}).}
-
-\item{bparam}{An optional \code{BiocParallelParam} object for controlling parallel execution.}
-
-\item{progressbar}{Logical; if \code{TRUE}, displays a progress bar during computation (default: \code{TRUE}).}
-
-\item{verbose}{Logical; if \code{TRUE}, prints messages about progress and warnings (default: \code{TRUE}).}
+\item{verbose}{Logical; if \code{TRUE}, prints progress messages during computation (default: \code{TRUE}).}
 }
 \value{
-A list containing KNN graph-based consistency metrics for each gene list.
+A list (or a single data frame if only one assay is processed) where each element
+corresponds to a dissimilarity assay. Each element contains a data frame with rows
+corresponding to reference cell types and columns representing the mean proportion of
+neighbors belonging to each cell type.
 }
 \description{
-This function computes a KNN graph based on single-cell RNA sequencing (scRNA-seq) data,
-allowing for consistency analysis within and across cell types. The analysis can be performed
-on single-cell or pseudobulk data.
+This function computes KNN-based neighborhood composition scores from dissimilarity
+matrices stored in a \code{scTypeEval} object. For each dissimilarity assay, it constructs
+a KNN graph, computes the cell type composition among neighbors
+and aggregates results at the group level.
 }
 \details{
-This function constructs a KNN graph from scRNA-seq expression data using a chosen
-distance metric. It normalizes gene expression, applies optional PCA, and computes KNN relationships
-based on cell or pseudobulk similarities. The function assesses cell type consistency within the graph.
+The function extracts dissimilarity matrices from the \code{scTypeEval} object and applies
+a KNN graph construction. For each assay, it computes neighbor
+cell-type proportions per cell and then aggregate them by cell type. If
+normalization is enabled, the observed neighbor proportions are scaled relative to
+the expected global frequency of each cell type.
 }
 \examples{
-
 \dontrun{
-result <- get.NN(scTypeEval = sceval, 
-                 ident = "celltype",
-                 sample = "sample_id",
-                 normalization.method = "Log1p",
-                 data.type = "pseudobulk",
-                 distance.method = "euclidean",
-                 KNNGraph_k = 5)
+result <- get.NN(scTypeEval = sceval,
+                 KNNGraph_k = 5,
+                 normalize = TRUE)
 }
 
 }

@@ -5,27 +5,26 @@
 \title{Create an scTypeEval object for evaluating cell type classification.}
 \usage{
 create.scTypeEval(
-  matrix,
+  matrix = NULL,
   metadata = NULL,
   gene.lists = list(),
   black.list = character(),
-  active.ident = NULL,
-  version = "1.0.0"
+  active.ident = NULL
 )
 }
 \arguments{
-\item{matrix}{A Seurat object, SingleCellExperiment object, or a count matrix (dense or sparse).}
+\item{matrix}{A Seurat object, SingleCellExperiment object, dense/sparse count
+matrix, or \code{NULL}. If \code{NULL}, an empty object is initialized.}
 
-\item{metadata}{A metadata dataframe (required if \code{matrix} is a raw matrix).
-It must have the same number of rows as columns in the count matrix, sharing rownames and colnames respectively.}
+\item{metadata}{A metadata dataframe. Required if \code{matrix} is a raw matrix or
+\code{NULL}. Must have as many rows as the number of cells (columns of the count matrix).}
 
-\item{gene.lists}{A named list of gene sets to use in the evaluation.}
+\item{gene.lists}{A named list of gene sets to use in the evaluation (default: empty list).}
 
-\item{black.list}{A character vector of genes to exclude from analysis.}
+\item{black.list}{A character vector of genes to exclude from analysis (default: empty).}
 
-\item{active.ident}{The active identity class or cluster label (optional).}
-
-\item{version}{A string indicating the version of the \code{scTypeEval} object (optional).}
+\item{active.ident}{The active identity class or cluster label (optional). If provided,
+it is validated against the metadata.}
 }
 \value{
 An \code{scTypeEval} object containing:
@@ -35,7 +34,6 @@ An \code{scTypeEval} object containing:
 \item \code{gene.lists}: A list of gene sets used in classification.
 \item \code{black.list}: A vector of excluded genes.
 \item \code{active.ident}: Active cluster identity (if provided).
-\item \code{version}: The version tag for the object.
 }
 }
 \description{
@@ -44,9 +42,14 @@ SingleCellExperiment, or raw count matrices. It ensures compatibility by validat
 and structures before constructing the object.
 }
 \details{
-The function converts input objects into a standardized format before constructing
-an \code{scTypeEval} object. It ensures that the count matrix and metadata are correctly
-aligned and validates input types before proceeding.
+\itemize{
+\item If \code{matrix = NULL}, the function initializes an empty \code{dgCMatrix} with 0 rows and 0 columns,
+and requires a metadata dataframe.
+\item For Seurat and SingleCellExperiment objects, counts and metadata are extracted automatically.
+\item For raw matrices, metadata must be provided explicitly.
+\item The function validates that the number of metadata rows matches the number of cells (matrix columns).
+\item If \code{active.ident} is provided, it is checked for consistency with the metadata.
+}
 }
 \examples{
 \dontrun{
@@ -55,6 +58,12 @@ sceval <- create.scTypeEval(matrix = count_matrix, metadata = metadata)
 
 # From Seurat object
 sceval <- create.scTypeEval(seurat_obj)
+
+# From SingleCellExperiment object
+sceval <- create.scTypeEval(sce_obj)
+
+# Initialize an empty object (requires metadata)
+empty_eval <- create.scTypeEval(matrix = NULL, metadata = data.frame(celltype = character()))
 }
 
 }

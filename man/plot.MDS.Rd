@@ -2,51 +2,51 @@
 % Please edit documentation in R/main.R
 \name{plot.MDS}
 \alias{plot.MDS}
-\title{Plot PCA Results from scTypeEval Object}
+\title{Plot MDS Results from scTypeEval Object}
 \usage{
 \method{plot}{MDS}(
   scTypeEval,
-  gene.list = NULL,
-  data.type = NULL,
-  dims = c(1, 2),
+  dissimilarity.slot = "all",
   label = TRUE,
+  dims = c(1, 2),
   show.legend = FALSE
 )
 }
 \arguments{
-\item{scTypeEval}{An \code{scTypeEval} object containing PCA results in the \code{reductions} slot.}
+\item{scTypeEval}{An \code{scTypeEval} object containing one or more dissimilarity assays.}
 
-\item{gene.list}{Character vector. gene.list names to filter PCA plots. If \code{NULL}, all available PCA results are plotted.}
+\item{dissimilarity.slot}{Character string specifying which dissimilarity assay(s)
+to use. If \code{"all"}, all available dissimilarity assays are plotted (default: \code{"all"}).}
 
-\item{data.type}{Character vector. Specifies which data types to include in the plots (e.g., \code{"sc"}, \code{"pseudobulk"}).
-If \code{NULL}, all data types are included.}
+\item{label}{Logical; whether to add cluster labels to the MDS plot (default: \code{TRUE}).}
 
-\item{dims}{Integer vector of length 2. The principal component (PC) dimensions to plot (default: \code{c(1,2)}).}
+\item{dims}{Integer vector of length 2; the MDS dimensions to plot (default: \code{c(1, 2)}).}
 
-\item{label}{Logical. Whether to add labels to the PCA plot (default: \code{TRUE}).}
-
-\item{show.legend}{Logical. Whether to display a legend (default: \code{FALSE}).}
+\item{show.legend}{Logical; whether to display a legend (default: \code{FALSE}).}
 }
 \value{
-A named list of PCA plots (\link{ggplot2} objects) corresponding to different PCA analyses stored in
-\code{reductions} slot of an scTypeEval object by \link{add.PCA}.
+A named list of MDS plots (\code{ggplot2} objects), one per dissimilarity assay.
+If only a single assay is processed, a single \code{ggplot2} object is returned.
 }
 \description{
-This function visualizes Principal Component Analysis (PCA) results stored in the \code{reductions} slot of an scTypeEval object.
+This function visualizes Multidimensional Scaling (MDS) results computed from
+dissimilarity assays stored in an \code{scTypeEval} object. For each dissimilarity assay,
+MDS is performed using \code{stats::cmdscale()} and results are displayed as scatterplots.
+}
+\details{
+For each selected dissimilarity assay, the function:
+\enumerate{
+\item Extracts the dissimilarity matrix and cell-type identities.
+\item Performs classical multidimensional scaling (MDS) with \code{cmdscale()}.
+\item Generates a 2D scatterplot with group labels and optional legends using
+an internal plotting helper.
+}
+The plot axes correspond to the requested MDS dimensions (\code{dims}).
 }
 \examples{
 \dontrun{
-# plot all PCA dimensional reductions
-pca_plots <- plot.MDS(sceval) # scTypeEval object with previously run `add.PCA()`
-
-# plot only some PCAs
-mds_plots_filtered <- plot.MDS(sceval, # scTypeEval object with previously run `add.PCA()`
-                              gene.list = "HVG", # plot only PCA for highly variable genes
-                              data.type = "pseudobulk" # plot only PCA for pseudobulk data
-                              ) 
+# Plot MDS for all dissimilarity assays
+mds_plots <- plot.MDS(sceval)
 }
 
-}
-\seealso{
-\link{add.PCA}
 }
