@@ -10,7 +10,6 @@ methods::setClass("scTypeEval",
                      black.list = "ANY", # list of genes in black list
                      active.ident = "ANY", # default grouping variable
                      reductions = "list", # list of dim reductions
-                     version = "character" # package version
                   )
 )
 
