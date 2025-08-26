@@ -982,8 +982,10 @@ wr.assayPlot <- function(df,
                          combine = TRUE){
    
    rsq <- df |> 
+      dplyr::group_by(dissimilarity_method, consistency.metric, celltype, rate) |>
+      dplyr::summarize(measure = mean(measure)) |>
       dplyr::group_by(dissimilarity_method, consistency.metric, celltype) |>
-      dplyr::arrange(desc(rate))
+      dplyr::arrange(rate, .by_group = TRUE)
    
    # remove NA or NaN
    rsq <- rsq[complete.cases(rsq),]
