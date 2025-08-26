@@ -9,7 +9,8 @@ methods::setClass("scTypeEval",
                      gene.lists = "list", # list of either HGV, markers
                      black.list = "ANY", # list of genes in black list
                      active.ident = "ANY", # default grouping variable
-                     reductions = "list" # list of dim reductions
+                     reductions = "list", # list of dim reductions
+                     version = "character" # package version
                   )
 )
 
