@@ -103,7 +103,8 @@ create.scTypeEval <- function(matrix = NULL,
                                   gene.lists = gene.lists,
                                   black.list = black.list,
                                   active.ident = active.ident,
-                                  version = packageVersion("scTypeEval"))
+                                  version = as.character(packageVersion("scTypeEval"))
+                                  )
    if(!is.null(active.ident)){
       tmp <- .check_ident(scTypeEval_obj,
                           active.ident,
