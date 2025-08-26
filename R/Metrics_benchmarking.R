@@ -458,7 +458,7 @@ wr.NSamples <- function(count_matrix,
                              
                              # render PCAs
                              # only produce for one replicate of the seeds
-                             if(stringr::str_split(ann, "_")[[1]][2] == 1){
+                             if(stringr::str_split(ns, "_")[[1]][2] == 1){
                                 # save pdf if indicated
                                 if(save.plots){
                                    if(verbose){message("\nProducing Plots for ", ns, "\n")}
