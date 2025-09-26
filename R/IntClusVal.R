@@ -1,6 +1,6 @@
 IntVal_metric <- c("silhouette", "NeighborhoodPurity",
                    "ward.PropMatch", "Orbital.medoid",
-                   "Average.similarity")
+                   "Average.similarity", "2label.silhouette")
 knn.need <- "NeighborhoodPurity"
 
 # compute medoid based on distances
@@ -79,6 +79,51 @@ compute_silhouette <- function(dist, ident) {
    silh_df$celltype <- ident
    
    # Calculate the mean silhouette width per cell type
+   mean_per_celltype <- silh_df |>
+      dplyr::group_by(celltype) |>
+      dplyr::summarise(mean_sil_width = mean(sil_width, na.rm = TRUE)) |>
+      dplyr::pull(mean_sil_width, name = celltype)
+   
+   return(mean_per_celltype)
+}
+
+
+compute_2label_silhouette <- function(dist, ident) {
+   # ident: vector of cluster/cell type labels
+   # dist:  distance object (from dist() or similar)
+   
+   # turn dist into matrix for easy indexing
+   dist_mat <- as.matrix(dist)
+   n <- length(ident)
+   
+   sil_widths <- numeric(n)
+   
+   for (i in seq_len(n)) {
+      this_label <- ident[i]
+      in_cluster <- which(ident == this_label)
+      out_cluster <- which(ident != this_label)
+      
+      # a(i): mean distance to own cluster (excluding self)
+      if (length(in_cluster) > 1) {
+         a_i <- mean(dist_mat[i, in_cluster[in_cluster != i]])
+      } else {
+         a_i <- 0 # only one member in cluster
+      }
+      
+      # b(i): mean distance to *all other labels at once*
+      b_i <- mean(dist_mat[i, out_cluster])
+      
+      # silhouette definition
+      sil_widths[i] <- (b_i - a_i) / max(a_i, b_i)
+   }
+   
+   silh_df <- data.frame(
+      cell = seq_len(n),
+      celltype = ident,
+      sil_width = sil_widths
+   )
+   
+   # mean silhouette per celltype
    mean_per_celltype <- silh_df |>
       dplyr::group_by(celltype) |>
       dplyr::summarise(mean_sil_width = mean(sil_width, na.rm = TRUE)) |>
@@ -293,6 +338,8 @@ calculate_IntVal_metric <- function(dist,
          switch(metric,
                 "silhouette" = compute_silhouette(dist,
                                                   ident),
+                "2label.silhouette" = compute_2label_silhouette(dist,
+                                                                ident),
                 "NeighborhoodPurity" = compute_NeighborhoodPurity(dist = dist,
                                                                   ident = ident,
                                                                   KNNGraph_k = KNNGraph_k,

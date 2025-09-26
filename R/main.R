@@ -1099,6 +1099,13 @@ Run.Dissimilarity <- function(scTypeEval,
 #'        Supported options include:
 #'        \itemize{
 #'          \item \code{"silhouette"} – cohesion/separation score
+#'          \item \code{"2label.silhouette"} – Variant of the silhouette score where,
+#'           for each cell, the within-cluster distance is compared against the average
+#'           distance to all cells outside its cluster (rather than just the closest
+#'           other cluster). This effectively treats the clustering as a two-group
+#'           problem: "own cell type" vs. "all others." Scores are then averaged per
+#'           cell type. Higher values indicate stronger separation of a cell type
+#'           from the rest of the dataset as a whole.
 #'          \item \code{"NeighborhoodPurity"} – For each cell, computes the fraction of its K nearest
 #'          neighbors that belong to the same cell type. Scores are then averaged per cell type.
 #'          Optionally, values can be normalized relative to the expected proportion by chance.
@@ -1168,10 +1175,11 @@ Run.Dissimilarity <- function(scTypeEval,
 get.Consistency <- function(scTypeEval,
                             dissimilarity.slot = "all", 
                             Consistency.metric = c("silhouette",
-                                              "NeighborhoodPurity",
-                                              "ward.PropMatch",
-                                              "Orbital.medoid",
-                                              "Average.similarity"),
+                                                   "2label.silhouette",
+                                                   "NeighborhoodPurity",
+                                                   "ward.PropMatch",
+                                                   "Orbital.medoid",
+                                                   "Average.similarity"),
                             KNNGraph_k = 5,
                             hclust.method = "ward.D2",
                             normalize = FALSE,
