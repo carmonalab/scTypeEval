@@ -223,7 +223,6 @@ match.tidy <- function(predi, true1, true2){
 
 bestHit <- function(mat,
                     ident,
-                    ident_GroundTruth = NULL,
                     sample,
                     group,
                     method = "Score",
@@ -241,17 +240,6 @@ bestHit <- function(mat,
                              ident = ident,
                              sample = sample,
                              bparam = param)
-   
-   if(is.null(ident_GroundTruth)){
-      mat.splitGT <- mat.split
-   } else {
-      mat.splitGT <- split_matrix(mat = mat,
-                                  ident = ident_GroundTruth,
-                                  sample = sample,
-                                  bparam = param)
-   }
-   
-   
    n <- length(mat.split)
    combs <- split(expand.grid(1:n, 1:n), seq_len(n^2))
    
@@ -271,27 +259,26 @@ bestHit <- function(mat,
                                        b <- i[2]
                                        
                                        # Check that both reference and query are not NULL
-                                       if (is.null(mat.split[[a]]) || is.null(mat.split[[b]]) ||
-                                           is.null(mat.splitGT[[a]]) || is.null(mat.splitGT[[b]])) {
+                                       if (is.null(mat.split[[a]]) || is.null(mat.split[[b]])) {
                                           return(NULL)
                                        }
                                        
                                        # Check if each matrix has at least two unique cell types
-                                       nc <- lapply(mat.splitGT[c(a, b)], function(x) length(unique(x@ident)))
+                                       nc <- lapply(mat.split[c(a, b)], function(x) length(unique(x@ident)))
                                        if (any(nc < 2)) {
                                           return(NULL)
                                        }
                                        
                                        # Perform classification
                                        pred1 <- classifier(mat.split[[a]]@matrix,
-                                                           mat.splitGT[[b]]@matrix,
-                                                           ref.ident = mat.splitGT[[b]]@ident)
+                                                           mat.split[[b]]@matrix,
+                                                           ref.ident = mat.split[[b]]@ident)
                                        pred2 <- classifier(mat.split[[b]]@matrix,
-                                                           mat.splitGT[[a]]@matrix,
-                                                           ref.ident = mat.splitGT[[a]]@ident)
+                                                           mat.split[[a]]@matrix,
+                                                           ref.ident = mat.split[[a]]@ident)
                                        
-                                       true1 <- mat.splitGT[[a]]@ident
-                                       true2 <- mat.splitGT[[b]]@ident
+                                       true1 <- mat.split[[a]]@ident
+                                       true2 <- mat.split[[b]]@ident
                                        
                                        # Evaluate metrics
                                        meth <- tolower(method)
