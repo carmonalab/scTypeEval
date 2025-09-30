@@ -180,14 +180,19 @@ score.tidy <- function(predi,
 }
 
 match.tidy <- function(predi, true1, true2){
+   # get cell types contained in both samples
+   common_celltypes <- intersect(true1, true2)
+   
    pred0 <- predi |>
       dplyr::select("label") |>
       dplyr::mutate(true = true1,
                     score_r = 0
       ) |>
+      # keep only cell types in both
+      dplyr::filter(true %in% common_celltypes) |>
       tibble::rownames_to_column("id")
    
-   pred <- tidyr::expand_grid(true = unique(pred0$true),
+   pred <- tidyr::expand_grid(true = true1,
                               label = true2) |>
       dplyr::mutate(score_base = 1) |>
       left_join(pred0, by = c("true", "label")) |>
