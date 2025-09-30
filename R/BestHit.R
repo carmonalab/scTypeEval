@@ -183,23 +183,15 @@ match.tidy <- function(predi, true1, true2){
    # get cell types contained in both samples
    common_celltypes <- intersect(true1, true2)
    
-   pred0 <- predi |>
+   pred <- predi |>
       dplyr::select("label") |>
       dplyr::mutate(true = true1,
-                    score_r = 0
+                    score = 0
       ) |>
       # keep only cell types in both
       dplyr::filter(true %in% common_celltypes) |>
-      tibble::rownames_to_column("id")
-   
-   pred <- tidyr::expand_grid(true = true1,
-                              label = true2) |>
-      dplyr::mutate(score_base = 1) |>
-      left_join(pred0, by = c("true", "label")) |>
-      dplyr::mutate(score_r = tidyr::replace_na(score_r, 1)) |>
-      rowwise() |>
-      dplyr::mutate(score = min(score_r, score_base)) |>
-      dplyr::select(-score_base, -score_r)
+      tibble::rownames_to_column("id") |>
+      dplyr::select(true, label, id, score)
    
    return(pred)
 }
@@ -215,7 +207,7 @@ match.tidy <- function(predi, true1, true2){
    pred <- dplyr::inner_join(pred1, pred2, by = c("true", "label")) |>
       dplyr::mutate(score.x = tidyr::replace_na(score.x, 1),
                     score.y = tidyr::replace_na(score.y, 1)) |>
-      rowwise() |>
+      dplyr::rowwise() |>
       dplyr::mutate(score = max(score.x, score.y)) |>
       dplyr::select(i = id.x, j = id.y, score)
    pred <- pred[complete.cases(pred),]
