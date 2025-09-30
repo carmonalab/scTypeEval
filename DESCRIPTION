@@ -34,15 +34,14 @@ Imports:
   scran (>= 1.30.2),
   ggplot2 (>= 3.5.1),
   ggrepel (>= 0.9.6),
-  igraph (>= 2.1.1),
   cluster (>= 2.1.4),
   SingleR (>= 2.4.1),
   SummarizedExperiment (>= 1.32.0),
   SingleCellExperiment (>= 1.24.0),
-  scuttle (>= 1.12.0),
   irlba (>= 2.3.5.1),
   transport (>= 0.15-4)
 Suggests:
   transformGamPoi (>= 1.8.0),
   glmGamPoi (>= 1.14.3),
-  pheatmap (>= 1.0.12)
+  pheatmap (>= 1.0.12),
+  anndata (>=0.8.0)
