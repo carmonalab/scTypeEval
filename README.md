@@ -81,7 +81,8 @@ sceval <- Run.ProcessingData(
 <details>
 <summary><strong>3. Obtain relevant features</strong></summary> 
 
-Extract relevant features such as **highly variable genes (HVGs)** and **cell type marker genes**, or add custom gene lists.  
+Extract relevant features such as **highly variable genes (HVGs)** and **cell type marker genes**, or add custom gene lists.
+Dissimilarity and subsequently consistency will be evaluated using these features.
 
 ```r
 # Identify highly variable genes (HVGs)
