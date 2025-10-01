@@ -169,7 +169,7 @@ This produces a ggplot2 heatmap with cell types grouped and optionally ordered b
 plot.Heatmap(sceval,
             dissimilarity.slot = "BestHit:Match",
             sort.consistency = "silhouette",
-            sort.similarity = Pseudobulk:Euclidean)
+            sort.similarity = "Pseudobulk:Euclidean")
 ```
 
 <p align="center">
