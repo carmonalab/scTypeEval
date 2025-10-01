@@ -34,7 +34,7 @@ reduction embeddings (if available). Default is \code{TRUE}.}
 \code{NULL}, the method will use the default or inherited blacklist.}
 
 \item{BestHit.classifier}{Character. Classifier to use for BestHit
-dissimilarity methods (e.g. \code{"SingleR"}). Default is
+dissimilarity methods. Default is
 \code{"SingleR"}.}
 
 \item{ncores}{Integer. Number of cores for parallelization. Default is \code{1}.}
@@ -60,12 +60,13 @@ Dissimilarity can be computed either on dimensional reduction embeddings
 \details{
 The function supports multiple dissimilarity strategies:
 \itemize{
-\item \code{"pseudobulk:<distance>"} – computes pairwise distances between
-pseudobulk profiles using the specified distance metric.
+\item \code{"Pseudobulk:<distance>"} – computes pairwise distances between
+pseudobulk profiles using the specified distance metric. Supported distances are euclidean, cosine, and pearson.
 \item \code{"WasserStein"} – computes Wasserstein distances between groups
 of embeddings or cells.
-\item \code{"BestHit:<classifier>"} – assigns cells pairwise between samples using
+\item \code{"BestHit:<method>"} – assigns cells pairwise between samples using
 the specified classifier, then computes dissimilarity between assignments.
+Supported methods are 'match' and 'score'.
 }
 
 If \code{reduction = TRUE}, the function expects that dimensional reduction
@@ -76,16 +77,18 @@ to compute dissimilarity on processed expression data instead.
 \examples{
 \dontrun{
 # Run Wasserstein dissimilarity on dimensional reduction embeddings
-scTypeEval <- Run.Dissimilarity(scTypeEval, method = "WasserStein")
+scTypeEval <- Run.Dissimilarity(scTypeEval,
+                               method = "WasserStein",
+                               reduction = TRUE)
 
 # Run pseudobulk Euclidean dissimilarity on processed data
 scTypeEval <- Run.Dissimilarity(scTypeEval, 
-                                method = "pseudobulk:euclidean", 
+                                method = "Pseudobulk:euclidean", 
                                 reduction = FALSE)
                                 
 # Run BestHit classification-based dissimilarity with SingleR
 scTypeEval <- Run.Dissimilarity(scTypeEval, 
-                                method = "BestHit:correlation", 
+                                method = "BestHit:Match", 
                                 BestHit.classifier = "SingleR")
 }
 

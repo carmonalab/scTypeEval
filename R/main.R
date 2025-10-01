@@ -907,7 +907,7 @@ add.DimReduction <- function(scTypeEval,
 #' @param black.list Optional. Character vector of genes to exclude. If 
 #'        \code{NULL}, the method will use the default or inherited blacklist.
 #' @param BestHit.classifier Character. Classifier to use for BestHit 
-#'        dissimilarity methods (e.g. \code{"SingleR"}). Default is 
+#'        dissimilarity methods. Default is 
 #'        \code{"SingleR"}.
 #' @param ncores Integer. Number of cores for parallelization. Default is \code{1}.
 #' @param bparam Optional. BiocParallel parameter object to control 
@@ -919,12 +919,13 @@ add.DimReduction <- function(scTypeEval,
 #' @details
 #' The function supports multiple dissimilarity strategies:
 #' \itemize{
-#'   \item \code{"pseudobulk:<distance>"} – computes pairwise distances between 
-#'         pseudobulk profiles using the specified distance metric.
+#'   \item \code{"Pseudobulk:<distance>"} – computes pairwise distances between 
+#'         pseudobulk profiles using the specified distance metric. Supported distances are euclidean, cosine, and pearson.
 #'   \item \code{"WasserStein"} – computes Wasserstein distances between groups 
 #'         of embeddings or cells.
-#'   \item \code{"BestHit:<classifier>"} – assigns cells pairwise between samples using 
+#'   \item \code{"BestHit:<method>"} – assigns cells pairwise between samples using 
 #'         the specified classifier, then computes dissimilarity between assignments.
+#'         Supported methods are 'match' and 'score'.
 #' }
 #'
 #' If \code{reduction = TRUE}, the function expects that dimensional reduction 
@@ -939,16 +940,18 @@ add.DimReduction <- function(scTypeEval,
 #' @examples
 #' \dontrun{
 #' # Run Wasserstein dissimilarity on dimensional reduction embeddings
-#' scTypeEval <- Run.Dissimilarity(scTypeEval, method = "WasserStein")
+#' scTypeEval <- Run.Dissimilarity(scTypeEval,
+#'                                method = "WasserStein",
+#'                                reduction = TRUE)
 #'
 #' # Run pseudobulk Euclidean dissimilarity on processed data
 #' scTypeEval <- Run.Dissimilarity(scTypeEval, 
-#'                                 method = "pseudobulk:euclidean", 
+#'                                 method = "Pseudobulk:euclidean", 
 #'                                 reduction = FALSE)
 #'                                 
 #' # Run BestHit classification-based dissimilarity with SingleR
 #' scTypeEval <- Run.Dissimilarity(scTypeEval, 
-#'                                 method = "BestHit:correlation", 
+#'                                 method = "BestHit:Match", 
 #'                                 BestHit.classifier = "SingleR")
 #' }
 #'
@@ -1693,6 +1696,9 @@ load_singleCell_object <- function(path,
       object <- readRDS(path)
       
       if (inherits(object, "Seurat")) {
+         if (!requireNamespace("Seurat", quietly = TRUE)) {
+            stop("The 'Seurat' package is required to read Seurat objects. Please install it.")
+         }
          rcounts <- Seurat::GetAssayData(object,
                                          assay = "RNA",
                                          layer = "counts")
@@ -1700,6 +1706,9 @@ load_singleCell_object <- function(path,
          metadata <- as.data.frame(object@meta.data)
          
       } else if (inherits(object, "SingleCellExperiment")) {
+         if (!requireNamespace("SummarizedExperiment", quietly = TRUE)) {
+            stop("The 'SummarizedExperiment' package is required to read SCE objects. Please install it.")
+         }
          rcounts <- SummarizedExperiment::assay(object, "counts")
          counts <- as(rcounts, "dgCMatrix")
          metadata <- as.data.frame(SummarizedExperiment::colData(object))

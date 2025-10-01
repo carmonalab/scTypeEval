@@ -42,5 +42,5 @@ Suggests:
   transformGamPoi (>= 1.8.0),
   glmGamPoi (>= 1.14.3),
   pheatmap (>= 1.0.12),
-  anndata (>=0.8.0),
+  anndata (>= 0.8.0),
   SummarizedExperiment (>= 1.32.0)
