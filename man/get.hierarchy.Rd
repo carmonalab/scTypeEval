@@ -45,5 +45,5 @@ hier_results <- get.hierarchy(sceval)
 
 }
 \seealso{
-\link{compute.dissimilarity}, \link[stats]{hclust}
+\link{Run.dissimilarity}, \link[stats]{hclust}
 }
