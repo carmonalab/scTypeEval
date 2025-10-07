@@ -90,7 +90,7 @@ sceval <- Run.HVG(
   scTypeEval = sceval,
   var.method = "scran",   # method to compute HVGs
   ngenes = 2000,          # number of HVGs to retain
-  sample = "patient_id"   # sample-level blocking
+  sample = TRUE   # whether to perform sample-level blocking
 )
 
 # Identify marker genes per cell type
