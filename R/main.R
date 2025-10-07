@@ -483,11 +483,13 @@ Run.HVG <- function(scTypeEval,
                  "basic" = get.HVG(norm.mat = mat,
                                    ngenes = ngenes,
                                    sample = sample,
-                                   bparam = param),
+                                   bparam = param,
+                                   ...),
                  "scran" = get.GeneVar(norm.mat = mat,
                                        sample = sample,
                                        ngenes = ngenes,
-                                       bparam = param),
+                                       bparam = param,
+                                       ...),
                  stop(var.method, " not supported for getting variable genes.")
    )
    
