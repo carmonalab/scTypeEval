@@ -186,10 +186,10 @@ match.tidy <- function(predi, true1, true2){
    pred <- predi |>
       dplyr::select("label") |>
       dplyr::mutate(true = true1,
-                    score = 0
+                    # keep as 0.5 when actual match was not possible
+                    score = ifelse(true %in% common_celltypes,
+                                   0, 0.5)
       ) |>
-      # keep only cell types in both
-      dplyr::filter(true %in% common_celltypes) |>
       tibble::rownames_to_column("id") |>
       dplyr::select(true, label, id, score)
    
@@ -205,12 +205,9 @@ match.tidy <- function(predi, true1, true2){
    names(pred2)[1:2] <- c("label", "true")
    
    pred <- dplyr::inner_join(pred1, pred2, by = c("true", "label")) |>
-      dplyr::mutate(score.x = tidyr::replace_na(score.x, 1),
-                    score.y = tidyr::replace_na(score.y, 1)) |>
       dplyr::rowwise() |>
       dplyr::mutate(score = max(score.x, score.y)) |>
       dplyr::select(i = id.x, j = id.y, score)
-   pred <- pred[complete.cases(pred),]
    
    return(pred)
 }
