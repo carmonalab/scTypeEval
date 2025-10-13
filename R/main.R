@@ -1199,6 +1199,11 @@ get.Consistency <- function(scTypeEval,
                              assay <- scTypeEval@dissimilarity[[da]]
                              
                              dist <- assay@dissimilarity
+                             # if besthit match, convert 0.5 (for plotting to 1)
+                             if (da == "BestHit:Match") {
+                                dist[dist == 0.5] <- 1
+                             }
+                             
                              ident <- assay@ident[[1]]
                              
                              # compute internal validation metrics
