@@ -469,6 +469,7 @@ Run.HVG <- function(scTypeEval,
       sample <- norm.mat@sample
    } else {
       warning("Not leveraging sample information for computing HVG.\n")
+      sample <- NULL
    }
    
    # remove blacked listed genes
