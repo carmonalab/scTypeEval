@@ -176,6 +176,7 @@ get.matrix <- function(matrix,
                  "single-cell" = get_singlecell(mat = matrix,
                                         ident = ident,
                                         sample = sample,
+                                        min.samples = min.samples,
                                         min.cells = min.cells
                                         ),
                  "pseudobulk" = get_pseudobulk(mat = matrix, 
