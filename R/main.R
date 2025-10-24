@@ -1620,7 +1620,7 @@ plot.Heatmap <- function(scTypeEval,
       if(verbose){message("No ordering (sort.similarity or sort.consistency) indicated,
                           sorting cell type by alphabetical order.")}
    }
-
+   
    # Compute similarity of cell types if indicated
    if(!is.null(sort.similarity)){
       # get dissimilarity matrix
@@ -1642,7 +1642,7 @@ plot.Heatmap <- function(scTypeEval,
          }
       }
       hc <- stats::hclust(as.dist(mat),
-                   method = hclust.method)
+                          method = hclust.method)
       ident_order <- hc$labels[hc$order]
    } else {
       ident_order <- NULL
@@ -1686,7 +1686,7 @@ plot.Heatmap <- function(scTypeEval,
                           cells <- names(annot_ident)[annot_ident == iden]
                           if (length(cells) > 2) {
                              hc <- stats::hclust(as.dist(d_mat_cluster[cells, cells]),
-                                          method = hclust.method)
+                                                 method = hclust.method)
                              cells[hc$order]
                           } else {
                              cells
@@ -1874,4 +1874,160 @@ load_singleCell_object <- function(path,
    } else {
       return(object)
    }
+}
+
+
+#' @title Wrapper Function to Compute Dissimilarities from Single-Cell Data
+#'
+#' @description
+#' A high-level convenience function that initializes an \code{scTypeEval} object 
+#' from a count matrix and metadata, performs preprocessing (normalization, 
+#' filtering, optional dimensionality reduction), defines gene lists, 
+#' and computes one or more dissimilarity metrics between cell populations.
+#' 
+#' This function integrates multiple internal \pkg{scTypeEval} pipeline steps, 
+#' including data preparation, HVG selection, PCA reduction, and dissimilarity computation, 
+#' providing a streamlined workflow for single-cell data evaluation.
+#'
+#' @param count_matrix A numeric or sparse \code{dgCMatrix} of raw counts 
+#'   (genes as rows, cells as columns). Seurat and SingleCellExperiment object are accepted too.
+#' @param metadata A \code{data.frame} containing cell-level metadata.
+#' @param ident Character string indicating the metadata column specifying 
+#'   cell identities (e.g., cell types or clusters).
+#' @param sample Character string specifying the metadata column containing 
+#'   sample identifiers (used for pseudobulk aggregation).
+#' @param gene.list Optional named list of gene sets to include in the analysis.  
+#'   If \code{NULL}, highly variable genes (HVGs) are automatically computed.
+#' @param reduction Logical; if \code{TRUE}, performs PCA dimensionality 
+#'   reduction prior to dissimilarity computation (default: \code{TRUE}).
+#' @param ndim Integer; number of principal components to retain 
+#'   when \code{reduction = TRUE} (default: \code{30}).
+#' @param black.list Optional character vector of genes to exclude from analysis.  
+#'   If \code{NULL}, no genes are blacklisted.
+#' @param normalization.method Character string specifying the normalization 
+#'   method to apply. Options include \code{"Log1p"}, \code{"CLR"}, and \code{"pearson"} 
+#'   (default: \code{"Log1p"}).
+#' @param dissimilarity.method Character vector of dissimilarity metrics to compute.  
+#'   Available options include:
+#'   \itemize{
+#'     \item \code{"WasserStein"}
+#'     \item \code{"Pseudobulk:Euclidean"}
+#'     \item \code{"Pseudobulk:Cosine"}
+#'     \item \code{"Pseudobulk:Pearson"}
+#'     \item \code{"BestHit:Match"}
+#'     \item \code{"BestHit:Score"}
+#'   }
+#'   Multiple methods can be provided for comparative evaluation.
+#' @param min.samples Integer; minimum number of samples required for pseudobulk analysis (default: \code{5}).
+#' @param min.cells Integer; minimum number of cells required per group for inclusion (default: \code{10}).
+#' @param ncores Integer; number of CPU cores for parallel execution (default: \code{1}).
+#' @param bparam Optional \code{BiocParallelParam} object for fine-grained parallelization control.  
+#'   Overrides \code{ncores} if provided.
+#' @param progressbar Logical; if \code{TRUE}, displays a progress bar (default: \code{FALSE}).
+#' @param verbose Logical; if \code{TRUE}, prints progress messages (default: \code{TRUE}).
+#'
+#' @return
+#' An updated \code{scTypeEval} object containing:
+#' \itemize{
+#'   \item Normalized and filtered data
+#'   \item HVG gene sets or user-provided gene lists
+#'   \item PCA reductions (if enabled)
+#'   \item Computed dissimilarity matrices for each selected method
+#' }
+#'
+#' @details
+#' This wrapper combines multiple pipeline steps from \pkg{scTypeEval}:
+#' \enumerate{
+#'   \item \code{create.scTypeEval()} — initializes the object.
+#'   \item \code{Run.ProcessingData()} — performs normalization and filtering.
+#'   \item \code{Run.HVG()} or \code{add.GeneList()} — defines gene sets.
+#'   \item \code{Run.PCA()} — performs PCA if \code{reduction = TRUE}.
+#'   \item \code{Run.Dissimilarity()} — computes dissimilarities across methods.
+#' }
+#'
+#' This provides a simple entry point for end-to-end setup and dissimilarity computation 
+#' from raw single-cell data with minimal manual steps.
+#'
+#' @examples
+#' \dontrun{
+#' sc_res <- wrapper_scTypeEval(
+#'   count_matrix = sc_counts,
+#'   metadata = sc_metadata,
+#'   ident = "celltype",
+#'   sample = "sample_id",
+#'   normalization.method = "Log1p",
+#'   dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean"),
+#'   reduction = TRUE,
+#'   ndim = 30,
+#'   verbose = TRUE
+#' )
+#'
+#' # Access computed dissimilarities
+#' names(sc_res@dissimilarity)
+#' }
+#'
+#' @seealso 
+#' \code{\link{create.scTypeEval}}, 
+#' \code{\link{Run.ProcessingData}}, 
+#' \code{\link{Run.Dissimilarity}}, 
+#' \code{\link{Run.PCA}}, 
+#' \code{\link{Run.HVG}}
+#'
+#' @export wrapper_scTypeEval
+
+wrapper_scTypeEval <- function(count_matrix,
+                               metadata,
+                               ident,
+                               sample,
+                               gene.list = NULL,
+                               reduction = TRUE,
+                               ndim = 30,
+                               black.list = NULL,
+                               normalization.method = "Log1p",
+                               dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                                                        "Pseudobulk:Cosine", "Pseudobulk:Pearson",
+                                                        "BestHit:Match", "BestHit:Score"),
+                               min.samples = 5,
+                               min.cells = 10,
+                               ncores = 1,
+                               bparam = NULL,
+                               progressbar = FALSE,
+                               verbose = TRUE){
+   
+   sc <- create.scTypeEval(matrix = count_matrix,
+                           metadata = metadata,
+                           active.ident = ident,
+                           black.list = black.list)
+   
+   sc <- Run.ProcessingData(sc,
+                            sample = sample,
+                            normalization.method = normalization.method,
+                            min.samples = min.samples,
+                            min.cells = min.cells,
+                            verbose = verbose)
+   
+   if(is.null(gene.list)){
+      sc <- Run.HVG(sc,
+                    ncores = ncores)
+   } else {
+      sc <- add.GeneList(sc,
+                         gene.list)
+   }
+   
+   if(reduction){
+      sc <- Run.PCA(sc,
+                    ndim = ndim)
+   }
+   
+   for(m in dissimilarity.method){
+      if(verbose){message(">.  Running ", m, "\n")}
+      sc <- Run.Dissimilarity(sc,
+                              reduction = reduction,
+                              method = m,
+                              ncores = ncores,
+                              verbose = verbose)
+   }
+   
+   return(sc)
+   
 }
