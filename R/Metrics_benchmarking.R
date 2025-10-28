@@ -975,17 +975,30 @@ wr.mergeCT <- function(count_matrix,
 
 wr.assayPlot <- function(df,
                          type = c("Monotonic", "ReferenceLine", "Constant"),
+                         group = c("celltype", "ident"),
                          return.df = FALSE,
                          verbose = TRUE,
                          xlabel = "rate",
                          title = "",
                          combine = TRUE){
    
-   rsq <- df |> 
-      dplyr::group_by(dissimilarity_method, consistency.metric, celltype, rate) |>
-      dplyr::summarize(measure = mean(measure)) |>
-      dplyr::group_by(dissimilarity_method, consistency.metric, celltype) |>
-      dplyr::arrange(rate, .by_group = TRUE)
+   group <- group[1] |> tolower()
+   
+   if(group == "celltype"){
+      rsq <- df |> 
+         dplyr::group_by(dissimilarity_method, consistency.metric, celltype, rate) |>
+         dplyr::summarize(measure = mean(measure)) |>
+         dplyr::group_by(dissimilarity_method, consistency.metric, celltype) |>
+         dplyr::arrange(rate, .by_group = TRUE)
+   } else if (group == "ident"){
+      rsq <- df |> 
+         dplyr::group_by(dissimilarity_method, consistency.metric, rate) |>
+         dplyr::summarize(measure = mean(measure)) |>
+         dplyr::group_by(dissimilarity_method, consistency.metric) |>
+         dplyr::arrange(rate, .by_group = TRUE)
+   } else {
+      stop("Not supported grouping, it has to be either celltype or ident")
+   }
    
    # remove NA or NaN
    rsq <- rsq[complete.cases(rsq),]
