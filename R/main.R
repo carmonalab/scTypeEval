@@ -247,7 +247,7 @@ Run.ProcessingData <- function(scTypeEval,
                                              sample = mat@sample)
                           return(rr)
                        })
-   names(data.list) <- aggregation_types
+   names(data.list) <- aggregation
    
    # add to scTypeEval object
    scTypeEval@data <- data.list
