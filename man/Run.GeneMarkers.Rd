@@ -8,6 +8,7 @@ Run.GeneMarkers(
   scTypeEval,
   method = c("scran.findMarkers"),
   ngenes.celltype = 50,
+  aggregation = "single-cell",
   black.list = NULL,
   ncores = 1,
   bparam = NULL,
@@ -30,6 +31,8 @@ Default: \code{"scran.findMarkers"}.}
 
 \item{ngenes.celltype}{Integer specifying the max number of marker genes to retain
 per cell type (default: \code{50}).}
+
+\item{aggregation}{Method to group cells stored in \code{scTypeEval@data}, either \code{"single-cell"} or \code{"pseudobulk"}. Default is \code{"single-cell"}.}
 
 \item{black.list}{A character vector of genes to exclude from marker selection.
 If \code{NULL}, uses the object’s internal blacklist (\code{scTypeEval@black.list}).}
@@ -77,4 +80,7 @@ sceval <- Run.ProcessingData(sceval)
 sceval <- Run.GeneMarkers(sceval, method = "scran.findMarkers", ngenes.celltype = 50)
 }
 
+}
+\seealso{
+\link{Run.ProcessingData}, \link{Add.ProcessedData}
 }

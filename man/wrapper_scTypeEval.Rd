@@ -9,6 +9,7 @@ wrapper_scTypeEval(
   metadata,
   ident,
   sample,
+  aggregation = c("single-cell", "pseudobulk"),
   gene.list = NULL,
   reduction = TRUE,
   ndim = 30,
@@ -35,6 +36,8 @@ cell identities (e.g., cell types or clusters).}
 
 \item{sample}{Character string specifying the metadata column containing
 sample identifiers (used for pseudobulk aggregation).}
+
+\item{aggregation}{Method to group cells, either \code{"single-cell"} or \code{"pseudobulk"}. Default is \code{"single-cell"}.}
 
 \item{gene.list}{Optional named list of gene sets to include in the analysis.
 If \code{NULL}, highly variable genes (HVGs) are automatically computed.}

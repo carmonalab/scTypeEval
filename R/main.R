@@ -165,6 +165,7 @@ set.activeIdent <- function(scTypeEval,
 #' @param sample A column name from metadata indicating sample identifiers, required.
 #' @param normalization.method A string specifying the normalization method to apply 
 #'   (default: `"Log1p"`).
+#' @param aggregation Method to group cells, either `"single-cell"` or `"pseudobulk"`. Default is both.
 #' @param min.samples Minimum number of samples required to retain a cell type (default: 5).
 #' @param min.cells Minimum number of cells required to retain a cell type in a sample (default: 10).
 #' @param verbose Logical indicating whether to print progress messages (default: TRUE).
@@ -199,6 +200,7 @@ set.activeIdent <- function(scTypeEval,
 Run.ProcessingData <- function(scTypeEval,
                                ident = NULL,
                                sample = NULL,
+                               aggregation = c("single-cell", "pseudobulk"),
                                normalization.method = "Log1p",
                                min.samples = 5,
                                min.cells = 10,
@@ -214,8 +216,13 @@ Run.ProcessingData <- function(scTypeEval,
    # set normalization method
    normalization.method <- normalization.method[1]
    
+   if(any(!tolower(aggregation) %in% aggregation_types)){
+      stop("Invalid aggregation type. Valid options are: ",
+           paste(aggregation_types, collapse = ", "))
+   }
+   
    #### RUN 
-   data.list <- lapply(aggregation_types,
+   data.list <- lapply(aggregation,
                        function(ag){
                           if(verbose){message("# Processing data for ", ag, " ... \n")}
                           # Transform data
@@ -399,8 +406,8 @@ Add.ProcessedData <- function(scTypeEval,
 #' @param ngenes Integer specifying the number of highly variable genes to retain
 #'   (default: `2000`).
 #' @param sample Logical indicating whether to leverage sample information when
-#'   computing HVGs. If `TRUE`, the \code{sample} annotation stored in the
-#'   `"single-cell"` data is used. If `FALSE`, HVGs are computed without sample grouping.
+#'   computing HVGs. If `TRUE`, the \code{sample} annotation stored in data is used. If `FALSE`, HVGs are computed without sample grouping.
+#' @param aggregation Method to group cells stored in `scTypeEval@data`, either `"single-cell"` or `"pseudobulk"`. Default is `"single-cell"`.
 #' @param black.list A character vector of genes to exclude from HVG selection.
 #'   If `NULL`, uses the object’s internal blacklist (`scTypeEval@black.list`).
 #' @param ncores Integer specifying the number of CPU cores to use for parallel
@@ -426,6 +433,8 @@ Add.ProcessedData <- function(scTypeEval,
 #'     \item \code{"basic"}: A simple variance-to-mean approach ranking genes by
 #'     coefficient of variation, selecting the top \code{ngenes}.
 #'   }
+#'   
+#' @seealso \link{Run.ProcessingData}, \link{Add.ProcessedData}
 #'
 #' @examples
 #' \dontrun{
@@ -444,6 +453,7 @@ Run.HVG <- function(scTypeEval,
                     var.method = "scran",
                     ngenes = 2000,
                     sample = TRUE,
+                    aggregation = "single-cell",
                     black.list = NULL,
                     ncores = 1,
                     bparam = NULL,
@@ -457,9 +467,12 @@ Run.HVG <- function(scTypeEval,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
-   
+   if(!tolower(aggregation) %in% aggregation_types){
+      stop("Invalid aggregation type. Valid options are: ",
+           paste(aggregation_types, collapse = ", "))
+   }
    # normalized matrix
-   norm.mat <- scTypeEval@data[["single-cell"]]
+   norm.mat <- scTypeEval@data[[aggregation]]
    if(is.null(norm.mat)){
       stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
    }
@@ -518,6 +531,7 @@ Run.HVG <- function(scTypeEval,
 #'   Default: `"scran.findMarkers"`.
 #' @param ngenes.celltype Integer specifying the max number of marker genes to retain
 #'   per cell type (default: `50`).
+#' @param aggregation Method to group cells stored in `scTypeEval@data`, either `"single-cell"` or `"pseudobulk"`. Default is `"single-cell"`.
 #' @param black.list A character vector of genes to exclude from marker selection.
 #'   If `NULL`, uses the object’s internal blacklist (`scTypeEval@black.list`).
 #' @param ncores Integer specifying the number of cores to use for parallel
@@ -540,6 +554,8 @@ Run.HVG <- function(scTypeEval,
 #' - Genes present in the blacklist (\code{black.list}) are removed before marker selection.
 #' - For `"scran.findMarkers"`, the \pkg{scran} method \code{findMarkers} is applied
 #'   to identify differentially expressed genes per cell type while adjusting for sample effects.
+#'   
+#' @seealso \link{Run.ProcessingData}, \link{Add.ProcessedData}
 #'
 #' @examples
 #' \dontrun{
@@ -558,6 +574,7 @@ Run.HVG <- function(scTypeEval,
 Run.GeneMarkers <- function(scTypeEval,
                             method = c("scran.findMarkers"),
                             ngenes.celltype = 50,
+                            aggregation = "single-cell",
                             black.list = NULL,
                             ncores = 1,
                             bparam = NULL,
@@ -572,8 +589,12 @@ Run.GeneMarkers <- function(scTypeEval,
    
    black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
    
+   if(!tolower(aggregation) %in% aggregation_types){
+      stop("Invalid aggregation type. Valid options are: ",
+           paste(aggregation_types, collapse = ", "))
+   }
    # normalized matrix
-   norm.mat <- scTypeEval@data[["single-cell"]]
+   norm.mat <- scTypeEval@data[[aggregation]]
    if(is.null(norm.mat)){
       stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
    }
@@ -1896,6 +1917,7 @@ load_singleCell_object <- function(path,
 #'   cell identities (e.g., cell types or clusters).
 #' @param sample Character string specifying the metadata column containing 
 #'   sample identifiers (used for pseudobulk aggregation).
+#' @param aggregation Method to group cells, either `"single-cell"` or `"pseudobulk"`. Default is `"single-cell"`.
 #' @param gene.list Optional named list of gene sets to include in the analysis.  
 #'   If \code{NULL}, highly variable genes (HVGs) are automatically computed.
 #' @param reduction Logical; if \code{TRUE}, performs PCA dimensionality 
@@ -1979,6 +2001,7 @@ wrapper_scTypeEval <- function(count_matrix,
                                metadata,
                                ident,
                                sample,
+                               aggregation = c("single-cell", "pseudobulk"),
                                gene.list = NULL,
                                reduction = TRUE,
                                ndim = 30,
@@ -2001,6 +2024,7 @@ wrapper_scTypeEval <- function(count_matrix,
    
    sc <- Run.ProcessingData(sc,
                             sample = sample,
+                            aggregation = aggregation,
                             normalization.method = normalization.method,
                             min.samples = min.samples,
                             min.cells = min.cells,
@@ -2008,6 +2032,7 @@ wrapper_scTypeEval <- function(count_matrix,
    
    if(is.null(gene.list)){
       sc <- Run.HVG(sc,
+                    aggregation = aggregation[1],
                     ncores = ncores)
    } else {
       sc <- add.GeneList(sc,

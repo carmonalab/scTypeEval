@@ -8,6 +8,7 @@ Run.ProcessingData(
   scTypeEval,
   ident = NULL,
   sample = NULL,
+  aggregation = c("single-cell", "pseudobulk"),
   normalization.method = "Log1p",
   min.samples = 5,
   min.cells = 10,
@@ -21,6 +22,8 @@ Run.ProcessingData(
 If \code{NULL}, defaults to \code{scTypeEval@active.ident}.}
 
 \item{sample}{A column name from metadata indicating sample identifiers, required.}
+
+\item{aggregation}{Method to group cells, either \code{"single-cell"} or \code{"pseudobulk"}. Default is both.}
 
 \item{normalization.method}{A string specifying the normalization method to apply
 (default: \code{"Log1p"}).}

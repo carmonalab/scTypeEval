@@ -9,6 +9,7 @@ Run.HVG(
   var.method = "scran",
   ngenes = 2000,
   sample = TRUE,
+  aggregation = "single-cell",
   black.list = NULL,
   ncores = 1,
   bparam = NULL,
@@ -28,8 +29,9 @@ variable genes. Options: \code{"scran"} (default) or \code{"basic"}.}
 (default: \code{2000}).}
 
 \item{sample}{Logical indicating whether to leverage sample information when
-computing HVGs. If \code{TRUE}, the \code{sample} annotation stored in the
-\code{"single-cell"} data is used. If \code{FALSE}, HVGs are computed without sample grouping.}
+computing HVGs. If \code{TRUE}, the \code{sample} annotation stored in data is used. If \code{FALSE}, HVGs are computed without sample grouping.}
+
+\item{aggregation}{Method to group cells stored in \code{scTypeEval@data}, either \code{"single-cell"} or \code{"pseudobulk"}. Default is \code{"single-cell"}.}
 
 \item{black.list}{A character vector of genes to exclude from HVG selection.
 If \code{NULL}, uses the object’s internal blacklist (\code{scTypeEval@black.list}).}
@@ -80,4 +82,7 @@ sceval <- Run.ProcessingData(sceval)
 sceval <- Run.HVG(sceval, var.method = "scran", ngenes = 2000)
 }
 
+}
+\seealso{
+\link{Run.ProcessingData}, \link{Add.ProcessedData}
 }
