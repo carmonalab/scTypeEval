@@ -45,6 +45,45 @@ rand.shuffling_group <- function(vector,
    return(nvector)
 }
 
+rand.Split_group <- function(vector,
+                             group,
+                             rate = 0.5, # proportion of labels to shuffle within each group
+                             seed = 22,
+                             celltype = "ctA") {
+
+   
+   if(!celltype %in% vector){
+      stop("No cell type found in vector")
+   }
+   
+   set.seed(seed)
+   
+   # identify cells of the chosen type
+   idx_ct <- which(vector == celltype)
+   
+   # working copies
+   new_labels <- vector[idx_ct]  # keep original names = "ctA" (spl1)
+   sample_sub <- group[idx_ct]   
+   
+   # iterate over samples
+   for (s in unique(sample_sub)) {
+      idx_s     <- which(sample_sub == s)
+      n_s       <- length(idx_s)
+      n_shuffle <- floor(n_s * rate)
+      
+      if(n_shuffle > 0){
+         # choose which cells go to spl2
+         chosen <- sample(idx_s, n_shuffle)
+         new_labels[chosen] <- paste0(celltype, ".Nspl2")
+      }
+   }
+   
+   # assign back
+   vector[idx_ct] <- new_labels
+   
+   return(vector)
+}
+
 
 
 trim_mean_se <- function(x,
@@ -202,7 +241,7 @@ wr.missclasify <- function(count_matrix,
                                                     "BestHit:Match", "BestHit:Score"),
                            IntVal.metric = c("silhouette", "NeighborhoodPurity",
                                              "ward.PropMatch", "Orbital.medoid",
-                                             "Average.similarity"),
+                                             "Average.similarity", "2label.silhouette"),
                            min.samples = 5,
                            min.cells = 10,
                            ncores = 1,
@@ -229,12 +268,11 @@ wr.missclasify <- function(count_matrix,
    sds <- seed + 1:replicates
    names(sds) <- 1:replicates
    
+   original_vector <- metadata[[ident]]
    # vector for annotations
    annotations <- c()
    
    for(s in names(sds)){
-      original_vector <- metadata[[ident]]
-      
       for(r in rates){
          ra <- 1-r # proportion of cells to shuffle
          new_vector <- rand.shuffling_group(vector = original_vector,
@@ -353,7 +391,7 @@ wr.NSamples <- function(count_matrix,
                                                  "BestHit:Match", "BestHit:Score"),
                         IntVal.metric = c("silhouette", "NeighborhoodPurity",
                                           "ward.PropMatch", "Orbital.medoid",
-                                          "Average.similarity"),
+                                          "Average.similarity", "2label.silhouette"),
                         min.samples = 5,
                         min.cells = 10,
                         ncores = 1,
@@ -506,7 +544,7 @@ wr.Nct <- function(count_matrix,
                                             "BestHit:Match", "BestHit:Score"),
                    IntVal.metric = c("silhouette", "NeighborhoodPurity",
                                      "ward.PropMatch", "Orbital.medoid",
-                                     "Average.similarity"),
+                                     "Average.similarity", "2label.silhouette"),
                    min.samples = 5,
                    min.cells = 10,
                    ncores = 1,
@@ -655,7 +693,7 @@ wr.NCell <- function(count_matrix,
                                               "BestHit:Match", "BestHit:Score"),
                      IntVal.metric = c("silhouette", "NeighborhoodPurity",
                                        "ward.PropMatch", "Orbital.medoid",
-                                       "Average.similarity"),
+                                       "Average.similarity", "2label.silhouette"),
                      min.samples = 5,
                      min.cells = 10,
                      ncores = 1,
@@ -789,11 +827,12 @@ wr.NCell <- function(count_matrix,
    
    # concatenate all results
    df.res <- do.call(rbind, df.res)
+   ctype_name <- purge_label(ctype)
    
    if(!is.null(dir)){
       saveRDS(df.res,
               file.path(dir,
-                        paste0("NCell_", ctype, "_", ident, ".rds")))
+                        paste0("NCell_", ctype_name, "_", ident, ".rds")))
    }
    
    
@@ -820,7 +859,7 @@ wr.mergeCT <- function(count_matrix,
                                                 "BestHit:Match", "BestHit:Score"),
                        IntVal.metric = c("silhouette", "NeighborhoodPurity",
                                          "ward.PropMatch", "Orbital.medoid",
-                                         "Average.similarity"),
+                                         "Average.similarity", "2label.silhouette"),
                        min.samples = 5,
                        min.cells = 10,
                        ncores = 1,
@@ -970,6 +1009,167 @@ wr.mergeCT <- function(count_matrix,
    
    return(df.res)
    
+}
+
+# wrapper to split a cell type into 2 different, but highly similar transcriptomically
+wr.splitCellType <- function(count_matrix,
+                             metadata,
+                             ident,
+                             sample,
+                             rates = c(1, 0.5),
+                             ctype = NULL, # which cell type to split
+                             replicates = 3,
+                             gene.list = NULL,
+                             reduction = TRUE,
+                             ndim = 30,
+                             black.list = NULL,
+                             dir = NULL,
+                             normalization.method = "Log1p",
+                             dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                                                      "Pseudobulk:Cosine", "Pseudobulk:Pearson",
+                                                      "BestHit:Match", "BestHit:Score"),
+                             IntVal.metric = c("silhouette", "NeighborhoodPurity",
+                                               "ward.PropMatch", "Orbital.medoid",
+                                               "Average.similarity", "2label.silhouette"),
+                             min.samples = 5,
+                             min.cells = 10,
+                             ncores = 1,
+                             bparam = NULL,
+                             progressbar = FALSE,
+                             seed = 22,
+                             KNNGraph_k = 5,
+                             hclust.method = "ward.D2",
+                             save.plots = TRUE,
+                             verbose = TRUE){
+   
+   if(!is.null(dir)){
+      if(verbose){message("\nResults will be stored at ", dir)}
+      dir.create(dir, showWarnings = F)
+      
+      if(save.plots){
+         pca.dir <- file.path(dir, "Plots_SplitCellType")
+         dir.create(pca.dir, showWarnings = F)
+      }
+   }
+   
+   # produce missclassification on metadata
+   # get seed for each replicate
+   sds <- seed + 1:replicates
+   names(sds) <- 1:replicates
+   
+   ## Create sc object
+   sc <- create.scTypeEval(matrix = count_matrix,
+                           metadata = metadata,
+                           active.ident = ident,
+                           black.list = black.list)
+   # get the gene list, the same for every run
+   if(is.null(gene.list)){
+      sc.gl <- Run.ProcessingData(sc,
+                                  sample = sample,
+                                  normalization.method = normalization.method,
+                                  min.samples = min.samples,
+                                  min.cells = min.cells,
+                                  verbose = verbose)
+      sc.gl <- Run.HVG(sc.gl,
+                       ncores = ncores)
+      gl <- sc.gl@gene.lists
+   } else {
+      gl <- gene.list
+   }
+   
+   original_vector <- metadata[[ident]]
+   
+   # get cell type to split, defined or most abundant
+   if(is.null(ctype)){
+      ctype <- original_vector[which.max(table(original_vector))]
+   }
+   if(verbose){message("\nReducing number of cells for ", ctype, "\n")}
+   
+   
+   # vector for annotations
+   annotations <- c()
+   
+   for(s in names(sds)){
+      for(r in rates){
+         ra <- 1-r # proportion of cells to shuffle
+         new_vector <- rand.Split_group(vector = original_vector,
+                                        group = metadata[[sample]],
+                                        rate = ra,
+                                        seed = sds[[s]],
+                                        celltype = ctype)
+         new_name <- paste("R", s, r, ident, sep = "_")
+         metadata[[new_name]] <- new_vector
+         annotations <- c(annotations, new_name)
+         
+      }
+   }
+   
+   param <- set_parallel_params(ncores = ncores,
+                                bparam = bparam,
+                                progressbar = progressbar)
+   
+   if(verbose){message("Running loop of annotations ")}
+   df.res <- lapply(annotations,
+                    function(ann){
+                       tryCatch(
+                          {
+                             sc.tmp <- wrapper_dissimilarity(sc,
+                                                             ident = ann,
+                                                             sample = sample,
+                                                             gene.list = gl,
+                                                             reduction = reduction,
+                                                             ndim = ndim,
+                                                             normalization.method = normalization.method,
+                                                             dissimilarity.method = dissimilarity.method,
+                                                             min.samples = min.samples,
+                                                             min.cells = min.cells,
+                                                             bparam = param,
+                                                             verbose = verbose
+                             )
+                             # data.frame with consistency outcome
+                             res <- get.Consistency(sc.tmp)
+                             
+                             # accommodate extra data
+                             res <- res |>
+                                dplyr::mutate(rate = as.numeric(as.character(strsplit(ann, "_")[[1]][3])),
+                                              rep = strsplit(ann, "_")[[1]][2],
+                                              original.ident = !!ident,
+                                              task = "SplitCelltype"
+                                )
+                             
+                             # render PCAs
+                             # only produce for one replicate of the seeds
+                             if(stringr::str_split(ann, "_")[[1]][2] == 1){
+                                # save pdf if indicated
+                                if(save.plots){
+                                   if(verbose){message("\nProducing Plots for ", ann, "\n")}
+                                   fp <- file.path(pca.dir, ann)
+                                   wrapper_plots(sc.tmp,
+                                                 dir.path = fp,
+                                                 reduction = reduction)
+                                }
+                             }
+                             
+                             return(res)
+                          },
+                          error = function(e){
+                             message("\n-X- scTypeEval failed for ", ann, "\n", e)
+                          }
+                       )
+                       
+                    })
+   
+   # concatenate all results
+   df.res <- do.call(rbind, df.res)
+   ctype_name <- purge_label(ctype)
+   
+   if(!is.null(dir)){
+      saveRDS(df.res,
+              file.path(dir,
+                        paste0("SplitCelltype_", ctype_name, "_", ident, ".rds")))
+   }
+   
+   return(df.res)
 }
 
 
