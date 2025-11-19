@@ -716,8 +716,11 @@ wr.NCell <- function(count_matrix,
       }
    }
    
+   original_vector <- as.character(metadata[[ident]])
+   
+   # get cell type to split, defined or most abundant
    if(is.null(ctype)){
-      ctype <- unique(metadata[[ident]])[1]
+      ctype <- names(which.max(table(original_vector)))
    }
    if(verbose){message("\nReducing number of cells for ", ctype, "\n")}
    
@@ -1057,11 +1060,11 @@ wr.splitCellType <- function(count_matrix,
    sds <- seed + 1:replicates
    names(sds) <- 1:replicates
    
-   original_vector <- metadata[[ident]]
+   original_vector <- as.character(metadata[[ident]])
    
    # get cell type to split, defined or most abundant
    if(is.null(ctype)){
-      ctype <- original_vector[which.max(table(original_vector))]
+      ctype <- names(which.max(table(original_vector)))
    }
    if(verbose){message("\nReducing number of cells for ", ctype, "\n")}
    
