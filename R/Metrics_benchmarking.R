@@ -1057,26 +1057,6 @@ wr.splitCellType <- function(count_matrix,
    sds <- seed + 1:replicates
    names(sds) <- 1:replicates
    
-   ## Create sc object
-   sc <- create.scTypeEval(matrix = count_matrix,
-                           metadata = metadata,
-                           active.ident = ident,
-                           black.list = black.list)
-   # get the gene list, the same for every run
-   if(is.null(gene.list)){
-      sc.gl <- Run.ProcessingData(sc,
-                                  sample = sample,
-                                  normalization.method = normalization.method,
-                                  min.samples = min.samples,
-                                  min.cells = min.cells,
-                                  verbose = verbose)
-      sc.gl <- Run.HVG(sc.gl,
-                       ncores = ncores)
-      gl <- sc.gl@gene.lists
-   } else {
-      gl <- gene.list
-   }
-   
    original_vector <- metadata[[ident]]
    
    # get cell type to split, defined or most abundant
@@ -1102,6 +1082,26 @@ wr.splitCellType <- function(count_matrix,
          annotations <- c(annotations, new_name)
          
       }
+   }
+   
+   ## Create sc object
+   sc <- create.scTypeEval(matrix = count_matrix,
+                           metadata = metadata,
+                           active.ident = ident,
+                           black.list = black.list)
+   # get the gene list, the same for every run
+   if(is.null(gene.list)){
+      sc.gl <- Run.ProcessingData(sc,
+                                  sample = sample,
+                                  normalization.method = normalization.method,
+                                  min.samples = min.samples,
+                                  min.cells = min.cells,
+                                  verbose = verbose)
+      sc.gl <- Run.HVG(sc.gl,
+                       ncores = ncores)
+      gl <- sc.gl@gene.lists
+   } else {
+      gl <- gene.list
    }
    
    param <- set_parallel_params(ncores = ncores,
