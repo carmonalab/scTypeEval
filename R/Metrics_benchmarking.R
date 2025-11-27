@@ -1231,8 +1231,7 @@ wr.assayPlot <- function(df,
           "drop" = {
              rsq <- rsq <- rsq |>
                 dplyr::summarize(score_celltype = round(consistency_drop(x = measure, y = rate), 2))
-                )
-             type.verb <- "fit Consistency drop, expecting a drop in consistency in smaller rates.\n",
+             type.verb <- "fit Consistency drop, expecting a drop in consistency in smaller rates.\n"
           },
           stop(type, "is not a supported scoring metric.")
    )
