@@ -63,10 +63,14 @@ fit.Constant <- function(x, y) {
    return(ret)
 }
 
-monotonicity_score <- function(x) {
+monotonicity_score <- function(x, inverse = TRUE) {
    if (length(x) < 2) return(1)
    diffs <- diff(x)
-   sum(diffs > 0) / (length(x) - 1)
+   r <- sum(diffs > 0) / (length(x) - 1)
+   if(inverse){
+      r <- 1 - r
+   }
+   return(r)
 }
 
 consistency_drop <- function(x, # consistency score
