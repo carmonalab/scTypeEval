@@ -70,14 +70,18 @@ monotonicity_score <- function(x) {
 }
 
 consistency_drop <- function(x, # consistency score
-                             y # it has to be 1 (no split) or 0.5 (split)
-                             ){
+                             y, # it has to be 1 (no split) or 0.5 (split)
+                             lim = TRUE # whether to cap between 0 an 1
+){
    whole <- x[y == 1]
    split <- x[y == 0.5]
    
    diff <- whole - split
    score <- 1 - diff
-   score <- ifelse(score<0, 0, score)
+   # keep between 0 an 1
+   if(lim){
+      score <- pmin(pmax(score, 0), 1)
+   }
    return(score)
 }
 
