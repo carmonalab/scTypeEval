@@ -64,7 +64,7 @@ fit.Constant <- function(x, y) {
 }
 
 monotonicity_score <- function(x, inverse = TRUE) {
-   if (length(x) < 2) return(1)
+   if (length(x) < 2) return(NA)
    diffs <- diff(x)
    r <- sum(diffs > 0) / (length(x) - 1)
    if(inverse){
