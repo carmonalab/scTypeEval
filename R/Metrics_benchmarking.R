@@ -1177,7 +1177,7 @@ wr.splitCellType <- function(count_matrix,
 
 
 wr.assayPlot <- function(df,
-                         type = c("Monotonic", "ReferenceLine", "Constant"),
+                         type = c("Monotonic", "ReferenceLine", "Constant", "drop"),
                          group = c("celltype", "ident"),
                          return.df = FALSE,
                          verbose = TRUE,
@@ -1228,6 +1228,12 @@ wr.assayPlot <- function(df,
                                  p.val_fill = ifelse(pval < 0.05, "sig", "ns")
                 )
              type.verb <- "fit.Constant, expecting a flat curve with slope = 0\n"},
+          "drop" = {
+             rsq <- rsq <- rsq |>
+                dplyr::summarize(score_celltype = round(consistency_drop(x = measure, y = rate), 2))
+                )
+             type.verb <- "fit Consistency drop, expecting a drop in consistency in smaller rates.\n",
+          },
           stop(type, "is not a supported scoring metric.")
    )
    

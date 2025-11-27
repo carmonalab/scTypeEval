@@ -69,5 +69,17 @@ monotonicity_score <- function(x) {
    sum(diffs > 0) / (length(x) - 1)
 }
 
+consistency_drop <- function(x, # consistency score
+                             y # it has to be 1 (no split) or 0.5 (split)
+                             ){
+   whole <- x[y == 1]
+   split <- x[y == 0.5]
+   
+   diff <- whole - split
+   score <- 1 - diff
+   score <- ifelse(score<0, 0, score)
+   return(score)
+}
+
 
 
