@@ -36,7 +36,9 @@ fit.ReferenceLine <- function(x, y) {
 
 
 
-fit.Constant <- function(x, y) {
+fit.Constant <- function(x, y,
+                         lim = TRUE,
+                         inverse = TRUE) {
    # remove NA
    y <- y[!is.na(y)]
    
@@ -54,6 +56,14 @@ fit.Constant <- function(x, y) {
    # Compute Root Mean Squared Error (RMSE)
    rss <- sqrt(mean(residuals^2))
    
+   if(inverse){
+      rss <- 1 - rss
+   }
+   # keep between 0 an 1
+   if(lim){
+      rss <- pmin(pmax(rss, 0), 1)
+   }
+   
    # Compute p-value for residuals (testing if mean residual = 0)
    p_value <- t.test(residuals, mu = 0)$p.value
    if(is.na(p_value)){p_value <- 1}
@@ -63,7 +73,7 @@ fit.Constant <- function(x, y) {
    return(ret)
 }
 
-monotonicity_score <- function(x, inverse = TRUE) {
+monotonicity_score <- function(x, inverse = FALSE) {
    if (length(x) < 2) return(NA)
    diffs <- diff(x)
    r <- sum(diffs > 0) / (length(x) - 1)
@@ -75,13 +85,17 @@ monotonicity_score <- function(x, inverse = TRUE) {
 
 consistency_drop <- function(x, # consistency score
                              y, # it has to be 1 (no split) or 0.5 (split)
-                             lim = TRUE # whether to cap between 0 an 1
+                             lim = TRUE, # whether to cap between 0 an 1
+                             inverse = FALSE
 ){
    whole <- x[y == 1]
    split <- x[y == 0.5]
    
-   diff <- whole - split
-   score <- 1 - diff
+   score <- whole - split
+   
+   if(inverse){
+      score <- 1 - score
+   }
    # keep between 0 an 1
    if(lim){
       score <- pmin(pmax(score, 0), 1)
