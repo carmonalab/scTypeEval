@@ -136,7 +136,7 @@ You can choose among several strategies depending on whether you want to compare
 - **`Pseudobulk:<distance>`** – computes distances between pseudobulk gene expression profiles.  
   Supported distances: *euclidean*, *cosine*, *pearson*.  
 - **`WasserStein`** – computes Wasserstein distances between distributions of cells.  
-- **`BestHit:<method>`** – matches cells across groups using a classifier and computes dissimilarities.  
+- **`RecipClassif:<method>`** – matches cells across groups using a classifier and computes dissimilarities.  
   Supported methods: *Match*, *Score*.  
 
 By default, if `reduction = TRUE`, dissimilarity is computed on dimensional reduction embeddings (e.g. PCA).  
@@ -154,10 +154,10 @@ sceval <- Run.Dissimilarity(sceval,
                        method = "WasserStein",
                        reduction = TRUE)
 
-# BestHit Match using SingleR classifier
+# Reciprocal Classification Match using SingleR classifier
 sceval <- Run.Dissimilarity(sceval,
-                       method = "BestHit:Match",
-                       BestHit.classifier = "SingleR")
+                       method = "RecipClassif:Match",
+                       ReciprocalClassifier = "SingleR")
 ```
 
 <details>
@@ -168,7 +168,7 @@ This produces a ggplot2 heatmap with cell types grouped and optionally ordered b
 
 ```r
 plot.Heatmap(sceval,
-            dissimilarity.slot = "BestHit:Match",
+            dissimilarity.slot = "RecipClassif:Match",
             sort.consistency = "silhouette",
             sort.similarity = "Pseudobulk:Euclidean")
 ```

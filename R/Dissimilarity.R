@@ -4,13 +4,13 @@ dissimilarity_methods <-
      "Pseudobulk:Euclidean" = "pseudobulk",
      "Pseudobulk:Cosine" = "pseudobulk",
      "Pseudobulk:Pearson" = "pseudobulk",
-     "BestHit:Match" = "pseudobulk",
-     "BestHit:Score" = "pseudobulk"
+     "RecipClassif:Match" = "pseudobulk",
+     "RecipClassif:Score" = "pseudobulk"
    )
 
 
-no_dr_ds <- c("BestHit:Match",
-              "BestHit:Score")
+no_dr_ds <- c("RecipClassif:Match",
+              "RecipClassif:Score")
 
 quiet_transport <- function(...) {
    suppressWarnings(

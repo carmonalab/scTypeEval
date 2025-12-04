@@ -16,7 +16,7 @@ wrapper_scTypeEval(
   black.list = NULL,
   normalization.method = "Log1p",
   dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean", "Pseudobulk:Cosine",
-    "Pseudobulk:Pearson", "BestHit:Match", "BestHit:Score"),
+    "Pseudobulk:Pearson", "RecipClassif:Match", "RecipClassif:Score"),
   min.samples = 5,
   min.cells = 10,
   ncores = 1,
@@ -62,8 +62,8 @@ Available options include:
 \item \code{"Pseudobulk:Euclidean"}
 \item \code{"Pseudobulk:Cosine"}
 \item \code{"Pseudobulk:Pearson"}
-\item \code{"BestHit:Match"}
-\item \code{"BestHit:Score"}
+\item \code{"RecipClassif:Match"}
+\item \code{"RecipClassif:Score"}
 }
 Multiple methods can be provided for comparative evaluation.}
 

@@ -930,7 +930,7 @@ add.DimReduction <- function(scTypeEval,
 #'        \code{NULL}, the method will use the default or inherited gene list.
 #' @param black.list Optional. Character vector of genes to exclude. If 
 #'        \code{NULL}, the method will use the default or inherited blacklist.
-#' @param BestHit.classifier Character. Classifier to use for BestHit 
+#' @param ReciprocalClassifier Character. Classifier to use for RecipClassif 
 #'        dissimilarity methods. Default is 
 #'        \code{"SingleR"}.
 #' @param ncores Integer. Number of cores for parallelization. Default is \code{1}.
@@ -947,7 +947,7 @@ add.DimReduction <- function(scTypeEval,
 #'         pseudobulk profiles using the specified distance metric. Supported distances are euclidean, cosine, and pearson.
 #'   \item \code{"WasserStein"} – computes Wasserstein distances between groups 
 #'         of embeddings or cells.
-#'   \item \code{"BestHit:<method>"} – assigns cells pairwise between samples using 
+#'   \item \code{"RecipClassif:<method>"} – assigns cells pairwise between samples using 
 #'         the specified classifier, then computes dissimilarity between assignments.
 #'         Supported methods are 'match' and 'score'.
 #' }
@@ -973,10 +973,10 @@ add.DimReduction <- function(scTypeEval,
 #'                                 method = "Pseudobulk:euclidean", 
 #'                                 reduction = FALSE)
 #'                                 
-#' # Run BestHit classification-based dissimilarity with SingleR
+#' # Run RecipClassif classification-based dissimilarity with SingleR
 #' scTypeEval <- Run.Dissimilarity(scTypeEval, 
-#'                                 method = "BestHit:Match", 
-#'                                 BestHit.classifier = "SingleR")
+#'                                 method = "RecipClassif:Match", 
+#'                                 ReciprocalClassifier = "SingleR")
 #' }
 #'
 #' @seealso 
@@ -992,7 +992,7 @@ Run.Dissimilarity <- function(scTypeEval,
                               reduction = TRUE,
                               gene.list = NULL,
                               black.list = NULL,
-                              BestHit.classifier = "SingleR",
+                              ReciprocalClassifier = "SingleR",
                               ncores = 1,
                               bparam = NULL,
                               progressbar = FALSE,
@@ -1065,7 +1065,7 @@ Run.Dissimilarity <- function(scTypeEval,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
-   # split matrix per sample for BestHit, and for celltype & sample for Wasserstein, no need for the rest
+   # split matrix per sample for ReciprocalClassif, and for celltype & sample for Wasserstein, no need for the rest
    
    aggregation <- strsplit(method, ":")[[1]][1] |> tolower()
    dist.type <- strsplit(method, ":")[[1]][2] |> tolower()
@@ -1079,14 +1079,14 @@ Run.Dissimilarity <- function(scTypeEval,
                                           group = mat_ident@group,
                                           bparam = param,
                                           verbose = verbose),
-      "besthit" = bestHit(mat = mat,
-                          ident = ident[[1]],
-                          sample = sample,
-                          group = mat_ident@group,
-                          classifier = BestHit.classifier,
-                          method = dist.type,
-                          bparam = param,
-                          verbose = verbose),
+      "recipclassif" = RecipClassif(mat = mat,
+                                              ident = ident[[1]],
+                                              sample = sample,
+                                              group = mat_ident@group,
+                                              classifier = ReciprocalClassifier,
+                                              method = dist.type,
+                                              bparam = param,
+                                              verbose = verbose),
       stop(aggregation, "is not a supported method.\n")
    )
    
@@ -1221,8 +1221,8 @@ get.Consistency <- function(scTypeEval,
                              assay <- scTypeEval@dissimilarity[[da]]
                              
                              dist <- assay@dissimilarity
-                             # if besthit match, convert 0.5 (for plotting to 1)
-                             if (da == "BestHit:Match") {
+                             # if RecipClassif match, convert 0.5 (for plotting to 1)
+                             if (da == "RecipClassif:Match") {
                                 dist[dist == 0.5] <- 1
                              }
                              
@@ -1936,8 +1936,8 @@ load_singleCell_object <- function(path,
 #'     \item \code{"Pseudobulk:Euclidean"}
 #'     \item \code{"Pseudobulk:Cosine"}
 #'     \item \code{"Pseudobulk:Pearson"}
-#'     \item \code{"BestHit:Match"}
-#'     \item \code{"BestHit:Score"}
+#'     \item \code{"RecipClassif:Match"}
+#'     \item \code{"RecipClassif:Score"}
 #'   }
 #'   Multiple methods can be provided for comparative evaluation.
 #' @param min.samples Integer; minimum number of samples required for pseudobulk analysis (default: \code{5}).
@@ -2009,7 +2009,7 @@ wrapper_scTypeEval <- function(count_matrix,
                                normalization.method = "Log1p",
                                dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
                                                         "Pseudobulk:Cosine", "Pseudobulk:Pearson",
-                                                        "BestHit:Match", "BestHit:Score"),
+                                                        "RecipClassif:Match", "RecipClassif:Score"),
                                min.samples = 5,
                                min.cells = 10,
                                ncores = 1,

@@ -10,7 +10,7 @@ Run.Dissimilarity(
   reduction = TRUE,
   gene.list = NULL,
   black.list = NULL,
-  BestHit.classifier = "SingleR",
+  ReciprocalClassifier = "SingleR",
   ncores = 1,
   bparam = NULL,
   progressbar = FALSE,
@@ -33,7 +33,7 @@ reduction embeddings (if available). Default is \code{TRUE}.}
 \item{black.list}{Optional. Character vector of genes to exclude. If
 \code{NULL}, the method will use the default or inherited blacklist.}
 
-\item{BestHit.classifier}{Character. Classifier to use for BestHit
+\item{ReciprocalClassifier}{Character. Classifier to use for RecipClassif
 dissimilarity methods. Default is
 \code{"SingleR"}.}
 
@@ -64,7 +64,7 @@ The function supports multiple dissimilarity strategies:
 pseudobulk profiles using the specified distance metric. Supported distances are euclidean, cosine, and pearson.
 \item \code{"WasserStein"} – computes Wasserstein distances between groups
 of embeddings or cells.
-\item \code{"BestHit:<method>"} – assigns cells pairwise between samples using
+\item \code{"RecipClassif:<method>"} – assigns cells pairwise between samples using
 the specified classifier, then computes dissimilarity between assignments.
 Supported methods are 'match' and 'score'.
 }
@@ -86,10 +86,10 @@ scTypeEval <- Run.Dissimilarity(scTypeEval,
                                 method = "Pseudobulk:euclidean", 
                                 reduction = FALSE)
                                 
-# Run BestHit classification-based dissimilarity with SingleR
+# Run RecipClassif classification-based dissimilarity with SingleR
 scTypeEval <- Run.Dissimilarity(scTypeEval, 
-                                method = "BestHit:Match", 
-                                BestHit.classifier = "SingleR")
+                                method = "RecipClassif:Match", 
+                                ReciprocalClassifier = "SingleR")
 }
 
 }

@@ -169,7 +169,7 @@ score.tidy <- function(predi,
    names(pred2)[1:2] <- c("celltype", "true")
    
    pred <- dplyr::inner_join(pred1, pred2,
-                            by = c("true", "celltype")) |>
+                             by = c("true", "celltype")) |>
       dplyr::mutate(
          score0 = score.x * score.y,
          score = 1 - score0
@@ -215,16 +215,16 @@ match.tidy <- function(predi, true1, true2){
 
 
 
-bestHit <- function(mat,
-                    ident,
-                    sample,
-                    group,
-                    method = "Score",
-                    classifier = "SingleR",
-                    ncores = 1,
-                    bparam = NULL,
-                    progressbar = TRUE,
-                    verbose = TRUE){
+RecipClassif <- function(mat,
+                              ident,
+                              sample,
+                              group,
+                              method = "Score",
+                              classifier = "SingleR",
+                              ncores = 1,
+                              bparam = NULL,
+                              progressbar = TRUE,
+                              verbose = TRUE){
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
@@ -277,15 +277,15 @@ bestHit <- function(mat,
                                        # Evaluate metrics
                                        meth <- tolower(method)
                                        results <- switch(meth,
-                                                 "score" = .score(pred1 = pred1,
-                                                                  pred2 = pred2,
-                                                                  true1 = true1,
-                                                                  true2 = true2),
-                                                 "match" = .match(pred1 = pred1,
-                                                                  pred2 = pred2,
-                                                                  true1 = true1,
-                                                                  true2 = true2),
-                                                 stop(meth, " is not a supported Mutual Besthit method."))
+                                                         "score" = .score(pred1 = pred1,
+                                                                          pred2 = pred2,
+                                                                          true1 = true1,
+                                                                          true2 = true2),
+                                                         "match" = .match(pred1 = pred1,
+                                                                          pred2 = pred2,
+                                                                          true1 = true1,
+                                                                          true2 = true2),
+                                                         stop(meth, " is not a supported Reciprocal Classficiation method."))
                                        
                                        lst <- apply(results, 1, as.list)
                                        
