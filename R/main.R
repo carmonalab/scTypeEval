@@ -1877,8 +1877,22 @@ load_singleCell_object <- function(path,
       
       object <- anndata::read_h5ad(path)
       
-      if (!"counts" %in% names(object$layers)) {
-         stop("The .h5ad file does not contain a 'counts' layer.")
+      if ("counts" %in% names(object$layers)) {
+         message("Using 'counts' layer from .h5ad.")
+         rcounts <- object$layers[["counts"]]
+         
+      } else if (!is.null(object$X)) {
+         message("No 'counts' layer found. Using main matrix 'X'.")
+         rcounts <- object$X
+         
+      } else if (length(object$layers) > 0) {
+         first_layer <- names(object$layers)[1]
+         message("No 'counts' layer or 'X' found. Using first available layer: ", first_layer)
+         rcounts <- object$layers[[first_layer]]
+         
+      } else {
+         stop("No usable expression matrix found in the .h5ad file. 
+               Searched for layers[['counts']], X, or any layer.")
       }
       
       rcounts <- Matrix::t(object$layers[["counts"]])
