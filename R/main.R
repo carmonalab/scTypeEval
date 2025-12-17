@@ -2056,7 +2056,7 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
                             verbose = verbose)
    
    if(is.null(gene.list)){
-      if(verbose){message("Obtaining HVG from ", aggr[1], "slot.")}
+      if(verbose){message("Obtaining HVG from ", aggregation[1], "slot.")}
       sc <- Run.HVG(sc,
                     aggregation = aggregation[1],
                     ncores = ncores,
