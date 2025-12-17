@@ -2046,7 +2046,8 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
          unique()
    }
    
-   sc <- Run.ProcessingData(sc,
+   sc <- Run.ProcessingData(sc, 
+                            ident = ident,
                             sample = sample,
                             aggregation = aggregation,
                             normalization.method = normalization.method,
