@@ -1080,13 +1080,13 @@ Run.Dissimilarity <- function(scTypeEval,
                                           bparam = param,
                                           verbose = verbose),
       "recipclassif" = RecipClassif(mat = mat,
-                                              ident = ident[[1]],
-                                              sample = sample,
-                                              group = mat_ident@group,
-                                              classifier = ReciprocalClassifier,
-                                              method = dist.type,
-                                              bparam = param,
-                                              verbose = verbose),
+                                    ident = ident[[1]],
+                                    sample = sample,
+                                    group = mat_ident@group,
+                                    classifier = ReciprocalClassifier,
+                                    method = dist.type,
+                                    bparam = param,
+                                    verbose = verbose),
       stop(aggregation, "is not a supported method.\n")
    )
    
@@ -2011,7 +2011,8 @@ load_singleCell_object <- function(path,
 #'
 #' @export wrapper_scTypeEval
 
-wrapper_scTypeEval <- function(count_matrix,
+wrapper_scTypeEval <- function(scTypeEval = NULL,
+                               count_matrix,
                                metadata,
                                ident,
                                sample,
@@ -2031,10 +2032,19 @@ wrapper_scTypeEval <- function(count_matrix,
                                progressbar = FALSE,
                                verbose = TRUE){
    
-   sc <- create.scTypeEval(matrix = count_matrix,
-                           metadata = metadata,
-                           active.ident = ident,
-                           black.list = black.list)
+   if(is.null(scTypeEval)){
+      sc <- create.scTypeEval(matrix = count_matrix,
+                              metadata = metadata,
+                              active.ident = ident,
+                              black.list = black.list)
+   } else {
+      sc <- scTypeEval
+   }
+   
+   if(is.null(aggregation)){
+      aggregation <- dissimilarity_methods[names(dissimilarity_methods) %in% dissimilarity.method] |>
+         unique()
+   }
    
    sc <- Run.ProcessingData(sc,
                             sample = sample,
@@ -2045,9 +2055,11 @@ wrapper_scTypeEval <- function(count_matrix,
                             verbose = verbose)
    
    if(is.null(gene.list)){
+      if(verbose){message("Obtaining HVG from ", aggr[1], "slot.")}
       sc <- Run.HVG(sc,
                     aggregation = aggregation[1],
-                    ncores = ncores)
+                    ncores = ncores,
+                    verbose = verbose)
    } else {
       sc <- add.GeneList(sc,
                          gene.list)
@@ -2055,7 +2067,8 @@ wrapper_scTypeEval <- function(count_matrix,
    
    if(reduction){
       sc <- Run.PCA(sc,
-                    ndim = ndim)
+                    ndim = ndim,
+                    verbose = verbose)
    }
    
    for(m in dissimilarity.method){
