@@ -12,7 +12,7 @@ purge_label <- function(label){
    if(!is.null(scTypeEval)){
       if(is.null(ident)){
          ident <- scTypeEval@active.ident
-         if(verbose){message("Using default ident: ", ident, "\n")}
+         if(verbose){message("\nUsing default ident: ", ident, "\n")}
       }
       
       if(!ident %in% names(scTypeEval@metadata)){
@@ -86,7 +86,7 @@ purge_label <- function(label){
       stop("gene.list not included in scTypeEval object")
    }
    
-   if(verbose){message("Using ", gene.list, " gene list.\n")}
+   if(verbose){message("\nUsing ", gene.list, " gene list.\n")}
    gl <- scTypeEval@gene.lists[[gene.list]]
    
    if(length(gl)>5000){
