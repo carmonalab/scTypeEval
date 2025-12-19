@@ -1,6 +1,6 @@
 Package: scTypeEval
 Title: Evaluation of cell type classifications in single-cell transcriptomics.
-Version: 2.0.0
+Version: 2.1.0
 Authors@R: c(
   person(given = 'Josep', family = 'Garnica',
     email = 'josep.garnicacaparros@unil.ch',
