@@ -12,6 +12,7 @@ get.Consistency(
   KNNGraph_k = 5,
   hclust.method = "ward.D2",
   normalize = FALSE,
+  return.scTypeEval = FALSE,
   verbose = TRUE
 )
 }
@@ -67,6 +68,8 @@ for Ward-based metrics. Default is \code{"ward.D2"}.}
 
 \item{normalize}{Logical. Whether to normalize metric values (e.g., scaling
 across dissimilarity methods). Default is \code{FALSE}.}
+
+\item{return.scTypeEval}{Logical. Whether to return data frame with inter-sample consistencies or store within scTypeEval@consistency slot. Default is \code{FALSE}.}
 
 \item{verbose}{Logical. Whether to print progress messages. Default is \code{TRUE}.}
 }

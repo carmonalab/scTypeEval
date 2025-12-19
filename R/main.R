@@ -1163,6 +1163,7 @@ Run.Dissimilarity <- function(scTypeEval,
 #'        for Ward-based metrics. Default is \code{"ward.D2"}.
 #' @param normalize Logical. Whether to normalize metric values (e.g., scaling 
 #'        across dissimilarity methods). Default is \code{FALSE}.
+#' @param return.scTypeEval Logical. Whether to return data frame with inter-sample consistencies or store within scTypeEval@consistency slot. Default is \code{FALSE}.
 #' @param verbose Logical. Whether to print progress messages. Default is \code{TRUE}.
 #'
 #' @details
@@ -1210,6 +1211,7 @@ get.Consistency <- function(scTypeEval,
                             KNNGraph_k = 5,
                             hclust.method = "ward.D2",
                             normalize = FALSE,
+                            return.scTypeEval = FALSE,
                             verbose = TRUE
                             
 ){
@@ -1227,6 +1229,10 @@ get.Consistency <- function(scTypeEval,
                              }
                              
                              ident <- assay@ident[[1]]
+                             ident.name <- names(assay@ident)
+                             # all expected clusters
+                             all_clusters <- purge_label(unique(scTypeEval@metadata[[ident.name]]))
+                             all_clusters <- all_clusters[!is.na(all_clusters)]
                              
                              # compute internal validation metrics
                              if(verbose){message("Computing internal validation metrics for ", da, " ... \n")}
@@ -1249,12 +1255,28 @@ get.Consistency <- function(scTypeEval,
                                 dplyr::mutate(dissimilarity_method = assay@method,
                                               ident = names(assay@ident))
                              
-                             return(df)
+                             # ensure all clusters/celltypes are present
+                             cons <- dplyr::right_join(
+                                df,
+                                tibble::tibble(celltype = as.character(all_clusters)),
+                                by = "celltype"
+                             ) %>% 
+                                # convert NA to 0s
+                                dplyr::mutate(measure = as.numeric(measure),
+                                              measure = dplyr::coalesce(measure, 0))
+
+                             return(cons)
                           })
    
    consist <- do.call(rbind, consist.list) 
    
-   return(consist)
+   if(!return.scTypeEval){
+      return(consist)
+   } else {
+      ident.name <- unique(consist$ident)
+      scTypeEval@consistency[[ident.name]] <- consist
+      return(scTypeEval)
+   }
    
 }
 
