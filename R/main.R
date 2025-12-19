@@ -2342,7 +2342,7 @@ get.optimal_clustering <- function(X = NULL,
    }
    
    # get optimal clustering
-   allcons <- data.table::rbindlist(cons.list)
+   allcons <- do.call(rbind, cons.list)
    
    nfail <- 1
    scTypeEval@metadata$optimal0 <- scTypeEval@metadata$.tmp
