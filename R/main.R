@@ -1256,7 +1256,7 @@ get.Consistency <- function(scTypeEval,
                                               return(r)
                                            })
                              
-                             df <- do.call(rbind, dfl) |>
+                             cons <- do.call(rbind, dfl) |>
                                 dplyr::mutate(dissimilarity_method = assay@method,
                                               ident = names(assay@ident))
                              
