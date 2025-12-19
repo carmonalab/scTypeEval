@@ -5,6 +5,7 @@
 \title{Wrapper Function to Compute Dissimilarities from Single-Cell Data}
 \usage{
 wrapper_scTypeEval(
+  scTypeEval = NULL,
   count_matrix,
   metadata,
   ident,
