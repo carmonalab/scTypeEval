@@ -19,6 +19,7 @@ get.optimal_clustering(
   hvg.ngenes = 2000,
   normalization.method = "Log1p",
   ncores = 1,
+  nchild = 2,
   max_Nclusters = 100,
   max_iter = 100,
   nstart = 30,
@@ -71,6 +72,8 @@ method used during preprocessing (default: \code{"Log1p"}).}
 
 \item{ncores}{Integer; number of CPU cores for parallel execution
 (default: \code{1}).}
+
+\item{nchild}{Integer; number of childs per cluster in each iteration when using kmeans (default: \code{2}).}
 
 \item{max_Nclusters}{Integer; maximum number of clusters allowed before
 stopping the hierarchical splitting process (default: \code{100}).}

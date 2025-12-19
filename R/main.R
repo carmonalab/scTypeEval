@@ -2152,6 +2152,7 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #'   method used during preprocessing (default: \code{"Log1p"}).
 #' @param ncores Integer; number of CPU cores for parallel execution
 #'   (default: \code{1}).
+#' @param nchild Integer; number of childs per cluster in each iteration when using kmeans (default: \code{2}).
 #' @param max_Nclusters Integer; maximum number of clusters allowed before
 #'   stopping the hierarchical splitting process (default: \code{100}).
 #' @param max_iter Integer; maximum number of hierarchical splitting iterations
@@ -2235,6 +2236,7 @@ get.optimal_clustering <- function(X = NULL,
                                hvg.ngenes = 2000,
                                normalization.method = "Log1p",
                                ncores = 1,
+                               nchild = 2,
                                max_Nclusters = 100,
                                max_iter = 100,
                                nstart = 30,
@@ -2283,7 +2285,7 @@ get.optimal_clustering <- function(X = NULL,
          set.seed(22)
          cl <- get.clusters(X[cells, , drop=FALSE],
                             clustering_method = clustering_method,
-                            nclusters = 2,
+                            nclusters = nchild,
                             nstart = nstart)
          
          
