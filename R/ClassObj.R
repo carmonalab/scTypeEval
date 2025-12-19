@@ -10,7 +10,6 @@ methods::setClass("scTypeEval",
                      black.list = "ANY", # list of genes in black list
                      active.ident = "ANY", # default grouping variable
                      reductions = "list", # list of dim reductions
-                     consistency = "list", # list of data frames with obtained consistencies
                      version = "character" # package version
                   )
 )
@@ -38,18 +37,12 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
       args$reductions <- list()
    }
    
-   # Set default for consistency if not provided
-   if (is.null(args$consistency)) {
-      args$consistency <- list()
-   }
-   
    # Pass the updated arguments to the default initialize method
    .Object <- callNextMethod(.Object, ..., 
                              data = args$data,
                              dissimilarity = args$dissimilarity,
                              consistency = args$consistency, 
-                             reductions = args$reductions,
-                             consistency = args$consistency)
+                             reductions = args$reductions)
    
    validObject(.Object)  # Validate the object
    .Object
