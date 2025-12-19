@@ -1264,7 +1264,7 @@ get.Consistency <- function(scTypeEval,
                                 # convert NA to 0s
                                 dplyr::mutate(measure = as.numeric(measure),
                                               measure = dplyr::coalesce(measure, 0))
-
+                             
                              return(cons)
                           })
    
@@ -2105,4 +2105,277 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
    
    return(sc)
    
+}
+
+
+
+#' @title Optimal Hierarchical Clustering Based on Consistency Metrics
+#'
+#' @description
+#' An automated clustering procedure that iteratively splits cell populations
+#' into subclusters and selects an optimal clustering resolution based on
+#' cluster consistency metrics.
+#'
+#' This function performs a top-down hierarchical clustering strategy,
+#' evaluates each split using one or more consistency metrics,
+#' and retains only those splits that improve or maintain consistency above
+#' user-defined thresholds. The final output is an \code{scTypeEval} object
+#' annotated with an optimal clustering assignment.
+#'
+#' @param X Optional numeric matrix of features (cells as rows, features as columns). 
+#'    Usually a low dimensional embeddings for all cells of datasets are expected.
+#'   If \code{NULL}, the function preprocesses the provided \code{scTypeEval} object
+#'   using \code{process_clustering()} to obtain a PCA embedding or filtered matrix.
+#' @param scTypeEval A \code{scTypeEval} object containing raw or processed
+#'   single-cell data and metadata.
+#' @param sample Character string specifying the metadata column containing
+#'   sample identifiers.
+#' @param reduction Logical; if \code{TRUE}, PCA is performed during preprocessing
+#'   when \code{X} is not provided (default: \code{TRUE}).
+#' @param ndim Integer; number of principal components to retain when
+#'   \code{reduction = TRUE} (default: \code{30}).
+#' @param gene.list Optional named list of gene sets used for consistency
+#'   computation. If \code{NULL}, highly variable genes (HVGs) are computed.
+#' @param min.cells Integer; minimum number of cells required per cluster
+#'   to be considered during consistency computation (default: \code{10}).
+#' @param min.samples Integer; minimum number of samples required per cluster
+#'   for consistency evaluation (default: \code{5}).
+#' @param clustering_method Character string specifying the clustering algorithm
+#'   used for splitting. Currently supported: \code{"kmeans"}.
+#'   \code{"leiden"} is reserved for future implementation.
+#' @param consistency_method Character vector specifying consistency metrics to
+#'   evaluate cluster splits. Each entry must follow the format
+#'   \code{"<metric> | <dissimilarity.method>"}.
+#' @param hvg.ngenes Integer; number of highly variable genes to select when
+#'   \code{gene.list = NULL} (default: \code{2000}).
+#' @param normalization.method Character string specifying the normalization
+#'   method used during preprocessing (default: \code{"Log1p"}).
+#' @param ncores Integer; number of CPU cores for parallel execution
+#'   (default: \code{1}).
+#' @param max_Nclusters Integer; maximum number of clusters allowed before
+#'   stopping the hierarchical splitting process (default: \code{100}).
+#' @param max_iter Integer; maximum number of hierarchical splitting iterations
+#'   (default: \code{100}).
+#' @param nstart Integer; number of random starts for k-means clustering
+#'   (default: \code{30}).
+#' @param epsilon Numeric; tolerance allowing child cluster consistency to be
+#'   slightly lower than the parent cluster consistency (default: \code{0.2}).
+#' @param min.consistency Numeric; minimum consistency score required for a
+#'   cluster to be retained in the final solution (default: \code{0.5}).
+#' @param weight_by Character string specifying how to aggregate child
+#'   consistency scores when evaluating a split:
+#'   \itemize{
+#'     \item \code{"none"} — unweighted mean
+#'     \item \code{"cells"} — weighted by number of cells
+#'     \item \code{"samples"} — weighted by number of samples
+#'   }
+#' @param verbose Logical; if \code{TRUE}, prints progress messages
+#'   (default: \code{TRUE}).
+#'
+#' @return
+#' An updated \code{scTypeEval} object containing:
+#' \itemize{
+#'   \item A new metadata column \code{optimal} with the selected clustering labels
+#'   \item Intermediate hierarchical clustering assignments
+#'   \item Consistency results stored in \code{scTypeEval@consistency}
+#' }
+#'
+#' @details
+#' The algorithm proceeds as follows:
+#' \enumerate{
+#'   \item Preprocesses the data if \code{X} is not provided
+#'   \item Initializes all cells into a root cluster
+#'   \item Iteratively splits clusters into subclusters
+#'   \item Computes consistency metrics for each split using
+#'         \code{compute_consistency()}
+#'   \item Retains splits that satisfy consistency improvement and threshold
+#'         criteria
+#'   \item Reverts clusters failing \code{min.consistency} to their parent cluster
+#' }
+#'
+#' This strategy identifies a data-driven clustering resolution without
+#' requiring the number of clusters to be specified a priori.
+#'
+#' @examples
+#' \dontrun{
+#' scTypeEval <- optimal_clustering(
+#'   scTypeEval = sc_obj,
+#'   ident = "celltype",
+#'   sample = "sample_id",
+#'   consistency_method = c(
+#'     "silhouette | RecipClassif:Match",
+#'     "2label.silhouette | Pseudobulk:Cosine"
+#'   ),
+#'   min.consistency = 0.6,
+#'   verbose = TRUE
+#' )
+#'
+#' table(scTypeEval@metadata$optimal)
+#' }
+#'
+#' @seealso
+#' \code{\link{process_clustering}},
+#' \code{\link{compute_consistency}},
+#' \code{\link{get.clusters}}
+#'
+#' @export get.optimal_clustering
+
+
+get.optimal_clustering <- function(X = NULL,
+                               scTypeEval,
+                               sample = "sample",
+                               reduction = TRUE,
+                               ndim = 30,
+                               gene.list = NULL,
+                               min.cells = 10,
+                               min.samples = 5,
+                               clustering_method = c("kmeans", "leiden"),
+                               consistency_method = c("silhouette | RecipClassif:Match",
+                                                      "2label.silhouette | Pseudobulk:Cosine"),
+                               hvg.ngenes = 2000,
+                               normalization.method = "Log1p",
+                               ncores = 1,
+                               max_Nclusters = 100,
+                               max_iter = 100,
+                               nstart = 30,
+                               epsilon = 0.2,
+                               min.consistency = 0.5,
+                               weight_by = c("none", "cells", "samples" ),
+                               verbose = TRUE) {
+   
+   clustering_method <- clustering_method[1]
+   weight_by <- weight_by[1]
+   
+   # 1. preprocess data if X not provided
+   if(is.null(X)){
+      if(verbose) message("X not provided, processing scTypeEval object")
+      ret <- process_clustering(scTypeEval,
+                                sample = sample,
+                                reduction = reduction,
+                                ndim = ndim,
+                                gene.list = gene.list,
+                                hvg.ngenes = hvg.ngenes,
+                                normalization.method = normalization.method,
+                                ncores = ncores,
+                                verbose = verbose)
+      X <- t(ret$X)
+      if(is.null(gene.list)) gene.list <- ret$gene.list
+   }
+   
+   scTypeEval@metadata$.tmp <- "root"
+   allcells <- rownames(X)
+   ct_follow <- "root"
+   cons.list <- list()
+   parent_score <- c("root" = 0)
+   iter <- 0
+   
+   while(dplyr::n_distinct(scTypeEval@metadata$.tmp) < max_Nclusters && iter < max_iter){
+      
+      if(length(ct_follow) == 0) {break}
+      child_vector <- c()
+      to_follow <- c()
+      iter <- iter + 1
+      clus_col <- paste(clustering_method, iter, sep = "_")
+      for(cu in ct_follow){
+         
+         cells <- allcells[scTypeEval@metadata[[".tmp"]] == cu]
+         
+         set.seed(22)
+         cl <- get.clusters(X[cells, , drop=FALSE],
+                            clustering_method = clustering_method,
+                            nclusters = 2,
+                            nstart = nstart)
+         
+         
+         scTypeEval@metadata[cells, ".tmp"] <- paste(scTypeEval@metadata[cells, ".tmp"], cl, sep = ".")
+         if(verbose){cat("Computing consistency for", clus_col)}
+         
+         suppressMessages(
+            {
+               cons <- compute_consistency(scTypeEval,
+                                           ident = ".tmp",
+                                           sample = sample,
+                                           gene.list = gene.list,
+                                           consistency_method = consistency_method,
+                                           min.samples = min.samples,
+                                           min.cells = min.cells,
+                                           ncores = ncores,
+                                           verbose = F)
+            })
+         
+         # aggregate child consistency
+         child_celltypes <- unique(scTypeEval@metadata[cells, ".tmp"])
+         cons <- cons |>
+            dplyr::filter(celltype %in% child_celltypes) 
+         child_cons <- cons |>
+            dplyr::filter(celltype %in% child_celltypes) |>
+            dplyr::pull(product, name = celltype)
+         if(weight_by == "cells"){
+            sizes <- table(scTypeEval@metadata[cells, ".tmp"])
+            child_score <- weighted.mean(child_cons[child_celltypes], sizes[child_celltypes])
+         } else if(weight_by == "samples"){
+            nsamp <- scTypeEval@metadata[cells,] |>
+               dplyr::group_by(.data[[".tmp"]]) |>
+               dplyr::summarise(n = dplyr::n_distinct(.data[[sample]]))
+            child_score <- weighted.mean(child_cons, nsamp$n)
+         } else {
+            child_score <- mean(child_cons, na.rm = TRUE)
+         }
+         
+         cons.list[[paste(clus_col, cu, sep = "-")]] <- cons |>
+            mutate(ident = clus_col,
+                   parent = cu)
+         
+         if(child_score >= (parent_score[cu] - epsilon) && child_score >= min.consistency){
+            to_follow <- c(to_follow, child_celltypes)
+         }
+         child_score_pass <- cons |>
+            dplyr::filter(celltype %in% to_follow) |>
+            dplyr::pull(product, name = celltype)
+         child_vector <- c(child_vector, child_score_pass)
+      }
+      ct_follow <- to_follow
+      parent_score <- child_vector
+      scTypeEval@metadata[[clus_col]] <-  scTypeEval@metadata[[".tmp"]]
+   }
+   
+   # get optimal clustering
+   allcons <- data.table::rbindlist(cons.list)
+   
+   nfail <- 1
+   scTypeEval@metadata$optimal0 <- scTypeEval@metadata$.tmp
+   
+   while(length(nfail) > 0){
+      # get clusters do not passing the threshold of min.consistency
+      # revert all childs to parent, even if only one child is poor consistent
+      nfail_parent <- allcons |>
+         dplyr::filter(product < min.consistency ) |>
+         dplyr::filter(celltype %in% unique(scTypeEval@metadata$optimal0)) |>
+         dplyr::pull(parent)
+      nfail <- allcons |>
+         dplyr::filter(parent %in% nfail_parent) |>
+         dplyr::pull(celltype)
+      
+      if(length(nfail) == 0) break  # stop if none fail
+      
+      # for clustering under the threshold, use parent clustering
+      scTypeEval@metadata <- 
+         scTypeEval@metadata |>
+         dplyr::rowwise() |>
+         dplyr::mutate(optimal0 = ifelse(optimal0 %in% nfail,
+                                         allcons %>% dplyr::filter(celltype == optimal0) %>% dplyr::pull(parent),
+                                         optimal0)
+         ) |>
+         dplyr::ungroup()
+   }
+   
+   scTypeEval@metadata <- 
+      scTypeEval@metadata |>
+      dplyr::mutate(optimal = factor(optimal0),
+                    optimal = paste0("C", as.integer(optimal)))
+   
+   # add consistency output
+   scTypeEval@consistency <- c(scTypeEval@consistency, cons.list)
+   
+   return(scTypeEval)
 }
