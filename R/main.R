@@ -1244,7 +1244,12 @@ get.Consistency <- function(scTypeEval,
                                                             normalize = normalize)
                              dfl <- lapply(names(con),
                                            function(int){
-                                              # build dissimilarity object
+                                              # ensure all clusters/celltypes are present
+                                              # cell type no passing the threshold will have a value of 0
+                                              con[[int]] <- con[[int]][all_clusters]
+                                              con[[int]][is.na(con[[int]])] <- 0
+                                              names(con[[int]]) <- all_clusters
+                                              # start consistency dataframe object
                                               r <- data.frame(celltype = names(con[[int]]),
                                                               measure = con[[int]],
                                                               consistency.metric = int)
@@ -1254,16 +1259,6 @@ get.Consistency <- function(scTypeEval,
                              df <- do.call(rbind, dfl) |>
                                 dplyr::mutate(dissimilarity_method = assay@method,
                                               ident = names(assay@ident))
-                             
-                             # ensure all clusters/celltypes are present
-                             cons <- dplyr::right_join(
-                                df,
-                                tibble::tibble(celltype = as.character(all_clusters)),
-                                by = "celltype"
-                             ) %>% 
-                                # convert NA to 0s
-                                dplyr::mutate(measure = as.numeric(measure),
-                                              measure = dplyr::coalesce(measure, 0))
                              
                              return(cons)
                           })
