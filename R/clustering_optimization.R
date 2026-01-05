@@ -19,7 +19,7 @@ process_clustering <- function(scTypeEval,
                                nrow(scTypeEval@metadata),
                                replace = T),
                     sample = .data[[sample]]
-      ) %>% 
+      ) |>
       dplyr::select(k, sample)
    
    scTypeEval <- Run.ProcessingData(scTypeEval,

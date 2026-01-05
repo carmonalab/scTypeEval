@@ -2320,7 +2320,7 @@ get.optimal_clustering <- function(X = NULL,
          }
          
          cons.list[[paste(clus_col, cu, sep = "-")]] <- cons |>
-            mutate(ident = clus_col,
+            dplyr::mutate(ident = clus_col,
                    parent = cu)
          
          if(child_score >= (parent_score[cu] - epsilon) && child_score >= min.consistency){
@@ -2360,7 +2360,7 @@ get.optimal_clustering <- function(X = NULL,
          scTypeEval@metadata |>
          dplyr::rowwise() |>
          dplyr::mutate(optimal0 = ifelse(optimal0 %in% nfail,
-                                         allcons %>% dplyr::filter(celltype == optimal0) %>% dplyr::pull(parent),
+                                         allcons |> dplyr::filter(celltype == optimal0) |> dplyr::pull(parent),
                                          optimal0)
          ) |>
          dplyr::ungroup()
