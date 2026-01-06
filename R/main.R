@@ -2282,16 +2282,25 @@ get.optimal_clustering <- function(X = NULL,
          
          cells <- allcells[scTypeEval@metadata[[".tmp"]] == cu]
          
-         resolution <- pick_resolution(length(cells), nchild)
+         resolution0 <- pick_resolution(length(cells), nchild)
+         resolution <- resolution0
+         resolution_iter <- 0 # max iteration trials for louvan/leiden resolution
+         nclus <- 1
+         while(nclus < 2 && resolution_iter <= 10){
+            set.seed(22)
+            cl <- get.clusters(X[cells, , drop=FALSE],
+                               clustering_method = clustering_method,
+                               nclusters = nchild,
+                               nstart = nstart,
+                               resolution = resolution,
+                               ncores = ncores)
+            
+            nclus <- dplyr::n_distinct(cl)
+            resolution_iter <- resolution_iter + 1
+            resolution <- resolution0 + resolution0*resolution_iter
+         }
          
-         set.seed(22)
-         cl <- get.clusters(X[cells, , drop=FALSE],
-                            clustering_method = clustering_method,
-                            nclusters = nchild,
-                            nstart = nstart,
-                            resolution = resolution,
-                            ncores = ncores)
-         
+         if(nclus<2) {next}
          
          scTypeEval@metadata[cells, ".tmp"] <- paste(scTypeEval@metadata[cells, ".tmp"], cl, sep = ".")
          if(verbose){cat("Computing consistency for", clus_col)}
