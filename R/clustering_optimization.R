@@ -143,14 +143,22 @@ get.clusters <- function(
       k = 20,
       transposed = TRUE,
       resolution = 1.0,
+      ncores = 1,
+      bparam = NULL,
+      progressbar = FALSE,
       ...
 ) {
    clustering_method <- match.arg(clustering_method)
    
    if(clustering_method %in% c("louvain", "leiden")){
+      # set paralelization
+      param <- set_parallel_params(ncores = ncores,
+                                   bparam = bparam,
+                                   progressbar = progressbar)
       g <- scran::buildSNNGraph(X,
                                 k = k,
-                                transposed = transposed)
+                                transposed = transposed,
+                                BPPARAM = param)
    }
    
    switch(
@@ -182,9 +190,15 @@ cluster_louvain_wrapper <- function(g, ...) {
 
 cluster_leiden_wrapper <- function(g, ...) {
    
-   cl <- igraph::cluster_leiden(g, ...)
+   cl <- igraph::cluster_leiden(g, n_iterations = 10, ...)
    labs <- igraph::membership(cl)
    
    return(labs)
+}
+
+# function to programmatically set up clustering resolution
+
+pick_resolution <- function(ncells, target = 2) {
+   target / sqrt(ncells)
 }
 
