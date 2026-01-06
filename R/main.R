@@ -2234,6 +2234,7 @@ get.optimal_clustering <- function(X = NULL,
                                    nchild = 2,
                                    max_Nclusters = 100,
                                    max_iter = 100,
+                                   resolution = 1,
                                    nstart = 30,
                                    epsilon = 0.2,
                                    min.consistency = 0.5,
@@ -2286,7 +2287,8 @@ get.optimal_clustering <- function(X = NULL,
          cl <- get.clusters(X[cells, , drop=FALSE],
                             clustering_method = clustering_method,
                             nclusters = nchild,
-                            nstart = nstart)
+                            nstart = nstart,
+                            resolution = resolution)
          
          
          scTypeEval@metadata[cells, ".tmp"] <- paste(scTypeEval@metadata[cells, ".tmp"], cl, sep = ".")
