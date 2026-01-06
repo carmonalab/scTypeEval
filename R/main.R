@@ -2225,7 +2225,7 @@ get.optimal_clustering <- function(X = NULL,
                                    gene.list = NULL,
                                    min.cells = 10,
                                    min.samples = 5,
-                                   clustering_method = c("kmeans", "leiden"),
+                                   clustering_method = c("kmeans", "louvain", "leiden"),
                                    consistency_method = c("silhouette | RecipClassif:Match",
                                                           "2label.silhouette | Pseudobulk:Cosine"),
                                    hvg.ngenes = 2000,
@@ -2241,6 +2241,11 @@ get.optimal_clustering <- function(X = NULL,
                                    verbose = TRUE) {
    
    clustering_method <- clustering_method[1] |> tolower()
+   # install igraph if not done
+   if(clustering_method %in% c("louvain", "leiden") && !requireNamespace("igraph", quietly = TRUE)){
+      message("igraph package needed for ", clustering_method., ". Installing igraph...\n")
+      install.packages("igraph")
+   }
    weight_by <- weight_by[1] |> tolower()
    
    # 1. preprocess data if X not provided
