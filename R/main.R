@@ -2218,30 +2218,30 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 
 
 get.optimal_clustering <- function(X = NULL,
-                               scTypeEval,
-                               sample = "sample",
-                               reduction = TRUE,
-                               ndim = 30,
-                               gene.list = NULL,
-                               min.cells = 10,
-                               min.samples = 5,
-                               clustering_method = c("kmeans", "leiden"),
-                               consistency_method = c("silhouette | RecipClassif:Match",
-                                                      "2label.silhouette | Pseudobulk:Cosine"),
-                               hvg.ngenes = 2000,
-                               normalization.method = "Log1p",
-                               ncores = 1,
-                               nchild = 2,
-                               max_Nclusters = 100,
-                               max_iter = 100,
-                               nstart = 30,
-                               epsilon = 0.2,
-                               min.consistency = 0.5,
-                               weight_by = c("none", "cells", "samples" ),
-                               verbose = TRUE) {
+                                   scTypeEval,
+                                   sample = "sample",
+                                   reduction = TRUE,
+                                   ndim = 30,
+                                   gene.list = NULL,
+                                   min.cells = 10,
+                                   min.samples = 5,
+                                   clustering_method = c("kmeans", "leiden"),
+                                   consistency_method = c("silhouette | RecipClassif:Match",
+                                                          "2label.silhouette | Pseudobulk:Cosine"),
+                                   hvg.ngenes = 2000,
+                                   normalization.method = "Log1p",
+                                   ncores = 1,
+                                   nchild = 2,
+                                   max_Nclusters = 100,
+                                   max_iter = 100,
+                                   nstart = 30,
+                                   epsilon = 0.2,
+                                   min.consistency = 0.5,
+                                   weight_by = c("none", "cells", "samples" ),
+                                   verbose = TRUE) {
    
-   clustering_method <- clustering_method[1]
-   weight_by <- weight_by[1]
+   clustering_method <- clustering_method[1] |> tolower()
+   weight_by <- weight_by[1] |> tolower()
    
    # 1. preprocess data if X not provided
    if(is.null(X)){
@@ -2314,14 +2314,15 @@ get.optimal_clustering <- function(X = NULL,
             nsamp <- scTypeEval@metadata[cells,] |>
                dplyr::group_by(.data[[".tmp"]]) |>
                dplyr::summarise(n = dplyr::n_distinct(.data[[sample]]))
-            child_score <- weighted.mean(child_cons, nsamp$n)
+            weights <- nsamp$n[match(names(child_cons), nsamp$.tmp)]
+            child_score <- weighted.mean(child_cons, weights)
          } else {
             child_score <- mean(child_cons, na.rm = TRUE)
          }
          
          cons.list[[paste(clus_col, cu, sep = "-")]] <- cons |>
             dplyr::mutate(ident = clus_col,
-                   parent = cu)
+                          parent = cu)
          
          if(child_score >= (parent_score[cu] - epsilon) && child_score >= min.consistency){
             to_follow <- c(to_follow, child_celltypes)
@@ -2340,9 +2341,11 @@ get.optimal_clustering <- function(X = NULL,
    allcons <- do.call(rbind, cons.list)
    
    nfail <- 1
+   iter_fail <- 0
    scTypeEval@metadata$optimal0 <- scTypeEval@metadata$.tmp
    
-   while(length(nfail) > 0){
+   while(length(nfail) > 0 && iter_fail < 500){
+      iter_fail <- iter_fail + 1 # safety break
       # get clusters do not passing the threshold of min.consistency
       # revert all childs to parent, even if only one child is poor consistent
       nfail_parent <- allcons |>
