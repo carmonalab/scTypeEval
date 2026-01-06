@@ -2286,7 +2286,7 @@ get.optimal_clustering <- function(X = NULL,
          resolution <- resolution0
          resolution_iter <- 0 # max iteration trials for louvan/leiden resolution
          nclus <- 1
-         while(nclus < 2 && resolution_iter <= 10){
+         while(nclus < nchild && resolution_iter <= 10){
             set.seed(22)
             cl <- get.clusters(X[cells, , drop=FALSE],
                                clustering_method = clustering_method,
