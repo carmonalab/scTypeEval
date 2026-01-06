@@ -141,13 +141,16 @@ get.clusters <- function(
       nclusters = 2,
       nstart = 30,
       k = 20,
+      transposed = TRUE,
       resolution = 1.0,
       ...
 ) {
    clustering_method <- match.arg(clustering_method)
    
    if(clustering_method %in% c("louvain", "leiden")){
-      g <- scran::buildSNNGraph(X, k = k)
+      g <- scran::buildSNNGraph(X,
+                                k = k,
+                                transposed = transposed)
    }
    
    switch(
