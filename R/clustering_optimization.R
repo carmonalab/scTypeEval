@@ -135,21 +135,53 @@ compute_consistency <- function(scTypeEval,
 
 # function to split clusters
 
-get.clusters <- function(X,
-                         clustering_method = c("kmeans", "leiden"),
-                         nclusters = 2,
-                         nstart = 30) {
+get.clusters <- function(
+      X,
+      clustering_method = c("kmeans", "louvain", "leiden"),
+      nclusters = 2,
+      nstart = 30,
+      k = 20,
+      resolution = 1.0,
+      ...
+) {
+   clustering_method <- match.arg(clustering_method)
    
-   clustering_method <- clustering_method[1]
+   if(clustering_method %in% c("louvain", "leiden")){
+      g <- scran::buildSNNGraph(X, k = k)
+   }
    
    switch(
       clustering_method,
+      
       "kmeans" = {
-         kmeans(X, centers = nclusters, nstart = nstart)$cluster
+         return(kmeans(X, centers = nclusters, nstart = nstart)$cluster)
       },
+      
+      "louvain" = {
+         return(cluster_louvain_wrapper(g, resolution = resolution, ...))
+      },
+      
       "leiden" = {
-         stop("Leiden not implemented yet — requires graph construction.")
+         return(cluster_leiden_wrapper(g, resolution = resolution, ...))
       },
+      
       stop("Unsupported clustering method: ", clustering_method)
    )
 }
+
+cluster_louvain_wrapper <- function(g, ...) {
+   
+   cl <- igraph::cluster_louvain(g, ...)
+   labs <- igraph::membership(cl)
+   
+   return(labs)
+}
+
+cluster_leiden_wrapper <- function(g, ...) {
+   
+   cl <- igraph::cluster_leiden(g, ...)
+   labs <- igraph::membership(cl)
+   
+   return(labs)
+}
+
