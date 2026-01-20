@@ -853,11 +853,11 @@ add.DimReduction <- function(scTypeEval,
       stop("Only supported aggregations are just `single-cell` (no aggregation) or `pseudobulk` per cell type and sample.\n")
    }
    ident <- .check_ident(ident = ident, verbose = verbose)
-   if(length(ident) == ncol(data)){
+   if(length(ident) != ncol(embeddings)){
       stop("Different length of ident vector and ncol of data\n")
    }
    sample <- .check_sample(sample = sample, verbose = verbose)
-   if(length(sample) == ncol(data)){
+   if(length(sample) != ncol(embeddings)){
       stop("Different length of sample vector and ncol of data\n")
    }
    groups <- factor(paste(sample, ident, sep = "_"))
@@ -893,9 +893,20 @@ add.DimReduction <- function(scTypeEval,
       }
    }
    
+   # Provide defaults for required slots if NULL
+   if(is.null(feature.loadings)){
+      feature.loadings <- matrix(numeric(0), nrow = nrow(embeddings), ncol = 0)
+   }
+   if(is.null(gene.list)){
+      gene.list <- character(0)
+   }
+   if(is.null(black.list)){
+      black.list <- character(0)
+   }
+   
    # Create DimRed assay
    rr <- methods::new("DimRed",
-                      embeddings = emdeddings,
+                      embeddings = embeddings,
                       feature.loadings = feature.loadings,
                       gene.list = gene.list,
                       black.list = black.list,
@@ -1343,7 +1354,7 @@ plot.PCA <- function(scTypeEval,
    names(pls) <- red.assays
    
    if(length(pls) == 1){
-      pls <- unlist(pls)
+      pls <- pls[[1]]
    }
    
    return(pls)
