@@ -58,10 +58,31 @@ The function performs the following steps:
 }
 }
 \examples{
-\dontrun{
-# Run data processing on an scTypeEval object
-sceval <- create.scTypeEval(seurat_obj)
-sceval <- Run.ProcessingData(sceval, ident = "celltype", sample = "patient_id")
-}
+# Create test data with enough samples
+library(Matrix)
+counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:100)
+colnames(counts) <- paste0("Cell", 1:60)
+
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 30),
+  sample = rep(paste0("Sample", 1:6), times = 10),
+  row.names = colnames(counts)
+)
+
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+
+# Process data with filtering
+sceval <- Run.ProcessingData(
+  sceval,
+  ident = "celltype",
+  sample = "sample",
+  min.samples = 3,
+  min.cells = 3,
+  verbose = FALSE
+)
+
+# Check processed data
+length(sceval@data)
 
 }

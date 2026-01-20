@@ -75,22 +75,31 @@ embeddings have been added previously via \code{Run.PCA()} or
 to compute dissimilarity on processed expression data instead.
 }
 \examples{
-\dontrun{
-# Run Wasserstein dissimilarity on dimensional reduction embeddings
-scTypeEval <- Run.Dissimilarity(scTypeEval,
-                               method = "WasserStein",
-                               reduction = TRUE)
+# Create and process test data
+library(Matrix)
+counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:100)
+colnames(counts) <- paste0("Cell", 1:60)
 
-# Run pseudobulk Euclidean dissimilarity on processed data
-scTypeEval <- Run.Dissimilarity(scTypeEval, 
-                                method = "Pseudobulk:euclidean", 
-                                reduction = FALSE)
-                                
-# Run RecipClassif classification-based dissimilarity with SingleR
-scTypeEval <- Run.Dissimilarity(scTypeEval, 
-                                method = "RecipClassif:Match", 
-                                ReciprocalClassifier = "SingleR")
-}
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 30),
+  sample = rep(paste0("Sample", 1:6), times = 10),
+  row.names = colnames(counts)
+)
+
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+sceval <- Run.ProcessingData(sceval, ident = "celltype", 
+                             aggregation = "pseudobulk", 
+                             sample = "sample", min.samples = 3,
+                             min.cells = 3, verbose = FALSE)
+sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", verbose = FALSE)
+
+# Compute Pseudobulk Euclidean dissimilarity
+sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+                            reduction = FALSE, verbose = FALSE)
+
+# Check dissimilarity slot
+names(sceval@dissimilarity)
 
 }
 \seealso{

@@ -47,12 +47,30 @@ Each PCA result is stored as a \code{DimRed} assay containing:
 }
 }
 \examples{
-\dontrun{
-# Run PCA on all processed aggregations
-sceval <- Run.PCA(sceval,
-                  gene.list = list(mygenes = c("Cd4", "Cd8a", "Foxp3")),
-                  ndim = 20)
-}
+# Create and process test data
+library(Matrix)
+counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:100)
+colnames(counts) <- paste0("Cell", 1:60)
+
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 30),
+  sample = rep(paste0("Sample", 1:6), times = 10),
+  row.names = colnames(counts)
+)
+
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+sceval <- Run.ProcessingData(sceval, ident = "celltype", 
+                             aggregation = "pseudobulk",
+                             sample = "sample", min.samples = 3,
+                             min.cells = 3, verbose = FALSE)
+sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", verbose = FALSE)
+
+# Run PCA on HVG genes
+sceval <- Run.PCA(sceval, gene.list = "HVG", ndim = 5, verbose = FALSE)
+
+# Check reductions
+names(sceval@reductions)
 
 }
 \seealso{

@@ -52,18 +52,29 @@ and requires a metadata dataframe.
 }
 }
 \examples{
-\dontrun{
-# From count matrix and metadata dataframe
-sceval <- create.scTypeEval(matrix = count_matrix, metadata = metadata)
+# Create synthetic test data
+library(Matrix)
+counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:50)
+colnames(counts) <- paste0("Cell", 1:20)
 
-# From Seurat object
-sceval <- create.scTypeEval(seurat_obj)
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 10),
+  sample = rep(paste0("Sample", 1:4), each = 5),
+  row.names = colnames(counts)
+)
 
-# From SingleCellExperiment object
-sceval <- create.scTypeEval(sce_obj)
+# Create scTypeEval object from matrix
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+sceval
 
-# Initialize an empty object (requires metadata)
-empty_eval <- create.scTypeEval(matrix = NULL, metadata = data.frame(celltype = character()))
-}
+# With custom gene lists and active identity
+gene_list <- list(markers = rownames(counts)[1:10])
+sceval <- create.scTypeEval(
+  matrix = counts, 
+  metadata = metadata,
+  gene.lists = gene_list,
+  active.ident = "celltype"
+)
 
 }
