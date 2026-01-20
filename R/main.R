@@ -73,7 +73,14 @@ create.scTypeEval <- function(matrix = NULL,
       }
       
    } else if (inherits(matrix, "Seurat")) {
-      counts <- as(matrix@assays$RNA@counts, "dgCMatrix")
+      # Handle both Seurat v4 and v5
+      if (inherits(matrix@assays$RNA, "Assay5")) {
+         # Seurat v5 uses LayerData from SeuratObject
+         counts <- as(SeuratObject::LayerData(matrix, assay = "RNA", layer = "counts"), "dgCMatrix")
+      } else {
+         # Seurat v4 and earlier
+         counts <- as(matrix@assays$RNA@counts, "dgCMatrix")
+      }
       metadata <- as.data.frame(matrix@meta.data)
       
    } else if (inherits(matrix, "SingleCellExperiment")) {
