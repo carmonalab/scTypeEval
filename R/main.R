@@ -1930,7 +1930,7 @@ load_singleCell_object <- function(path,
                Searched for layers[['counts']], X, or any layer.")
       }
       
-      rcounts <- Matrix::t(object$layers[["counts"]])
+      rcounts <- Matrix::t(rcounts)
       counts <- as(as(rcounts, "CsparseMatrix"), "dgCMatrix")
       metadata <- as.data.frame(object$obs)
       
