@@ -1247,7 +1247,7 @@ get.Consistency <- function(scTypeEval,
                                               # ensure all clusters/celltypes are present
                                               # cell type no passing the threshold will have a value of 0
                                               con[[int]] <- con[[int]][all_clusters]
-                                              con[[int]][is.na(con[[int]])] <- 0
+                                              # con[[int]][is.na(con[[int]])] <- 0
                                               names(con[[int]]) <- all_clusters
                                               # start consistency dataframe object
                                               r <- data.frame(celltype = names(con[[int]]),
