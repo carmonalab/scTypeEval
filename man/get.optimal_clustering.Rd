@@ -13,7 +13,7 @@ get.optimal_clustering(
   gene.list = NULL,
   min.cells = 10,
   min.samples = 5,
-  clustering_method = c("kmeans", "leiden"),
+  clustering_method = c("kmeans", "louvain", "leiden"),
   consistency_method = c("silhouette | RecipClassif:Match",
     "2label.silhouette | Pseudobulk:Cosine"),
   hvg.ngenes = 2000,
