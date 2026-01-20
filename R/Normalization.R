@@ -284,4 +284,10 @@ Normalize_data <- function(mat,
                          stop(method, " is not a supported normalization method. Please use either Log1p, CLR, or pearson")
    )
    
+   # Convert to sparse matrix if needed (pearson returns dense matrix)
+   if (method == "pearson" && !inherits(norm.mat, "dgCMatrix")) {
+      norm.mat <- Matrix::Matrix(norm.mat, sparse = TRUE)
+   }
+   
+   return(norm.mat)
 }
