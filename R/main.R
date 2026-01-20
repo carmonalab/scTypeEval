@@ -65,6 +65,7 @@ create.scTypeEval <- function(matrix = NULL,
       # Create an empty dgCMatrix
       counts <- Matrix::sparseMatrix(i = integer(0),
                       j = integer(0),
+                      x = numeric(0),
                       dims = c(0, 0))
       
       # If no metadata provided, create an empty data frame
