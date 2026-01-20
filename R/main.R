@@ -867,7 +867,7 @@ add.DimReduction <- function(scTypeEval,
       if(filter){
          if(verbose){message(" - Filtering cells based on min.samples and min.cells\n")}
          
-         mat <- get.matrix(data,
+         mat <- get.matrix(embeddings,
                            ident = ident,
                            sample = sample,
                            aggregation = aggregation,
