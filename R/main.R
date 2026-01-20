@@ -1789,8 +1789,8 @@ plot.Heatmap <- function(scTypeEval,
                           legend.position = "none",
                           panel.grid = ggplot2::element_blank()
                        ) +
-                       ggplot2::geom_hline(yintercept = sep_lines + 0.5, color = "grey70", size = 0.4) +
-                       ggplot2::geom_vline(xintercept = sep_lines + 0.5, color = "grey70", size = 0.4) +
+                       ggplot2::geom_hline(yintercept = sep_lines + 0.5, color = "grey70", linewidth = 0.4) +
+                       ggplot2::geom_vline(xintercept = sep_lines + 0.5, color = "grey70", linewidth = 0.4) +
                        ggplot2::labs(title = title)
                     
                     return(p)
