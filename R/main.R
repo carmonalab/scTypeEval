@@ -63,7 +63,9 @@ create.scTypeEval <- function(matrix = NULL,
       message("⚠️  No matrix provided. Initializing scTypeEval with empty counts.")
       
       # Create an empty dgCMatrix
-      counts <- Matrix::Matrix(0, nrow = 0, ncol = 0, sparse = TRUE)
+      counts <- Matrix::sparseMatrix(i = integer(0),
+                      j = integer(0),
+                      dims = c(0, 0))
       
       # If no metadata provided, create an empty data frame
       if (is.null(metadata)) {
@@ -1431,7 +1433,7 @@ get.hierarchy <- function(scTypeEval,
    names(hier.list) <- diss.assays
    
    if(length(hier.list) == 1){
-      hier.list <- unlist(hier.list)
+      return(hier.list[[1]])
    }
    
    return(hier.list)
@@ -1506,7 +1508,7 @@ get.NN <- function(scTypeEval,
    names(nn.list) <- diss.assays
    
    if(length(nn.list) == 1){
-      nn.list <- unlist(nn.list)
+      return(nn.list[[1]])
    }
    
    return(nn.list)
