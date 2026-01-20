@@ -52,7 +52,7 @@ purge_label <- function(label){
    }
    
    if(length(levels(sample))<5){
-      warning("Only ", length(sample), " samples detected.\n",
+      warning("Only ", length(levels(sample)), " samples detected.\n",
               "For inter-sample comparison 5 or more samples is recommended.\n")
    }
    
