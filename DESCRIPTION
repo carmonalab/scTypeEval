@@ -39,8 +39,12 @@ Imports:
   irlba (>= 2.3.5.1),
   transport (>= 0.15-4)
 Suggests:
+  testthat (>= 3.0.0),
   transformGamPoi (>= 1.8.0),
   glmGamPoi (>= 1.14.3),
   anndata (>= 0.8.0),
   SummarizedExperiment (>= 1.32.0),
-  igraph (>= 2.1.1)
+  igraph (>= 2.1.1),
+  Seurat,
+  SingleCellExperiment
+Config/testthat/edition: 3
