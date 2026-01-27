@@ -52,15 +52,23 @@ to match R’s cell-by-gene convention.
 }
 }
 \examples{
-\donttest{
-# Load as counts and metadata
-sce_split <- load_singleCell_object("dataset.rds", split = TRUE)
+# Set a temporary location for temporary file
+filepath <- file.path(tempdir(), "sce_test.rds")
 
-# Load Seurat object as-is
-seurat_obj <- load_singleCell_object("dataset.rds", split = FALSE)
+# Create small SCE object with sparse matrix
+counts <- Matrix::Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:50)
+colnames(counts) <- paste0("Cell", 1:20)
+sce_obj <- SingleCellExperiment::SingleCellExperiment(
+   assays = list(counts = counts),
+   colData = data.frame(
+      cell_type = rep(c("TypeA", "TypeB"), each = 10),
+      row.names = colnames(counts)
+  )
+)
 
-# Load AnnData (.h5ad) file and extract counts + metadata
-adata_split <- load_singleCell_object("dataset.h5ad", split = TRUE)
-}
+saveRDS(sce_obj, filepath)
+
+obj <- load_singleCell_object(filepath, split = TRUE)
 
 }
