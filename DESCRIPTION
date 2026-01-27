@@ -23,11 +23,12 @@ VignetteBuilder: knitr
 URL: https://github.com/carmonalab/scTypeEval
 BugReports: https://github.com/carmonalab/scTypeEval/issues
 License: GPL-3 + file LICENSE
-LazyData: true
+LazyData: false
 biocViews: SingleCell,
     Transcriptomics,
     GeneExpression,
-    CellBasedAssays
+    CellBasedAssays,
+    DimensionReduction
 Depends: R (>= 4.3.0)
 Imports:
   Matrix (>= 1.6-5),
