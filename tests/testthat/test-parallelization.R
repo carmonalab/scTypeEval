@@ -193,7 +193,6 @@ test_that("Sequential and parallel WasserStein results are consistent", {
   sceval <- create_processed_scTypeEval()
   
   # Get sequential result
-  set.seed(123)
   result_seq <- Run.Dissimilarity(
     sceval,
     method = "WasserStein",
@@ -203,7 +202,6 @@ test_that("Sequential and parallel WasserStein results are consistent", {
   )
   
   # Get parallel result
-  set.seed(123)
   result_par <- Run.Dissimilarity(
     sceval,
     method = "WasserStein",
@@ -372,7 +370,6 @@ test_that("Sequential and parallel HVG results are consistent", {
   )
   
   # Get sequential result
-  set.seed(123)
   result_seq <- Run.HVG(
     sceval,
     var.method = "basic",
@@ -381,7 +378,6 @@ test_that("Sequential and parallel HVG results are consistent", {
   )
   
   # Get parallel result (same seed for reproducibility)
-  set.seed(123)
   result_par <- Run.HVG(
     sceval,
     var.method = "basic",
@@ -397,7 +393,6 @@ test_that("Sequential and parallel Dissimilarity results are consistent", {
   sceval <- create_processed_scTypeEval()
   
   # Get sequential result
-  set.seed(123)
   result_seq <- Run.Dissimilarity(
     sceval,
     method = "RecipClassif:Match",
@@ -407,7 +402,6 @@ test_that("Sequential and parallel Dissimilarity results are consistent", {
   )
   
   # Get parallel result
-  set.seed(123)
   result_par <- Run.Dissimilarity(
     sceval,
     method = "RecipClassif:Match",

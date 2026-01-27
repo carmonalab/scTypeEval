@@ -47,7 +47,7 @@ get.DEG_logfc <- function(mat,
          # filter lowly expressed genes
          # cols <- which(ident == x)
          # emat <- mat[, cols, drop = FALSE]
-         # kg <- rownames(emat[Matrix::rowSums(emat) >= length(cols), ,drop = F])
+         # kg <- rownames(emat[Matrix::rowSums(emat) >= length(cols), ,drop = FALSE])
          # m <- m[names(m) %in% kg]
          # sort by FC
          m <- sort(m, decreasing = TRUE)
@@ -296,7 +296,7 @@ RecipClassif <- function(mat,
    
    # Filter out NULLs
    df.tmp <- Filter(Negate(is.null), df.tmp)
-   df.tmp <- unlist(df.tmp, recursive = F)
+   df.tmp <- unlist(df.tmp, recursive = FALSE)
    
    # ---- Build pairwise matrix with lists
    n <- length(group)

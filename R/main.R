@@ -1941,7 +1941,7 @@ plot.Heatmap <- function(scTypeEval,
                        consis <- get.Consistency(scTypeEval,
                                                  dissimilarity.slot = da,
                                                  Consistency.metric = sort.consistency,
-                                                 verbose = F,
+                                                 verbose = FALSE,
                                                  ...) |>
                           dplyr::arrange(measure) |>
                           dplyr::pull(measure, name = celltype)
@@ -1977,7 +1977,7 @@ plot.Heatmap <- function(scTypeEval,
                     }
                     
                     # reorder matrix + annotation
-                    d_mat_plot <- d_mat_plot[ordering, ordering, drop = F]
+                    d_mat_plot <- d_mat_plot[ordering, ordering, drop = FALSE]
                     
                     # convert matrix to tidy df
                     df <- as.data.frame(as.table(d_mat_plot))

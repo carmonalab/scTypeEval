@@ -255,11 +255,11 @@ wr.missclasify <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
-      dir.create(dir, showWarnings = F)
+      dir.create(dir, showWarnings = FALSE)
       
       if(save.plots){
          pca.dir <- file.path(dir, "Plots_Missclassify")
-         dir.create(pca.dir, showWarnings = F)
+         dir.create(pca.dir, showWarnings = FALSE)
       }
    }
    
@@ -405,11 +405,11 @@ wr.NSamples <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
-      dir.create(dir, showWarnings = F)
+      dir.create(dir, showWarnings = FALSE)
       
       if(save.plots){
          pca.dir <- file.path(dir, "Plots_Nsamples")
-         dir.create(pca.dir, showWarnings = F)
+         dir.create(pca.dir, showWarnings = FALSE)
       }
    }
    
@@ -559,11 +559,11 @@ wr.Nct <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("Results will be stored at ", dir)}
-      dir.create(dir, showWarnings = F)
+      dir.create(dir, showWarnings = FALSE)
       
       if(save.plots){
          pca.dir <- file.path(dir, "Plots_Nct")
-         dir.create(pca.dir, showWarnings = F)
+         dir.create(pca.dir, showWarnings = FALSE)
       }
    }
    
@@ -708,11 +708,11 @@ wr.NCell <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
-      dir.create(dir, showWarnings = F)
+      dir.create(dir, showWarnings = FALSE)
       
       if(save.plots){
          pca.dir <- file.path(dir, "Plots_NCell")
-         dir.create(pca.dir, showWarnings = F)
+         dir.create(pca.dir, showWarnings = FALSE)
       }
    }
    
@@ -875,11 +875,11 @@ wr.mergeCT <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
-      dir.create(dir, showWarnings = F)
+      dir.create(dir, showWarnings = FALSE)
       
       if(save.plots){
          pca.dir <- file.path(dir, "Plots_mergeCT")
-         dir.create(pca.dir, showWarnings = F)
+         dir.create(pca.dir, showWarnings = FALSE)
       }
    }
    
@@ -927,7 +927,7 @@ wr.mergeCT <- function(count_matrix,
                                      ident = idents)
       dist <- get.distance(norm.mat = centroids,
                            distance.method = distance.method,
-                           verbose = F)
+                           verbose = FALSE)
       dist_mat <- as.matrix(dist)
       diag(dist_mat) <- Inf  # Ignore self-distance
       # Find the closest pair of cell types
@@ -1047,11 +1047,11 @@ wr.splitCellType <- function(count_matrix,
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
-      dir.create(dir, showWarnings = F)
+      dir.create(dir, showWarnings = FALSE)
       
       if(save.plots){
          pca.dir <- file.path(dir, "Plots_SplitCellType")
-         dir.create(pca.dir, showWarnings = F)
+         dir.create(pca.dir, showWarnings = FALSE)
       }
    }
    

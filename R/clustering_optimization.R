@@ -47,7 +47,7 @@ process_clustering <- function(scTypeEval,
       if(verbose){message("Producing PCA embeddings")}
       scTypeEval <- Run.PCA(scTypeEval, 
                             ndim = ndim,
-                            verbose = F)
+                            verbose = FALSE)
       X <- scTypeEval@reductions[[slot]]@embeddings
    } else {
       if(verbose){
@@ -83,7 +83,7 @@ compute_consistency <- function(scTypeEval,
                                 min.samples = 5,
                                 min.cells = 10,
                                 ncores = 1,
-                                verbose = F) {
+                                verbose = FALSE) {
    
    dissimilarity.method <- sapply(consistency_method, \(x) strsplit(x, " [|] ")[[1]][2])
    consistency.metric  <- sapply(consistency_method, \(x) strsplit(x, " [|] ")[[1]][1])
