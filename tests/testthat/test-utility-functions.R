@@ -63,21 +63,20 @@ test_that("Add.ProcessedData adds single-cell data", {
   test_ident <- test_data$metadata$celltype[1:ncol(test_counts)]
   test_sample <- test_data$metadata$sample[1:ncol(test_counts)]
   
-  # Note: There's a logic bug in Add.ProcessedData (== should be !=)
-  # So we test for error when they should be equal
-  expect_error(
-    Add.ProcessedData(
-      sceval,
-      data = test_counts,
-      aggregation = "single-cell",
-      ident = test_ident,
-      ident.name = "celltype",
-      sample = test_sample,
-      filter = FALSE,
-      verbose = FALSE
-    ),
-    "Different length"
+  # Bug fixed: == changed to != in Add.ProcessedData
+  # Now correctly-sized data should succeed
+  result <- Add.ProcessedData(
+    sceval,
+    data = test_counts,
+    aggregation = "single-cell",
+    ident = test_ident,
+    ident.name = "celltype",
+    sample = test_sample,
+    filter = FALSE,
+    verbose = FALSE
   )
+  
+  expect_true("single-cell" %in% names(result@data))
 })
 
 
@@ -91,19 +90,19 @@ test_that("Add.ProcessedData adds pseudobulk data", {
   pb_sample <- test_data$metadata$sample[1:ncol(pb_data)]
   
   sceval <- create_test_scTypeEval()
-  # Test that correctly sized parameters cause error (due to == bug)
-  expect_error(
-    Add.ProcessedData(
-      sceval,
-      data = pb_data,
-      aggregation = "pseudobulk",
-      ident = pb_ident,
-      sample = pb_sample,
-      filter = FALSE,
-      verbose = FALSE
-    ),
-    "Different length"
+  # Bug fixed: == changed to != in Add.ProcessedData
+  # Now correctly-sized parameters should succeed
+  result <- Add.ProcessedData(
+    sceval,
+    data = pb_data,
+    aggregation = "pseudobulk",
+    ident = pb_ident,
+    sample = pb_sample,
+    filter = FALSE,
+    verbose = FALSE
   )
+  
+  expect_true("pseudobulk" %in% names(result@data))
 })
 
 
@@ -149,20 +148,21 @@ test_that("Add.ProcessedData handles filter parameter", {
   sceval <- create_test_scTypeEval()
   test_data <- generate_small_test_data()
   
-  # Test with mismatched lengths (expected error due to == bug)
-  expect_error(
-    Add.ProcessedData(
-      sceval,
-      data = test_data$counts,
-      aggregation = "single-cell",
-      ident = test_data$metadata$celltype,
-      sample = test_data$metadata$sample,
-      filter = TRUE,
-      min.samples = 2,
-      min.cells = 5,
-      verbose = FALSE
-    )
+  # Bug fixed: == changed to != in Add.ProcessedData
+  # Now correctly-sized parameters with filter should succeed
+  result <- Add.ProcessedData(
+    sceval,
+    data = test_data$counts,
+    aggregation = "single-cell",
+    ident = test_data$metadata$celltype,
+    sample = test_data$metadata$sample,
+    filter = TRUE,
+    min.samples = 2,
+    min.cells = 5,
+    verbose = FALSE
   )
+  
+  expect_true("single-cell" %in% names(result@data))
 })
 
 
