@@ -40,32 +40,18 @@
 #' }
 #'
 #' @examples
-#' # Load the default blacklist
-#' data(black.list)
-#'
-#' # Check number of genes
-#' length(black.list)
-#'
-#' # View first few genes
-#' head(black.list, 20)
-#'
-#' # Check if specific genes are blacklisted
-#' "MT-ND1" %in% black.list
-#' "CD3D" %in% black.list  # Cell type marker, should be FALSE
-#'
-#' # Use in scTypeEval functions
+#' # The default blacklist is automatically used in HVG and marker detection
 #' \donttest{
-#' # Default behavior: uses black.list automatically
-#' sceval <- Run.HVG(sceval, black.list = NULL)
+#' # Use default blacklist in HVG detection:
+#' # sceval <- Run.HVG(sceval, black.list = NULL)
 #'
-#' # Custom blacklist: only mitochondrial genes
-#' custom_blacklist <- grep("^MT-", black.list, value = TRUE)
-#' sceval <- Run.HVG(sceval, black.list = custom_blacklist)
-#'
-#' # No filtering
-#' sceval <- Run.HVG(sceval, black.list = character())
+#' # Use custom blacklist with only mitochondrial genes:
+#' # mt_genes <- grep("^MT-", rownames(sceval@counts), value = TRUE)
+#' # sceval <- Run.HVG(sceval, black.list = mt_genes)
 #' }
 #'
-#' @seealso \link{Run.HVG}, \link{Run.GeneMarkers}
+#' @seealso \code{\link{Run.HVG}}, \code{\link{Run.GeneMarkers}}
+#'
+#' @keywords datasets
 #'
 "black.list"
