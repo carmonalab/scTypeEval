@@ -28,26 +28,6 @@ knitr::opts_chunk$set(
 
 This quick start guide demonstrates the essential steps for evaluating cell type annotations using `scTypeEval`. For a comprehensive tutorial, see the main vignette.
 
-# Installation and Loading
-
-To install `scTypeEval` from Bioconductor:
-
-```{r install, eval=FALSE}
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-
-# Install from Bioconductor (when available)
-# BiocManager::install("scTypeEval")
-```
-
-For the development version from GitHub:
-
-```{r install_github, eval=FALSE}
-if (!requireNamespace("remotes", quietly = TRUE))
-    install.packages("remotes")
-
-remotes::install_github("carmonalab/scTypeEval")
-```
 
 ```{r load}
 library(scTypeEval)
