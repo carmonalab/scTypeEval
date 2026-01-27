@@ -2152,16 +2152,26 @@ plot.Heatmap <- function(scTypeEval,
 #'   to match R’s cell-by-gene convention.
 #'
 #' @examples
-#' \donttest{
-#' # Load as counts and metadata
-#' sce_split <- load_singleCell_object("dataset.rds", split = TRUE)
+#' # Set a temporary location for temporary file
+#' filepath <- file.path(tempdir(), "sce_test.rds")
 #'
-#' # Load Seurat object as-is
-#' seurat_obj <- load_singleCell_object("dataset.rds", split = FALSE)
-#'
-#' # Load AnnData (.h5ad) file and extract counts + metadata
-#' adata_split <- load_singleCell_object("dataset.h5ad", split = TRUE)
-#' }
+#'# Create small SCE object with sparse matrix
+#' counts <- Matrix::Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:50)
+#' colnames(counts) <- paste0("Cell", 1:20)
+
+#' sce_obj <- SingleCellExperiment::SingleCellExperiment(
+#'    assays = list(counts = counts),
+#'    colData = data.frame(
+#'       cell_type = rep(c("TypeA", "TypeB"), each = 10),
+# '      sample = rep(paste0("Sample", 1:4), each = 5),
+#'       row.names = colnames(counts)
+#'   )
+#' )
+#' 
+#' saveRDS(sce_obj, filepath)
+#' 
+#' obj <- load_singleCell_object(filepath, split = TRUE)
 #'
 #' @export load_singleCell_object
 
@@ -2518,16 +2528,31 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #'
 #' @examples
 #' \dontrun{
+#' #' # Create test data with enough samples
+#' library(Matrix)
+#' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:100)
+#' colnames(counts) <- paste0("Cell", 1:60)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 30),
+#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   row.names = colnames(counts)
+#' )
+#' 
+#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
 #' scTypeEval <- get.optimal_clustering(
 #'   scTypeEval = sceval,
-#'   ident = "celltype",
-#'   sample = "sample_id",
+#'   sample = "sample",
 #'   consistency_method = c(
 #'     "silhouette | RecipClassif:Match",
 #'     "2label.silhouette | Pseudobulk:Cosine"
 #'   ),
+#'   ndim = 5,
+#'   min.samples = 3,
+#'   min.cells = 3,
 #'   min.consistency = 0.6,
-#'   verbose = TRUE
+#'   verbose = FALSE
 #' )
 #'
 #' table(scTypeEval@metadata$optimal)
