@@ -151,6 +151,10 @@ get.clusters <- function(
    clustering_method <- match.arg(clustering_method)
    
    if(clustering_method %in% c("louvain", "leiden")){
+      if (!requireNamespace("igraph", quietly = TRUE)) {
+         stop("The 'igraph' package is required for ", clustering_method, " clustering. Please install it.",
+              call. = FALSE)
+      }
       # set paralelization
       param <- set_parallel_params(ncores = ncores,
                                    bparam = bparam,

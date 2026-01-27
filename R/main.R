@@ -87,6 +87,14 @@ create.scTypeEval <- function(matrix = NULL,
       }
       
    } else if (inherits(matrix, "Seurat")) {
+      if (!requireNamespace("Seurat", quietly = TRUE)) {
+         stop("The 'Seurat' package is required to handle Seurat objects. Please install it.",
+              call. = FALSE)
+      }
+      if (!requireNamespace("SeuratObject", quietly = TRUE)) {
+         stop("The 'SeuratObject' package is required to handle Seurat v5 layers. Please install it.",
+              call. = FALSE)
+      }
       # Handle both Seurat v4 and v5
       if (inherits(matrix@assays$RNA, "Assay5")) {
          # Seurat v5 uses LayerData from SeuratObject
@@ -98,6 +106,14 @@ create.scTypeEval <- function(matrix = NULL,
       metadata <- as.data.frame(matrix@meta.data)
       
    } else if (inherits(matrix, "SingleCellExperiment")) {
+      if (!requireNamespace("SingleCellExperiment", quietly = TRUE)) {
+         stop("The 'SingleCellExperiment' package is required to handle SingleCellExperiment objects. Please install it.",
+              call. = FALSE)
+      }
+      if (!requireNamespace("SummarizedExperiment", quietly = TRUE)) {
+         stop("The 'SummarizedExperiment' package is required to handle SingleCellExperiment assays. Please install it.",
+              call. = FALSE)
+      }
       counts <- as(SummarizedExperiment::assay(matrix, "counts"), "dgCMatrix")
       metadata <- as.data.frame(SummarizedExperiment::colData(matrix))
       
@@ -2358,8 +2374,8 @@ get.optimal_clustering <- function(X = NULL,
    clustering_method <- clustering_method[1] |> tolower()
    # install igraph if not done
    if(clustering_method %in% c("louvain", "leiden") && !requireNamespace("igraph", quietly = TRUE)){
-      message("igraph package needed for ", clustering_method., ". Installing igraph...\n")
-      install.packages("igraph")
+      stop("The 'igraph' package is required for ", clustering_method, " clustering. Please install it.",
+           call. = FALSE)
    }
    weight_by <- weight_by[1] |> tolower()
    
