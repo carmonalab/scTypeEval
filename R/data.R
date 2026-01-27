@@ -32,13 +32,17 @@
 #'   \item Non-coding RNAs that may not be informative for cell type annotation
 #' }
 #'
+#' @return A character vector containing gene symbols to be excluded from analysis,
+#' including cell cycle genes (G1/S and G2/M), mitochondrial genes, ribosomal genes,
+#' TCR and immunoglobulin genes, pseudogenes, heat shock proteins, non-coding RNAs,
+#' and sex chromosome genes (X and Y).
+#'
 #' @source
-#' Compiled from multiple sources including:
+#' Generated using the SignatuR package (Andreatta et al., \url{https://github.com/carmonalab/SignatuR}) with the following categories:
 #' \itemize{
-#'   \item Seurat package default gene lists
-#'   \item Cell cycle gene signatures (Tirosh et al., 2016)
-#'   \item Commonly filtered gene categories in scRNA-seq literature
-#'   \item Manual curation based on scTypeEval benchmarking
+#'   \item Cell cycle genes: G1/S and G2/M phase markers from SignatuR::Programs
+#'   \item Technical artifacts: Mitochondrial, ribosomal, TCR, immunoglobulins, pseudogenes, HSP, and non-coding RNAs from SignatuR::Blocklists
+#'   \item Sex chromosome genes: X-inactivation escapees and Y-chromosome specific genes from GenderGenes database (\url{http://bioinf.wehi.edu.au/software/GenderGenes/})
 #' }
 #'
 #' @examples
