@@ -50,6 +50,8 @@ Suggests:
   igraph (>= 2.1.1),
   Seurat,
   SingleCellExperiment,
-  knitr
+  knitr,
+  rmarkdown,
+  BiocStyle
 Config/testthat/edition: 3
  
