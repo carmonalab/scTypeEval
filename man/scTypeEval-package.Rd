@@ -6,7 +6,7 @@
 \alias{scTypeEval-package}
 \title{scTypeEval: Evaluation of cell type classifications in single-cell transcriptomics}
 \description{
-scTypeEval offers assessment and validation of cell type classifications in single-cell transcriptomics. In the absence of ground truth annotations, scTypeEval leverages internal validation metrics to evaluate the consistency and quality of cell type assignments, particularly across multiple biological samples.
+scTypeEval provides tools to evaluate and validate cell type classifications in single-cell transcriptomics when ground truth labels are limited or unavailable. Results are organized in an S4 object that integrates processed data, dimensional reductions, dissimilarity assays, and consistency metrics computed across samples. The workflow includes preprocessing and feature selection, principal component analysis, computation of dissimilarity matrices, internal validation metrics (for example, silhouette-based summaries), and visualization utilities to inspect heatmaps and PCA plots. Functions support common single-cell containers and enable comparison of clustering and labeling strategies across datasets. Optional Pearson residual normalization is available via the transformGamPoi/glmGamPoi ecosystem and is used only when explicitly requested. Vignettes demonstrate typical analyses and reproducible workflows.
 }
 \seealso{
 Useful links:
