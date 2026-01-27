@@ -82,5 +82,5 @@ hm_both <- plot.Heatmap(sceval, sort.consistency = "silhouette", sort.similarity
 
 }
 \seealso{
-\link{Run.dissimilarity}, \link[stats]{hclust}, \link{get.Consistency}
+\link{Run.Dissimilarity}, \link[stats]{hclust}, \link{get.Consistency}
 }

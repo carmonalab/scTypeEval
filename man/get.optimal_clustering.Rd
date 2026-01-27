@@ -155,7 +155,7 @@ table(scTypeEval@metadata$optimal)
 
 }
 \seealso{
-\code{\link{process_clustering}},
-\code{\link{compute_consistency}},
-\code{\link{get.clusters}}
+\code{process_clustering},
+\code{compute_consistency},
+\code{get.clusters}
 }
