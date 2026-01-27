@@ -67,24 +67,23 @@ pair occurs exactly once (i.e., fully aggregated).
 }
 \examples{
 \donttest{
-# Add single-cell processed data
-sceval <- create.scTypeEval(seurat_obj)
-sceval <- Add.ProcessedData(
-  sceval,
-  data = expr_matrix,
-  aggregation = "single-cell",
-  ident = celltypes,
-  sample = patients,
-  filter = TRUE
+library(Matrix)
+counts <- Matrix(rpois(200, 5), nrow = 20, ncol = 10, sparse = TRUE)
+rownames(counts) <- paste0("Gene", seq_len(20))
+colnames(counts) <- paste0("Cell", seq_len(10))
+metadata <- data.frame(
+  celltype = rep(c("A", "B"), each = 5),
+  sample = rep(paste0("S", 1:2), times = 5),
+  row.names = colnames(counts)
 )
-
-# Add pseudobulk data
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
 sceval <- Add.ProcessedData(
   sceval,
-  data = pseudobulk_matrix,
-  aggregation = "pseudobulk",
-  ident = bulk_idents,
-  sample = bulk_samples
+  data = counts,
+  aggregation = "single-cell",
+  ident = metadata$celltype,
+  sample = metadata$sample,
+  filter = TRUE
 )
 }
 
