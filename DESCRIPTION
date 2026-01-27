@@ -1,5 +1,5 @@
 Package: scTypeEval
-Title: Evaluation of cell type classifications in single-cell transcriptomics.
+Title: Evaluation of cell type classifications in single-cell transcriptomics
 Version: 0.99.21
 Authors@R: c(
   person(given = 'Josep', family = 'Garnica',
@@ -28,7 +28,7 @@ biocViews: SingleCell,
     Transcriptomics,
     GeneExpression,
     CellBasedAssays
-Depends: R (>= 4.3.1)
+Depends: R (>= 4.3.0)
 Imports:
   Matrix (>= 1.6-5),
   BiocParallel (>= 1.34.2),
@@ -40,7 +40,10 @@ Imports:
   cluster (>= 2.1.4),
   SingleR (>= 2.4.1),
   irlba (>= 2.3.5.1),
-  transport (>= 0.15-4)
+  transport (>= 0.15-4),
+  methods,
+  stats,
+  utils
 Suggests:
   testthat (>= 3.0.0),
   transformGamPoi (>= 1.8.0),
@@ -52,6 +55,13 @@ Suggests:
   SingleCellExperiment,
   knitr,
   rmarkdown,
-  BiocStyle
+  BiocStyle,
+  BiocManager,
+  SeuratObject,
+  aricode,
+  ggpubr,
+  rlang,
+  stringr,
+  tibble
 Config/testthat/edition: 3
  
