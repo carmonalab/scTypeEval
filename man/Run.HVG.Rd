@@ -99,7 +99,8 @@ sceval <- Run.HVG(sceval,
                   verbose = FALSE)
 
 # Check HVG genes
-length(sceval@gene.lists[["HVG"]])
+gl <- sceval@gene.lists
+if ("HVG" \%in\% names(gl)) length(gl[["HVG"]])
 
 }
 \seealso{

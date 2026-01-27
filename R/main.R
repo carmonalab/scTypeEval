@@ -505,7 +505,8 @@ Add.ProcessedData <- function(scTypeEval,
 #'                   verbose = FALSE)
 #' 
 #' # Check HVG genes
-#' length(sceval@gene.lists[["HVG"]])
+#' gl <- sceval@gene.lists
+#' if ("HVG" %in% names(gl)) length(gl[["HVG"]])
 #'
 #' @export Run.HVG
 
@@ -2420,18 +2421,16 @@ get.optimal_clustering <- function(X = NULL,
          scTypeEval@metadata[cells, ".tmp"] <- paste(scTypeEval@metadata[cells, ".tmp"], cl, sep = ".")
          if(verbose){message("Computing consistency for ", clus_col)}
          
-         suppressMessages(
-            {
-               cons <- compute_consistency(scTypeEval,
-                                           ident = ".tmp",
-                                           sample = sample,
-                                           gene.list = gene.list,
-                                           consistency_method = consistency_method,
-                                           min.samples = min.samples,
-                                           min.cells = min.cells,
-                                           ncores = ncores,
-                                           verbose = F)
-            })
+         # compute_consistency with verbose=FALSE to avoid redundant messages
+         cons <- compute_consistency(scTypeEval,
+                                     ident = ".tmp",
+                                     sample = sample,
+                                     gene.list = gene.list,
+                                     consistency_method = consistency_method,
+                                     min.samples = min.samples,
+                                     min.cells = min.cells,
+                                     ncores = ncores,
+                                     verbose = FALSE)
          
          # aggregate child consistency
          child_celltypes <- unique(scTypeEval@metadata[cells, ".tmp"])
