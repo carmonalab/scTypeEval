@@ -176,7 +176,7 @@ compute_NeighborhoodPurity <- function(dist,
          score <- minmax_norm(score,
                               min_value = prop.ident.table[ident[i]],
                               max_value = 1,
-                              inverse = F)
+                              inverse = FALSE)
       }
       
       modularities[i] <- score
@@ -220,7 +220,7 @@ custom_PropMatch <- function(ident, clusters, normalize = FALSE){
          score <- minmax_norm(score,
                               min_value = prop.ident.table[ct],
                               max_value = 1,
-                              inverse = F)
+                              inverse = FALSE)
       }
       scores[ct] <- score
    }

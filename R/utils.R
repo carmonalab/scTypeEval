@@ -125,11 +125,8 @@ sample_variable_length_combinations <- function(elements,
                                                 max_k = NULL,
                                                 num_samples = 30,
                                                 max_iter = 1000,
-                                                seed = 22) {
-   if (is.null(seed)) {
-      stop("Seed value missing")
-   }
-   set.seed(seed)
+                                                seed = NULL) {
+   # No global seeding in package code per Bioconductor guidelines
    
    if(is.null(max_k)){
       max_k <- length(elements) - 1
@@ -181,7 +178,7 @@ sample_variable_length_combinations <- function(elements,
 .general_filtering <- function(mat, # Mat_ident object
                                black.list = NULL,
                                gene.list = NULL,
-                               verbose = T){
+                               verbose = TRUE){
    norm.mat <- mat@matrix
    # remove blacked listed genes
    if(!is.null(black.list) && verbose){message("   Filtering out black listed genes... \n")}

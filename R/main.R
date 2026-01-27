@@ -1822,7 +1822,7 @@ plot.Heatmap <- function(scTypeEval,
                           dplyr::arrange(measure) |>
                           dplyr::pull(measure, name = celltype)
                        
-                       if(verbose){print(consis)}
+                       if(verbose){message("Consistency computed.")}
                        
                        ident_order <- names(consis)  
                     } 
@@ -1976,7 +1976,7 @@ load_singleCell_object <- function(path,
    counts <- NULL
    metadata <- NULL
    
-   if (grepl("rds$", path, ignore.case = T)) {
+   if (grepl("rds$", path, ignore.case = TRUE)) {
       object <- readRDS(path)
       
       if (inherits(object, "Seurat")) {
@@ -2001,7 +2001,7 @@ load_singleCell_object <- function(path,
          stop("Unsupported .rds object type: ", class(object))
       }
       
-   } else if (grepl("h5ad$", path, ignore.case = T)) {
+   } else if (grepl("h5ad$", path, ignore.case = TRUE)) {
       if (!requireNamespace("anndata", quietly = TRUE)) {
          stop("The 'anndata' package is required to read .h5ad files. Please install it.")
       }
@@ -2402,7 +2402,7 @@ get.optimal_clustering <- function(X = NULL,
          resolution_iter <- 0 # max iteration trials for louvan/leiden resolution
          nclus <- 1
          while(nclus < nchild && resolution_iter <= 10){
-            set.seed(22)
+            # removed set.seed to comply with Bioconductor guidelines
             cl <- get.clusters(X[cells, , drop=FALSE],
                                clustering_method = clustering_method,
                                nclusters = nchild,
@@ -2418,7 +2418,7 @@ get.optimal_clustering <- function(X = NULL,
          if(nclus<2) {next}
          
          scTypeEval@metadata[cells, ".tmp"] <- paste(scTypeEval@metadata[cells, ".tmp"], cl, sep = ".")
-         if(verbose){cat("Computing consistency for", clus_col)}
+         if(verbose){message("Computing consistency for ", clus_col)}
          
          suppressMessages(
             {

@@ -25,20 +25,20 @@ valid.indices <- function(groups,
       # update samples
       nsample <- sample[groups %in% valid_groups]
       # Split by ident and check sample distribution
-      ident_samples_count <- sapply(unique(nident), function(cell_type) {
+      ident_samples_count <- vapply(unique(nident), function(cell_type) {
          sample_counts <- table(nsample[nident == cell_type])
-         sum(sample_counts >= min.samples)  # Count samples with at least `min.samples` cells for this cell type
-      })
+         sum(sample_counts >= min.samples)
+      }, integer(1))
       
       names(ident_samples_count) <- unique(nident)
       
       valid_idents <- names(ident_samples_count[ident_samples_count >= min.samples])
       
       # Filter valid groups based on the number of samples with at least `min.cells` cells
-      valid_groups <- valid_groups[sapply(valid_groups, function(g) {
+      valid_groups <- valid_groups[vapply(valid_groups, function(g) {
          ident_name <- strsplit(g, sep)[[1]][2]
          ident_name %in% valid_idents
-      })]
+      }, logical(1))]
    }
    
    # Filter the grouping indices to keep only valid groups
@@ -96,11 +96,11 @@ get_pseudobulk <- function(mat,
    
    # retrieve new idents, group and sample
    new.group <- factor(group_levels)
-   new.ident <- sapply(group_levels, function(x){strsplit(x, sep)[[1]][2]})
+   new.ident <- vapply(group_levels, function(x){strsplit(x, sep)[[1]][2]}, character(1))
    new.ident <- factor(new.ident)
    
    if(!is.null(sample)){
-      new.sample <- sapply(group_levels, function(x){strsplit(x, sep)[[1]][1]})
+      new.sample <- vapply(group_levels, function(x){strsplit(x, sep)[[1]][1]}, character(1))
       new.sample <- factor(new.sample)
    } else {
       new.sample <- NULL

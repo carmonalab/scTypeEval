@@ -36,22 +36,22 @@ get.GeomMean <- function(mat,
                          margin = 2L){
    if (margin == 1L) {
       # Geometric mean for rows
-      gmeans <- sapply(1:nrow(mat), function(row_idx) {
+      gmeans <- vapply(seq_len(nrow(mat)), function(row_idx) {
          row_start <- mat@p[row_idx] + 1
          row_end <- mat@p[row_idx + 1]
          row_values <- mat@x[row_start:row_end]
          GeomMean(row_values)
-      })
-      names(gmeans) <- rownames(mat)  # Assign row names
+      }, numeric(1))
+      names(gmeans) <- rownames(mat)
    } else if (margin == 2L) {
       # Geometric mean for columns
-      gmeans <- sapply(1:ncol(mat), function(col_idx) {
+      gmeans <- vapply(seq_len(ncol(mat)), function(col_idx) {
          col_start <- mat@p[col_idx] + 1
          col_end <- mat@p[col_idx + 1]
          col_values <- mat@x[col_start:col_end]
          GeomMean(col_values)
-      })
-      names(gmeans) <- colnames(mat)  # Assign column names
+      }, numeric(1))
+      names(gmeans) <- colnames(mat)
    } else {
       stop("Invalid margin. Use 1 for rows or 2 for columns.")
    }

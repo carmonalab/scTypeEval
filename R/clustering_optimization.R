@@ -17,7 +17,7 @@ process_clustering <- function(scTypeEval,
       scTypeEval@metadata |>
       dplyr::mutate(k = sample(c("a", "b"),
                                nrow(scTypeEval@metadata),
-                               replace = T),
+                               replace = TRUE),
                     sample = .data[[sample]]
       ) |>
       dplyr::select(k, sample)

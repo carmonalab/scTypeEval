@@ -34,10 +34,11 @@ get.DEG_logfc <- function(mat,
       others <- setdiff(clusters, cl)
       
       # Store the maximum logFC against all other clusters
-      logfc_vec <- sapply(others, function(other) {
-         log2((medians[, cl] + pseudo_count) / 
+      logfc_vec <- do.call(cbind, lapply(others, function(other) {
+         log2((medians[, cl] + pseudo_count) /
                  (medians[, other] + pseudo_count))
-      })
+      }))
+      colnames(logfc_vec) <- others
       
       top_de <- lapply(others, function(x){
          m <- logfc_vec[,x]

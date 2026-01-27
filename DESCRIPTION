@@ -54,6 +54,7 @@ Imports:
   SingleR (>= 2.4.1),
   irlba (>= 2.3.5.1),
   transport (>= 0.15-4),
+  grDevices,
   methods,
   stats,
   utils

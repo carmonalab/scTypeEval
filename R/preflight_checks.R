@@ -8,7 +8,7 @@ purge_label <- function(label){
 
 .check_ident <- function(scTypeEval = NULL,
                          ident,
-                         verbose = T){
+                         verbose = TRUE){
    if(!is.null(scTypeEval)){
       if(is.null(ident)){
          ident <- scTypeEval@active.ident
@@ -36,7 +36,7 @@ purge_label <- function(label){
 
 .check_sample <- function(scTypeEval = NULL,
                           sample,
-                          verbose = T){
+                          verbose = TRUE){
    if(!is.null(scTypeEval)){
       if(!sample %in% names(scTypeEval@metadata)){
          stop("`sample` parameter not found in metadata colnames.\n")
@@ -59,7 +59,7 @@ purge_label <- function(label){
    return(sample)
 }
 
-.check_blacklist <- function(scTypeEval, black.list = NULL, verbose = T){
+.check_blacklist <- function(scTypeEval, black.list = NULL, verbose = TRUE){
    
    if(is.null(black.list)){
       black.list <- scTypeEval@black.list
