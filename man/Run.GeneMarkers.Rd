@@ -85,16 +85,9 @@ metadata <- data.frame(
 
 sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
 sceval <- Run.ProcessingData(sceval, ident = "celltype", 
-                             aggregation = "pseudobulk",
+                             aggregation = "single-cell",
                              sample = "sample", min.samples = 3,
                              min.cells = 3, verbose = FALSE)
-
-# Compute HVGs using scran method
-sceval <- Run.HVG(sceval,
-                  aggregation = "pseudobulk",
-                  var.method = "scran",
-                  ngenes = 50,
-                  verbose = FALSE)
 
 # Identify marker genes per cell type
 sceval <- Run.GeneMarkers(sceval,

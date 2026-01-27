@@ -70,15 +70,15 @@ t-SNE, or any embedding) into an \code{scTypeEval} object. The embeddings are st
 workflow for downstream analysis.
 }
 \examples{
-# Create synthetic test data
+# Create test data with enough samples
 library(Matrix)
-counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
-rownames(counts) <- paste0("Gene", 1:50)
-colnames(counts) <- paste0("Cell", 1:20)
+counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:100)
+colnames(counts) <- paste0("Cell", 1:60)
 
 metadata <- data.frame(
-  celltype = rep(c("TypeA", "TypeB"), each = 10),
-  sample = rep(paste0("Sample", 1:4), each = 5),
+  celltype = rep(c("TypeA", "TypeB"), each = 30),
+  sample = rep(paste0("Sample", 1:6), times = 10),
   row.names = colnames(counts)
 )
 
@@ -88,7 +88,6 @@ sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
 sceval <- create.scTypeEval(
   matrix = counts, 
   metadata = metadata,
-  gene.lists = gene_list,
   active.ident = "celltype"
 )
 

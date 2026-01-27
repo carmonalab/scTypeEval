@@ -66,8 +66,7 @@ pair occurs exactly once (i.e., fully aggregated).
 }
 }
 \examples{
-\donttest{
-library(Matrix)
+# Create synthetic test data#' library(Matrix)
 counts <- Matrix(rpois(200, 5), nrow = 20, ncol = 10, sparse = TRUE)
 rownames(counts) <- paste0("Gene", seq_len(20))
 colnames(counts) <- paste0("Cell", seq_len(10))
@@ -83,9 +82,8 @@ sceval <- Add.ProcessedData(
   aggregation = "single-cell",
   ident = metadata$celltype,
   sample = metadata$sample,
-  filter = TRUE
+  filter = FALSE
 )
-}
 
 }
 \seealso{

@@ -41,7 +41,6 @@ sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
 sceval <- create.scTypeEval(
   matrix = counts, 
   metadata = metadata,
-  gene.lists = gene_list,
   active.ident = "celltype"
 )
 

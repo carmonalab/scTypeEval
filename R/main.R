@@ -365,8 +365,7 @@ Run.ProcessingData <- function(scTypeEval,
 #' - Processed data is wrapped in a `DataAssay` object and added to the `scTypeEval`.
 #'
 #' @examples
-#' \donttest{
-#' library(Matrix)
+#' # Create synthetic test data#' library(Matrix)
 #' counts <- Matrix(rpois(200, 5), nrow = 20, ncol = 10, sparse = TRUE)
 #' rownames(counts) <- paste0("Gene", seq_len(20))
 #' colnames(counts) <- paste0("Cell", seq_len(10))
@@ -382,9 +381,8 @@ Run.ProcessingData <- function(scTypeEval,
 #'   aggregation = "single-cell",
 #'   ident = metadata$celltype,
 #'   sample = metadata$sample,
-#'   filter = TRUE
+#'   filter = FALSE
 #' )
-#' }
 #' 
 #' @seealso \link{Run.ProcessingData}
 #'
@@ -408,11 +406,11 @@ Add.ProcessedData <- function(scTypeEval,
    }
    #### preflights checks
    ident <- .check_ident(ident = ident, verbose = verbose)
-   if(length(ident) == ncol(data)){
+   if(length(ident) != ncol(data)){
       stop("Different length of ident and ncol of data\n")
    }
    sample <- .check_sample(sample = sample, verbose = verbose)
-   if(length(sample) == ncol(data)){
+   if(length(sample) != ncol(data)){
       stop("Different length of sample and ncol of data\n")
    }
    groups <- factor(paste(sample, ident, sep = "_"))
@@ -453,7 +451,7 @@ Add.ProcessedData <- function(scTypeEval,
    rr <- methods::new("DataAssay",
                       matrix = data,
                       aggregation = aggregation,
-                      group = group,
+                      group = groups,
                       ident = setNames(list(ident), ident.name),
                       sample = sample)
    
@@ -521,14 +519,12 @@ Add.ProcessedData <- function(scTypeEval,
 #' )
 #' 
 #' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype", 
-#'                              aggregation = "pseudobulk",
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' 
 #' # Compute HVGs using scran method
 #' sceval <- Run.HVG(sceval,
-#'                   aggregation = "pseudobulk",
 #'                   var.method = "scran",
 #'                   ngenes = 50,
 #'                   verbose = FALSE)
@@ -659,16 +655,9 @@ Run.HVG <- function(scTypeEval,
 #' 
 #' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
 #' sceval <- Run.ProcessingData(sceval, ident = "celltype", 
-#'                              aggregation = "pseudobulk",
+#'                              aggregation = "single-cell",
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
-#' 
-#' # Compute HVGs using scran method
-#' sceval <- Run.HVG(sceval,
-#'                   aggregation = "pseudobulk",
-#'                   var.method = "scran",
-#'                   ngenes = 50,
-#'                   verbose = FALSE)
 #'
 #' # Identify marker genes per cell type
 #' sceval <- Run.GeneMarkers(sceval,
@@ -765,7 +754,6 @@ Run.GeneMarkers <- function(scTypeEval,
 #' sceval <- create.scTypeEval(
 #'   matrix = counts, 
 #'   metadata = metadata,
-#'   gene.lists = gene_list,
 #'   active.ident = "celltype"
 #' )
 #' 
@@ -958,15 +946,15 @@ Run.PCA <- function(scTypeEval,
 #' in the \code{reductions} slot.
 #'
 #' @examples
-#' # Create synthetic test data
+#' # Create test data with enough samples
 #' library(Matrix)
-#' counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:50)
-#' colnames(counts) <- paste0("Cell", 1:20)
+#' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:100)
+#' colnames(counts) <- paste0("Cell", 1:60)
 #' 
 #' metadata <- data.frame(
-#'   celltype = rep(c("TypeA", "TypeB"), each = 10),
-#'   sample = rep(paste0("Sample", 1:4), each = 5),
+#'   celltype = rep(c("TypeA", "TypeB"), each = 30),
+#'   sample = rep(paste0("Sample", 1:6), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -976,7 +964,6 @@ Run.PCA <- function(scTypeEval,
 #' sceval <- create.scTypeEval(
 #'   matrix = counts, 
 #'   metadata = metadata,
-#'   gene.lists = gene_list,
 #'   active.ident = "celltype"
 #' )
 #' 
