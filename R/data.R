@@ -1,5 +1,7 @@
 #' Default Gene Blacklist for scTypeEval
 #'
+#' @name black.list
+#'
 #' @description
 #' A curated list of genes typically excluded from single-cell RNA-seq analysis
 #' to reduce technical artifacts and improve cell type annotation quality.
@@ -40,19 +42,13 @@
 #' }
 #'
 #' @examples
-#' # The default blacklist is automatically used in HVG and marker detection
-#' \donttest{
-#' # Use default blacklist in HVG detection:
-#' # sceval <- Run.HVG(sceval, black.list = NULL)
+#' # Load the default gene blacklist
+#' data(black.list)
 #'
-#' # Use custom blacklist with only mitochondrial genes:
-#' # mt_genes <- grep("^MT-", rownames(sceval@counts), value = TRUE)
-#' # sceval <- Run.HVG(sceval, black.list = mt_genes)
-#' }
+#' # Inspect the first few entries
+#' head(black.list)
 #'
 #' @seealso \code{\link{Run.HVG}}, \code{\link{Run.GeneMarkers}}
 #'
 #' @keywords datasets
-#'
-#' @export
-"black.list"
+NULL
