@@ -71,7 +71,7 @@ create.scTypeEval <- function(matrix = NULL,
    
    # Handle NULL matrix case
    if (is.null(matrix)) {
-      message("⚠️  No matrix provided. Initializing scTypeEval with empty counts.")
+      message("Warning: No matrix provided. Initializing scTypeEval with empty counts.")
       
       # Create an empty dgCMatrix
       counts <- Matrix::sparseMatrix(i = integer(0),
