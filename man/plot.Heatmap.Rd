@@ -66,19 +66,32 @@ Each heatmap is rendered with ggplot2, with group boundaries and axis labels
 indicating cell-type structure.
 }
 \examples{
-\donttest{
+#' # Create and process test data
+library(Matrix)
+counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:100)
+colnames(counts) <- paste0("Cell", 1:60)
+
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 30),
+  sample = rep(paste0("Sample", 1:6), times = 10),
+  row.names = colnames(counts)
+)
+
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+sceval <- Run.ProcessingData(sceval, ident = "celltype",
+                             sample = "sample", min.samples = 3,
+                             min.cells = 3, verbose = FALSE)
+sceval <- Run.HVG(sceval,
+                  var.method = "scran",
+                  ngenes = 10,
+                  verbose = FALSE)
+
+# Compute Pseudobulk Euclidean dissimilarity
+sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+                            reduction = FALSE, verbose = FALSE)
 # Plot heatmaps for all dissimilarity assays
-hm_all <- plot.Heatmap(sceval)
-
-# Plot with cell types ordered by consistency
-hm_cons <- plot.Heatmap(sceval, sort.consistency = "silhouette")
-
-# Plot with cells clustered by similarity within cell type
-hm_sim <- plot.Heatmap(sceval, sort.similarity = "WasserStein")
-
-# Plot with consistency ordering of cell types and similarity ordering within
-hm_both <- plot.Heatmap(sceval, sort.consistency = "silhouette", sort.similarity = "WasserStein")
-}
+heatmap <- plot.Heatmap(sceval)
 
 }
 \seealso{

@@ -66,16 +66,20 @@ pair occurs exactly once (i.e., fully aggregated).
 }
 }
 \examples{
-# Create synthetic test data#' library(Matrix)
-counts <- Matrix(rpois(200, 5), nrow = 20, ncol = 10, sparse = TRUE)
-rownames(counts) <- paste0("Gene", seq_len(20))
-colnames(counts) <- paste0("Cell", seq_len(10))
+# Create test data with enough samples
+library(Matrix)
+counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:100)
+colnames(counts) <- paste0("Cell", 1:60)
+
 metadata <- data.frame(
-  celltype = rep(c("A", "B"), each = 5),
-  sample = rep(paste0("S", 1:2), times = 5),
+  celltype = rep(c("TypeA", "TypeB"), each = 30),
+  sample = rep(paste0("Sample", 1:6), times = 10),
   row.names = colnames(counts)
 )
+
 sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+
 sceval <- Add.ProcessedData(
   sceval,
   data = counts,

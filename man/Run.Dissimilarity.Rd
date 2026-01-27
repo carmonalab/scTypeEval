@@ -88,11 +88,13 @@ metadata <- data.frame(
 )
 
 sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-sceval <- Run.ProcessingData(sceval, ident = "celltype", 
-                             aggregation = "pseudobulk", 
+sceval <- Run.ProcessingData(sceval, ident = "celltype",
                              sample = "sample", min.samples = 3,
                              min.cells = 3, verbose = FALSE)
-sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", verbose = FALSE)
+sceval <- Run.HVG(sceval,
+                  var.method = "scran",
+                  ngenes = 10,
+                  verbose = FALSE)
 
 # Compute Pseudobulk Euclidean dissimilarity
 sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",

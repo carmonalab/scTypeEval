@@ -44,9 +44,31 @@ an internal plotting helper.
 The plot axes correspond to the requested MDS dimensions (\code{dims}).
 }
 \examples{
-\donttest{
+#' # Create and process test data
+library(Matrix)
+counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:100)
+colnames(counts) <- paste0("Cell", 1:60)
+
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 30),
+  sample = rep(paste0("Sample", 1:6), times = 10),
+  row.names = colnames(counts)
+)
+
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+sceval <- Run.ProcessingData(sceval, ident = "celltype",
+                             sample = "sample", min.samples = 3,
+                             min.cells = 3, verbose = FALSE)
+sceval <- Run.HVG(sceval,
+                  var.method = "scran",
+                  ngenes = 10,
+                  verbose = FALSE)
+
+# Compute Pseudobulk Euclidean dissimilarity
+sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+                            reduction = FALSE, verbose = FALSE)
 # Plot MDS for all dissimilarity assays
 mds_plots <- plot.MDS(sceval)
-}
 
 }

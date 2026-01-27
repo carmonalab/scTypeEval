@@ -23,7 +23,6 @@ The function ensures that the provided identity exists within the metadata befor
 If no valid identity is provided, an error is raised.
 }
 \examples{
-\donttest{
 # Create synthetic test data
 library(Matrix)
 counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
@@ -41,6 +40,5 @@ sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
 
 # add active ident
 sceval <- set.activeIdent(sceval, ident = "celltype")
-}
 
 }

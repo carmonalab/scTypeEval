@@ -138,8 +138,8 @@ requiring the number of clusters to be specified a priori.
 }
 \examples{
 \donttest{
-scTypeEval <- optimal_clustering(
-  scTypeEval = sc_obj,
+scTypeEval <- get.optimal_clustering(
+  scTypeEval = sceval,
   ident = "celltype",
   sample = "sample_id",
   consistency_method = c(

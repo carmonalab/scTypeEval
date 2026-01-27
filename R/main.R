@@ -165,7 +165,6 @@ create.scTypeEval <- function(matrix = NULL,
 #'          If no valid identity is provided, an error is raised.
 #'
 #' @examples
-#' \donttest{
 #' # Create synthetic test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
@@ -183,7 +182,6 @@ create.scTypeEval <- function(matrix = NULL,
 #' 
 #' # add active ident
 #' sceval <- set.activeIdent(sceval, ident = "celltype")
-#' }
 #'
 #' @export set.activeIdent
 
@@ -365,16 +363,20 @@ Run.ProcessingData <- function(scTypeEval,
 #' - Processed data is wrapped in a `DataAssay` object and added to the `scTypeEval`.
 #'
 #' @examples
-#' # Create synthetic test data#' library(Matrix)
-#' counts <- Matrix(rpois(200, 5), nrow = 20, ncol = 10, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", seq_len(20))
-#' colnames(counts) <- paste0("Cell", seq_len(10))
+#' # Create test data with enough samples
+#' library(Matrix)
+#' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:100)
+#' colnames(counts) <- paste0("Cell", 1:60)
+#' 
 #' metadata <- data.frame(
-#'   celltype = rep(c("A", "B"), each = 5),
-#'   sample = rep(paste0("S", 1:2), times = 5),
+#'   celltype = rep(c("TypeA", "TypeB"), each = 30),
+#'   sample = rep(paste0("Sample", 1:6), times = 10),
 #'   row.names = colnames(counts)
 #' )
+#' 
 #' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' 
 #' sceval <- Add.ProcessedData(
 #'   sceval,
 #'   data = counts,
@@ -526,7 +528,7 @@ Add.ProcessedData <- function(scTypeEval,
 #' # Compute HVGs using scran method
 #' sceval <- Run.HVG(sceval,
 #'                   var.method = "scran",
-#'                   ngenes = 50,
+#'                   ngenes = 10,
 #'                   verbose = FALSE)
 #'
 #' @export Run.HVG
@@ -662,7 +664,8 @@ Run.HVG <- function(scTypeEval,
 #' # Identify marker genes per cell type
 #' sceval <- Run.GeneMarkers(sceval,
 #'  method = "scran.findMarkers",
-#'  ngenes.celltype = 50)
+#'  ngenes.celltype = 10,
+#'  verbose = FALSE)
 #'
 #' @export Run.GeneMarkers
 
@@ -835,14 +838,16 @@ add.GeneList <- function(scTypeEval,
 #' )
 #' 
 #' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype", 
-#'                              aggregation = "pseudobulk",
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", verbose = FALSE)
+#' sceval <- Run.HVG(sceval,
+#'                   var.method = "scran",
+#'                   ngenes = 20,
+#'                   verbose = FALSE)
 #' 
 #' # Run PCA on HVG genes
-#' sceval <- Run.PCA(sceval, gene.list = "HVG", ndim = 5, verbose = FALSE)
+#' sceval <- Run.PCA(sceval, gene.list = "HVG", ndim = 4, verbose = FALSE)
 #'
 #' @seealso \link{Add.ProcessedData}
 #'
@@ -1154,11 +1159,13 @@ add.DimReduction <- function(scTypeEval,
 #' )
 #' 
 #' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype", 
-#'                              aggregation = "pseudobulk", 
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", verbose = FALSE)
+#' sceval <- Run.HVG(sceval,
+#'                   var.method = "scran",
+#'                   ngenes = 10,
+#'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
 #' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
@@ -1382,11 +1389,13 @@ Run.Dissimilarity <- function(scTypeEval,
 #' )
 #' 
 #' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype", 
-#'                              aggregation = "pseudobulk", 
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", verbose = FALSE)
+#' sceval <- Run.HVG(sceval,
+#'                   var.method = "scran",
+#'                   ngenes = 10,
+#'                   verbose = FALSE)
 #' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 #'                             reduction = FALSE, verbose = FALSE)
 #' 
@@ -1510,19 +1519,18 @@ get.Consistency <- function(scTypeEval,
 #' )
 #' 
 #' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype", 
-#'                              aggregation = "pseudobulk",
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' sceval <- Run.HVG(sceval,
-#'                   aggregation = "pseudobulk",
 #'                   var.method = "scran",
+#'                   ngenes = 20,
 #'                   verbose = FALSE)
 #' 
 #' # Run PCA on HVG genes
 #' sceval <- Run.PCA(sceval,
 #'                  gene.list = "HVG",
-#'                  ndim = 5,
+#'                  ndim = 4,
 #'                  verbose = FALSE)
 #' 
 #' # plot PCA
@@ -1598,10 +1606,32 @@ plot.PCA <- function(scTypeEval,
 #' to the number of unique identities provided in the assay metadata.
 #'
 #' @examples
-#' \donttest{
+#' # Create and process test data
+#' library(Matrix)
+#' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:100)
+#' colnames(counts) <- paste0("Cell", 1:60)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 30),
+#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   row.names = colnames(counts)
+#' )
+#' 
+#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
+#'                              sample = "sample", min.samples = 3,
+#'                              min.cells = 3, verbose = FALSE)
+#' sceval <- Run.HVG(sceval,
+#'                   var.method = "scran",
+#'                   ngenes = 10,
+#'                   verbose = FALSE)
+#' 
+#' # Compute Pseudobulk Euclidean dissimilarity
+#' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+#'                             reduction = FALSE, verbose = FALSE)
 #' # Perform hierarchical clustering on all available dissimilarity matrices
-#' hier_results <- get.hierarchy(sceval)
-#' }
+#' hier_results <- get.hierarchy(sceval, verbose = FALSE)
 #'
 #' @seealso \link{Run.Dissimilarity}, \link[stats]{hclust}
 #'
@@ -1674,11 +1704,35 @@ get.hierarchy <- function(scTypeEval,
 #' the expected global frequency of each cell type.
 #'
 #' @examples
-#' \donttest{
+#' # Create and process test data
+#' library(Matrix)
+#' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:100)
+#' colnames(counts) <- paste0("Cell", 1:60)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 30),
+#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   row.names = colnames(counts)
+#' )
+#' 
+#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
+#'                              sample = "sample", min.samples = 3,
+#'                              min.cells = 3, verbose = FALSE)
+#' sceval <- Run.HVG(sceval,
+#'                   var.method = "scran",
+#'                   ngenes = 10,
+#'                   verbose = FALSE)
+#' 
+#' # Compute Pseudobulk Euclidean dissimilarity
+#' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+#'                             reduction = FALSE, verbose = FALSE)
+#' # Get nearest neighbors                            
 #' result <- get.NN(scTypeEval = sceval,
 #'                  KNNGraph_k = 5,
-#'                  normalize = TRUE)
-#' }
+#'                  normalize = TRUE,
+#'                  verbose = FALSE)
 #'
 #' @export get.NN
 
@@ -1748,10 +1802,32 @@ get.NN <- function(scTypeEval,
 #' The plot axes correspond to the requested MDS dimensions (`dims`).
 #'
 #' @examples
-#' \donttest{
+#' #' # Create and process test data
+#' library(Matrix)
+#' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:100)
+#' colnames(counts) <- paste0("Cell", 1:60)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 30),
+#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   row.names = colnames(counts)
+#' )
+#' 
+#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
+#'                              sample = "sample", min.samples = 3,
+#'                              min.cells = 3, verbose = FALSE)
+#' sceval <- Run.HVG(sceval,
+#'                   var.method = "scran",
+#'                   ngenes = 10,
+#'                   verbose = FALSE)
+#' 
+#' # Compute Pseudobulk Euclidean dissimilarity
+#' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+#'                             reduction = FALSE, verbose = FALSE)
 #' # Plot MDS for all dissimilarity assays
 #' mds_plots <- plot.MDS(sceval)
-#' }
 #'
 #' @export plot.MDS
 
@@ -1844,19 +1920,32 @@ plot.MDS <- function(scTypeEval,
 #' indicating cell-type structure.
 #'
 #' @examples
-#' \donttest{
+#' #' # Create and process test data
+#' library(Matrix)
+#' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:100)
+#' colnames(counts) <- paste0("Cell", 1:60)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 30),
+#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   row.names = colnames(counts)
+#' )
+#' 
+#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
+#'                              sample = "sample", min.samples = 3,
+#'                              min.cells = 3, verbose = FALSE)
+#' sceval <- Run.HVG(sceval,
+#'                   var.method = "scran",
+#'                   ngenes = 10,
+#'                   verbose = FALSE)
+#' 
+#' # Compute Pseudobulk Euclidean dissimilarity
+#' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+#'                             reduction = FALSE, verbose = FALSE)
 #' # Plot heatmaps for all dissimilarity assays
-#' hm_all <- plot.Heatmap(sceval)
-#'
-#' # Plot with cell types ordered by consistency
-#' hm_cons <- plot.Heatmap(sceval, sort.consistency = "silhouette")
-#'
-#' # Plot with cells clustered by similarity within cell type
-#' hm_sim <- plot.Heatmap(sceval, sort.similarity = "WasserStein")
-#'
-#' # Plot with consistency ordering of cell types and similarity ordering within
-#' hm_both <- plot.Heatmap(sceval, sort.consistency = "silhouette", sort.similarity = "WasserStein")
-#' }
+#' heatmap <- plot.Heatmap(sceval)
 #' 
 #' @seealso \link{Run.Dissimilarity}, \link[stats]{hclust}, \link{get.Consistency}
 #'
@@ -2228,22 +2317,31 @@ load_singleCell_object <- function(path,
 #' from raw single-cell data with minimal manual steps.
 #'
 #' @examples
-#' \donttest{
-#' sc_res <- wrapper_scTypeEval(
-#'   count_matrix = sc_counts,
-#'   metadata = sc_metadata,
-#'   ident = "celltype",
-#'   sample = "sample_id",
-#'   normalization.method = "Log1p",
-#'   dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean"),
-#'   reduction = TRUE,
-#'   ndim = 30,
-#'   verbose = TRUE
+#' #' # Create test data with enough samples
+#' library(Matrix)
+#' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:100)
+#' colnames(counts) <- paste0("Cell", 1:60)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 30),
+#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   row.names = colnames(counts)
 #' )
-#'
-#' # Access computed dissimilarities
-#' names(sc_res@dissimilarity)
-#' }
+#' sc_res <- wrapper_scTypeEval(
+#'   count_matrix = counts,
+#'   metadata = metadata,
+#'   ident = "celltype",
+#'   sample = "sample",
+#'   min.samples = 3,
+#'   min.cells = 3,
+#'   normalization.method = "Log1p",
+#'   dissimilarity.method = c("Pseudobulk:Euclidean"),
+#'   reduction = TRUE,
+#'   ndim = 4,
+#'   verbose = FALSE
+#' )
+
 #'
 #' @seealso 
 #' \code{\link{create.scTypeEval}}, 
@@ -2420,8 +2518,8 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #'
 #' @examples
 #' \donttest{
-#' scTypeEval <- optimal_clustering(
-#'   scTypeEval = sc_obj,
+#' scTypeEval <- get.optimal_clustering(
+#'   scTypeEval = sceval,
 #'   ident = "celltype",
 #'   sample = "sample_id",
 #'   consistency_method = c(

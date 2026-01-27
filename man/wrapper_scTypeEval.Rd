@@ -117,22 +117,30 @@ This provides a simple entry point for end-to-end setup and dissimilarity comput
 from raw single-cell data with minimal manual steps.
 }
 \examples{
-\donttest{
-sc_res <- wrapper_scTypeEval(
-  count_matrix = sc_counts,
-  metadata = sc_metadata,
-  ident = "celltype",
-  sample = "sample_id",
-  normalization.method = "Log1p",
-  dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean"),
-  reduction = TRUE,
-  ndim = 30,
-  verbose = TRUE
-)
+#' # Create test data with enough samples
+library(Matrix)
+counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:100)
+colnames(counts) <- paste0("Cell", 1:60)
 
-# Access computed dissimilarities
-names(sc_res@dissimilarity)
-}
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 30),
+  sample = rep(paste0("Sample", 1:6), times = 10),
+  row.names = colnames(counts)
+)
+sc_res <- wrapper_scTypeEval(
+  count_matrix = counts,
+  metadata = metadata,
+  ident = "celltype",
+  sample = "sample",
+  min.samples = 3,
+  min.cells = 3,
+  normalization.method = "Log1p",
+  dissimilarity.method = c("Pseudobulk:Euclidean"),
+  reduction = TRUE,
+  ndim = 4,
+  verbose = FALSE
+)
 
 }
 \seealso{

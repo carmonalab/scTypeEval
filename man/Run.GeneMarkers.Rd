@@ -92,7 +92,8 @@ sceval <- Run.ProcessingData(sceval, ident = "celltype",
 # Identify marker genes per cell type
 sceval <- Run.GeneMarkers(sceval,
  method = "scran.findMarkers",
- ngenes.celltype = 50)
+ ngenes.celltype = 10,
+ verbose = FALSE)
 
 }
 \seealso{

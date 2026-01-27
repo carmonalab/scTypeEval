@@ -60,14 +60,16 @@ metadata <- data.frame(
 )
 
 sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-sceval <- Run.ProcessingData(sceval, ident = "celltype", 
-                             aggregation = "pseudobulk",
+sceval <- Run.ProcessingData(sceval, ident = "celltype",
                              sample = "sample", min.samples = 3,
                              min.cells = 3, verbose = FALSE)
-sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", verbose = FALSE)
+sceval <- Run.HVG(sceval,
+                  var.method = "scran",
+                  ngenes = 20,
+                  verbose = FALSE)
 
 # Run PCA on HVG genes
-sceval <- Run.PCA(sceval, gene.list = "HVG", ndim = 5, verbose = FALSE)
+sceval <- Run.PCA(sceval, gene.list = "HVG", ndim = 4, verbose = FALSE)
 
 }
 \seealso{

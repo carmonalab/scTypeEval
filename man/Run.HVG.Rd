@@ -93,7 +93,7 @@ sceval <- Run.ProcessingData(sceval, ident = "celltype",
 # Compute HVGs using scran method
 sceval <- Run.HVG(sceval,
                   var.method = "scran",
-                  ngenes = 50,
+                  ngenes = 10,
                   verbose = FALSE)
 
 }
