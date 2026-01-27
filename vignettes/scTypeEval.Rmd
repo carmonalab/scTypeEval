@@ -1,0 +1,507 @@
+---
+title: "scTypeEval: Evaluating Cell Type Classifications in Single-Cell Transcriptomics"
+author:
+  - name: Josep Garnica
+    affiliation: University of Geneva
+    email: josep.garnicacaparros@unige.ch
+date: "`r Sys.Date()`"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{scTypeEval: Evaluating Cell Type Classifications}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Introduction
+
+Accurate cell type annotation is essential but challenging in single-cell RNA sequencing (scRNA-seq). **Manual approaches** are time-consuming, subjective, and inconsistent, while **automated classifiers** often fail to generalize across tissues, conditions, or closely related cell types. A key limitation for both is the **lack of true ground truth** for benchmarking.
+
+**`scTypeEval`** provides a **ground-truth-agnostic framework** to systematically assess annotation quality using internal validation metrics. It enables:
+
+- Quantification of **inter-sample label consistency**
+- Identification of **ambiguous or misclassified populations**
+- Reproducible **benchmarking of manual annotations, automated classifiers, or clustering results**
+
+## Key Features
+
+- **Ground-truth agnostic** – Evaluate annotations without external references
+- **Cross-dataset benchmarking** – Assess consistency across samples and studies
+- **Customizable** – Works with Seurat, SingleCellExperiment, or matrices; supports custom gene lists
+- **Robust** – Sensitive to misclassification; reliable across batch effects, label granularity, and sample sizes
+
+# Installation
+
+To install `scTypeEval` from Bioconductor:
+
+```{r install, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("scTypeEval")
+```
+
+For the development version from GitHub:
+
+```{r install_github, eval=FALSE}
+if (!requireNamespace("remotes", quietly = TRUE))
+    install.packages("remotes")
+
+remotes::install_github("carmonalab/scTypeEval")
+```
+
+# Quick Start
+
+Load the package:
+
+```{r load_packages}
+library(scTypeEval)
+library(Matrix)
+```
+
+## Generate Example Data
+
+For this vignette, we'll create a synthetic dataset representing single-cell RNA-seq data from multiple samples with distinct cell types. This simulates a typical scenario where we want to evaluate the consistency of cell type annotations across biological replicates.
+
+```{r generate_data}
+set.seed(22)
+
+# Number of genes and cells
+n_genes <- 5000
+n_cells_per_sample <- 500
+n_samples <- 6
+cell_types <- c("CD4_T", "CD8_T", "B_cells", "NK_cells")
+
+# Generate gene names
+gene_names <- paste0("Gene_", seq_len(n_genes))
+
+# Total cells
+total_cells <- n_cells_per_sample * n_samples
+
+# Generate metadata: samples and cell types
+samples <- rep(paste0("Sample", seq_len(n_samples)), each = n_cells_per_sample)
+
+# Assign cell types evenly within each sample
+n_cell_types <- length(cell_types)
+cells_per_type <- n_cells_per_sample %/% n_cell_types
+celltypes <- rep(rep(cell_types, each = cells_per_type), times = n_samples)
+
+# Initialize count matrix
+count_matrix <- matrix(0, nrow = n_genes, ncol = total_cells)
+rownames(count_matrix) <- gene_names
+colnames(count_matrix) <- paste0("Cell_", seq_len(total_cells))
+
+# Add cell-type-specific expression patterns
+for (i in seq_along(cell_types)) {
+  ct <- cell_types[i]
+  ct_indices <- which(celltypes == ct)
+  
+  # Marker genes for this cell type (50 genes per type)
+  marker_start <- ((i - 1) * 50 + 1)
+  marker_end <- min(marker_start + 49, n_genes)
+  marker_genes <- marker_start:marker_end
+  
+  # High expression in marker genes (lambda = 50)
+  count_matrix[marker_genes, ct_indices] <- matrix(
+    rpois(length(marker_genes) * length(ct_indices), lambda = 50),
+    nrow = length(marker_genes)
+  )
+  
+  # Background expression in other genes (lambda = 5)
+  other_genes <- setdiff(seq_len(n_genes), marker_genes)
+  count_matrix[other_genes, ct_indices] <- matrix(
+    rpois(length(other_genes) * length(ct_indices), lambda = 5),
+    nrow = length(other_genes)
+  )
+}
+
+# Add sample-specific batch effects
+for (s in seq_len(n_samples)) {
+  sample_cells <- which(samples == paste0("Sample", s))
+  batch_effect <- rnorm(1, mean = 1, sd = 0.1)
+  count_matrix[, sample_cells] <- round(count_matrix[, sample_cells] * batch_effect)
+}
+
+# Convert to sparse matrix
+count_matrix <- Matrix(count_matrix, sparse = TRUE)
+
+# Create metadata dataframe
+metadata <- data.frame(
+  celltype = celltypes,
+  sample = samples,
+  batch = rep(c("Batch1", "Batch2"), each = n_cells_per_sample * (n_samples/2)),
+  row.names = colnames(count_matrix),
+  stringsAsFactors = FALSE
+)
+
+# Preview the data
+head(metadata)
+dim(count_matrix)
+```
+
+# Core Workflow
+
+## Step 1: Create scTypeEval Object
+
+`scTypeEval` objects can be created from:
+
+- A count matrix and metadata dataframe
+- A Seurat object
+- A SingleCellExperiment object
+
+```{r create_object}
+# Create scTypeEval object from matrix and metadata
+sceval <- create.scTypeEval(
+  matrix = count_matrix,
+  metadata = metadata
+)
+
+```
+
+The `scTypeEval` object stores the raw count data and metadata, which will be processed in subsequent steps.
+
+## Step 2: Process Data
+
+Process and normalize the data, creating both single-cell and pseudobulk representations. This step:
+
+- Aggregates counts by cell type and sample (pseudobulk)
+- Filters out cell types with insufficient samples or cells
+- Normalizes the data for downstream analysis
+
+```{r process_data}
+# Process data with filtering criteria
+sceval <- Run.ProcessingData(
+  scTypeEval = sceval,
+  ident = "celltype",          # Column defining cell type identities
+  sample = "sample",           # Column defining sample IDs
+  min.samples = 3,             # Minimum samples required per cell type
+  min.cells = 10               # Minimum cells per sample-celltype combination
+)
+
+```
+
+The processed data is stored as `DataAssay` objects within the `scTypeEval` object, accessible for downstream analysis.
+
+## Step 3: Extract Relevant Features
+
+Identify biologically relevant features for evaluating consistency. `scTypeEval` supports:
+
+- **Highly Variable Genes (HVGs)**: Genes with high variability across the dataset
+- **Cell Type Marker Genes**: Genes differentially expressed in each cell type
+- **Custom Gene Lists**: User-defined gene sets
+
+### Highly Variable Genes
+
+```{r hvg}
+# Identify HVGs using the scran method
+sceval <- Run.HVG(
+  scTypeEval = sceval,
+  var.method = "scran",        # Method for variance modeling
+  ngenes = 2000,               # Number of HVGs to retain
+  sample = TRUE                # Perform sample-level blocking
+)
+
+# View stored gene lists
+names(sceval@gene.lists)
+length(sceval@gene.lists$HVG)
+```
+
+### Cell Type Marker Genes
+
+```{r markers}
+# Identify marker genes per cell type
+sceval <- Run.GeneMarkers(
+  scTypeEval = sceval,
+  method = "scran.findMarkers",  # Method for finding markers
+  ngenes.celltype = 50           # Maximum markers per cell type
+)
+
+# View marker genes
+head(sceval@gene.lists$scran.findMarkers, 20)
+```
+
+### Custom Gene Lists (Optional)
+
+You can also add custom gene lists using `add.GeneList()`:
+
+```{r custom_genes, eval=FALSE}
+# Example: Add a custom list of immune response genes
+custom_genes <- c("Gene_1", "Gene_50", "Gene_100", "Gene_150")
+
+sceval <- add.GeneList(
+  scTypeEval = sceval,
+  gene.list = list("custom_genes" = custom_genes)
+)
+```
+
+## Step 4: Dimensional Reduction (Optional but Recommended)
+
+Consistency metrics can be computed directly on the selected features. However, computing them in a **low-dimensional space** (e.g., PCA) significantly speeds up the analysis while yielding similar results.
+
+```{r pca}
+# Run PCA on processed data
+sceval <- Run.PCA(
+  scTypeEval = sceval,
+  ndim = 30                    # Number of principal components
+)
+
+# View available reductions
+names(sceval@reductions)
+```
+
+Alternatively, pre-computed embeddings (PCA, UMAP, t-SNE) can be inserted using `add.DimReduction()`.
+
+## Step 5: Compute Dissimilarity Matrices
+
+The core of `scTypeEval` is computing pairwise dissimilarities between cell types across samples. Multiple dissimilarity methods are supported:
+
+### Pseudobulk-based Distances
+
+Compute distances between pseudobulk gene expression profiles:
+
+```{r dissim_pseudobulk}
+# Euclidean distance on pseudobulk profiles
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "Pseudobulk:Euclidean",
+  reduction = FALSE              # Use processed expression data
+)
+
+# Cosine distance on PCA embeddings
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "Pseudobulk:Cosine",
+  reduction = TRUE               # Use PCA space
+)
+```
+
+### Wasserstein Distance
+
+Compute Wasserstein distances between single-cell distributions:
+
+```{r dissim_wasserstein}
+# Wasserstein distance on PCA embeddings (faster)
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "WasserStein",
+  reduction = TRUE
+)
+```
+
+### Reciprocal Classification
+
+Match cells across samples using a classifier:
+
+```{r dissim_reciprocal}
+# Reciprocal classification with SingleR
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "RecipClassif:Match",
+  ReciprocalClassifier = "SingleR"
+)
+```
+
+### View Available Dissimilarity Matrices
+
+```{r view_dissim}
+# List all computed dissimilarity matrices
+names(sceval@dissimilarity)
+```
+
+## Step 6: Compute Consistency Metrics
+
+Evaluate inter-sample consistency for each cell type using internal validation metrics. `scTypeEval` supports multiple consistency metrics:
+
+- **silhouette**: Standard cohesion/separation score
+- **2label.silhouette**: Silhouette comparing "own type" vs. all others
+- **NeighborhoodPurity**: Fraction of K-nearest neighbors with same label
+- **ward.PropMatch**: Proportion in dominant Ward cluster
+- **Orbital.medoid**: Fraction closer to own medoid than others
+- **Average.similarity**: Within-type similarity vs. between-type
+
+### Compute Silhouette Scores
+
+```{r consistency_silhouette}
+# Compute silhouette consistency on Euclidean dissimilarity
+consistency_sil <- get.Consistency(
+  sceval,
+  dissimilarity.slot = "Pseudobulk:Euclidean",
+  Consistency.metric = "silhouette"
+)
+
+# View results
+print(consistency_sil)
+```
+
+Higher values indicate better consistency (i.e., samples with the same cell type annotation are more similar to each other than to samples with different annotations).
+
+### Compute Neighborhood Purity
+
+```{r consistency_neighborhood}
+# Compute neighborhood purity on Wasserstein dissimilarity
+consistency_nbhd <- get.Consistency(
+  sceval,
+  dissimilarity.slot = "WasserStein",
+  Consistency.metric = "NeighborhoodPurity"
+)
+
+# View results
+print(consistency_nbhd)
+```
+
+### Compare Multiple Metrics
+
+```{r compare_metrics}
+# Compute multiple metrics for comparison
+metrics <- c("silhouette", "NeighborhoodPurity", "Average.similarity")
+
+consistency_all <- lapply(metrics, function(metric) {
+  get.Consistency(
+    sceval,
+    dissimilarity.slot = "Pseudobulk:Euclidean",
+    Consistency.metric = metric
+  )
+})
+
+# Combine results
+consistency_df <- do.call(rbind, consistency_all)
+print(consistency_df)
+```
+
+# Visualization
+
+## Dissimilarity Heatmap
+
+Visualize dissimilarity matrices as annotated heatmaps. Cell types can be ordered by similarity or consistency scores:
+
+```{r plot_heatmap, fig.width=8, fig.height=7}
+# Plot dissimilarity heatmap with consistency-based ordering
+plot.Heatmap(
+  sceval,
+  dissimilarity.slot = "Pseudobulk:Euclidean",
+  sort.consistency = "silhouette",      # Order by silhouette scores
+  sort.similarity = NULL                 # Or order by similarity
+)
+```
+
+The heatmap shows pairwise dissimilarities between samples, grouped by cell type. Cell types with higher consistency (e.g., more coherent annotations) show tighter clustering of their samples.
+
+# Advanced Usage
+
+## Using Different Dissimilarity Methods
+
+Different dissimilarity methods capture different aspects of cell type similarity:
+
+```{r compare_methods}
+# Compute multiple dissimilarity methods
+methods <- c("Pseudobulk:Euclidean", "Pseudobulk:Cosine", "WasserStein")
+
+for (method in methods) {
+  sceval <- Run.Dissimilarity(
+    sceval,
+    method = method,
+    reduction = TRUE
+  )
+}
+
+# Compare consistency across methods
+comparison <- lapply(methods, function(method) {
+  get.Consistency(
+    sceval,
+    dissimilarity.slot = method,
+    Consistency.metric = "silhouette"
+  )
+})
+
+comparison_df <- do.call(rbind, comparison)
+print(comparison_df)
+```
+
+## Working with Real Data
+
+When working with real scRNA-seq data from Seurat or SingleCellExperiment:
+
+```{r real_data_example, eval=FALSE}
+# From Seurat object
+library(Seurat)
+sceval <- create.scTypeEval(seurat_object)
+
+# From SingleCellExperiment object
+library(SingleCellExperiment)
+sceval <- create.scTypeEval(sce_object)
+
+# Continue with standard workflow
+sceval <- Run.ProcessingData(
+  sceval,
+  ident = "celltype",
+  sample = "orig.ident",
+  min.samples = 5,
+  min.cells = 10
+)
+# ... rest of analysis
+```
+
+## Custom Gene Lists for Specific Analyses
+
+Focus analysis on specific gene sets (e.g., immune genes, pathways):
+
+```{r custom_analysis, eval=FALSE}
+# Add pathway-specific genes
+sceval <- add.GeneList(
+  scTypeEval = sceval,
+  list.name = "TCR_signaling",
+  gene.list = c("CD3D", "CD3E", "CD3G", "CD247", "LCK", "ZAP70")
+)
+
+# Run analysis focused on these genes
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "Pseudobulk:Euclidean",
+  gene.list = "TCR_signaling",  # Use specific gene list
+  reduction = FALSE
+)
+```
+
+# Interpretation Guidelines
+
+## Identifying Problematic Annotations
+
+Cell types with low consistency scores may indicate:
+
+1. **Ambiguous cell type boundaries**: Related cell types (e.g., activated vs. resting T cells) may overlap
+2. **Heterogeneous populations**: A single label covering multiple biological states
+3. **Annotation errors**: Inconsistent labeling across samples
+
+## Recommendations
+
+- Investigate cell types with low consistency using the heatmap visualization
+- Consider refining annotations for cell types with negative consistency scores
+- Use biological knowledge to interpret whether low consistency reflects true biology or annotation issues
+
+# Session Information
+
+```{r session_info}
+sessionInfo()
+```
+
+# References
+
+The manuscript describing these methods is currently in preparation. For questions or issues, please visit:
+
+- GitHub: https://github.com/carmonalab/scTypeEval
+- Bug reports: https://github.com/carmonalab/scTypeEval/issues

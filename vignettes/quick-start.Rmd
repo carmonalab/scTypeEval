@@ -1,0 +1,263 @@
+---
+title: "Quick Start Guide for scTypeEval"
+author:
+  - name: Josep Garnica
+    affiliation: University of Geneva
+    email: josep.garnicacaparros@unige.ch
+date: "`r Sys.Date()`"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_float: true
+vignette: >
+  %\VignetteIndexEntry{Quick Start Guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Overview
+
+This quick start guide demonstrates the essential steps for evaluating cell type annotations using `scTypeEval`. For a comprehensive tutorial, see the main vignette.
+
+# Installation and Loading
+
+To install `scTypeEval` from Bioconductor:
+
+```{r install, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("scTypeEval")
+```
+
+For the development version from GitHub:
+
+```{r install_github, eval=FALSE}
+if (!requireNamespace("remotes", quietly = TRUE))
+    install.packages("remotes")
+
+remotes::install_github("carmonalab/scTypeEval")
+```
+
+```{r load}
+library(scTypeEval)
+```
+
+# Minimal Workflow
+
+## From a Count Matrix
+
+```{r minimal_workflow}
+library(Matrix)
+
+# Generate example data
+set.seed(123)
+counts <- Matrix(rpois(50000, 5), nrow=500, ncol=100, sparse=TRUE)
+rownames(counts) <- paste0("Gene", 1:500)
+colnames(counts) <- paste0("Cell", 1:100)
+
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB", "TypeC", "TypeD"), each=25),
+  sample = rep(paste0("S", 1:5), times=20),
+  row.names = colnames(counts)
+)
+
+# Create object
+sceval <- create.scTypeEval(matrix=counts, metadata=metadata)
+
+# Process data
+sceval <- Run.ProcessingData(sceval, ident="celltype", sample="sample", 
+                             min.samples=3, min.cells=5)
+
+# Identify features
+sceval <- Run.HVG(sceval, ngenes=1000)
+
+# Run PCA
+sceval <- Run.PCA(sceval, ndim=20)
+
+# Compute dissimilarity
+sceval <- Run.Dissimilarity(sceval, method="Pseudobulk:Euclidean", reduction=TRUE)
+
+# Get consistency
+results <- get.Consistency(sceval, 
+                          dissimilarity.slot="Pseudobulk:Euclidean",
+                          Consistency.metric="silhouette")
+print(results)
+```
+
+## From a Seurat Object
+
+```{r seurat_example, eval=FALSE}
+library(Seurat)
+
+# Assuming you have a Seurat object named 'seurat_obj'
+sceval <- create.scTypeEval(seurat_obj)
+
+# Continue with standard workflow
+sceval <- Run.ProcessingData(sceval, 
+                             ident="celltype",      # Adjust to your metadata column
+                             sample="orig.ident",   # Adjust to your sample column
+                             min.samples=5, 
+                             min.cells=10)
+
+sceval <- Run.HVG(sceval)
+sceval <- Run.PCA(sceval, ndim=30)
+sceval <- Run.Dissimilarity(sceval, method="Pseudobulk:Euclidean")
+
+consistency <- get.Consistency(sceval, 
+                              dissimilarity.slot="Pseudobulk:Euclidean",
+                              Consistency.metric="silhouette")
+```
+
+## From a SingleCellExperiment Object
+
+```{r sce_example, eval=FALSE}
+library(SingleCellExperiment)
+
+# Assuming you have a SingleCellExperiment object named 'sce'
+sceval <- create.scTypeEval(sce)
+
+# Continue with workflow as above
+```
+
+# Common Use Cases
+
+## Compare Multiple Dissimilarity Methods
+
+```{r compare_methods, eval=FALSE}
+# Compute different dissimilarity methods
+sceval <- Run.Dissimilarity(sceval, method="Pseudobulk:Euclidean", reduction=TRUE)
+sceval <- Run.Dissimilarity(sceval, method="Pseudobulk:Cosine", reduction=TRUE)
+sceval <- Run.Dissimilarity(sceval, method="WasserStein", reduction=TRUE)
+
+# Compare consistency across methods
+methods <- c("Pseudobulk:Euclidean", "Pseudobulk:Cosine", "WasserStein")
+comparison <- lapply(methods, function(m) {
+  get.Consistency(sceval, dissimilarity.slot=m, Consistency.metric="silhouette")
+})
+results_df <- do.call(rbind, comparison)
+```
+
+## Evaluate Multiple Consistency Metrics
+
+```{r multiple_metrics, eval=FALSE}
+# Compute multiple consistency metrics
+metrics <- c("silhouette", "NeighborhoodPurity", "Average.similarity")
+
+all_metrics <- lapply(metrics, function(metric) {
+  get.Consistency(sceval, 
+                 dissimilarity.slot="Pseudobulk:Euclidean",
+                 Consistency.metric=metric)
+})
+
+combined_results <- do.call(rbind, all_metrics)
+```
+
+## Visualize Results
+
+```{r visualize, eval=FALSE}
+# Heatmap of dissimilarities
+plot.Heatmap(sceval, 
+            dissimilarity.slot="Pseudobulk:Euclidean",
+            sort.consistency="silhouette")
+
+plot.PCA(sceval, 
+         reduction.slot = "pseudobulk")
+```
+
+## Using Marker Genes Instead of HVGs
+
+```{r markers, eval=FALSE}
+# Identify cell type markers
+sceval <- Run.GeneMarkers(sceval, 
+                         method="scran.findMarkers",
+                         ngenes.celltype=50)
+
+# Use markers for dissimilarity calculation
+sceval <- Run.Dissimilarity(sceval, 
+                           method="Pseudobulk:Euclidean",
+                           gene.list="Marker_genes",
+                           reduction=FALSE)
+```
+
+## Focus on Specific Gene Sets
+
+```{r gene_sets, eval=FALSE}
+# Add custom gene list
+immune_genes <- c("CD3D", "CD4", "CD8A", "CD19", "CD14", "NCAM1")
+sceval <- add.GeneList(sceval, 
+                      list.name="immune_markers",
+                      gene.list=immune_genes)
+
+# Run analysis on custom genes
+sceval <- Run.Dissimilarity(sceval, 
+                           method="Pseudobulk:Euclidean",
+                           gene.list="immune_markers",
+                           reduction=FALSE)
+```
+
+# Interpreting Results
+
+## What Low Scores Mean
+
+Low consistency scores may indicate:
+
+- **Ambiguous cell type boundaries** between related types
+- **Heterogeneous populations** needing refinement
+- **Annotation inconsistencies** across samples
+
+## Next Steps for Low-Scoring Cell Types
+
+1. **Visualize** using `plot.Heatmap()` or `plot.PCA()` to identify problematic samples
+2. **Investigate** biological differences (e.g., disease vs. healthy)
+3. **Refine** annotations by splitting or merging cell types
+
+# Available Methods and Metrics
+
+## Dissimilarity Methods
+
+- **Pseudobulk:Euclidean** - Euclidean distance on pseudobulk profiles
+- **Pseudobulk:Cosine** - Cosine distance on pseudobulk profiles
+- **Pseudobulk:Pearson** - Pearson correlation distance on pseudobulk profiles
+- **WasserStein** - Wasserstein distance between cell distributions
+- **RecipClassif:Match** - Reciprocal classification matching
+- **RecipClassif:Score** - Reciprocal classification scoring
+
+## Consistency Metrics
+
+- **silhouette** - Standard silhouette coefficient
+- **2label.silhouette** - Two-label silhouette variant
+- **NeighborhoodPurity** - K-nearest neighbor purity
+- **ward.PropMatch** - Ward clustering proportion match
+- **Orbital.medoid** - Medoid-based orbital metric
+- **Average.similarity** - Average within-group similarity
+
+# Tips and Best Practices
+
+1. **Always use multiple samples** (minimum 3-5 per cell type)
+2. **Compare different methods** - no single method is perfect
+3. **Use PCA for speed** - similar results, much faster
+4. **Start with HVGs** - then try marker genes if needed
+5. **Check sample sizes** - ensure adequate cells per type per sample
+6. **Interpret in context** - consider biological heterogeneity
+
+# Getting Help
+
+- **GitHub**: https://github.com/carmonalab/scTypeEval
+- **Issues**: https://github.com/carmonalab/scTypeEval/issues
+- **Main vignette**: `browseVignettes("scTypeEval")`
+
+# Session Info
+
+```{r session_info}
+sessionInfo()
+```
