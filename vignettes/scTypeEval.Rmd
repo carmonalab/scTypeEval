@@ -53,7 +53,8 @@ To install `scTypeEval` from Bioconductor:
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
-BiocManager::install("scTypeEval")
+# Install from Bioconductor (when available)
+# BiocManager::install("scTypeEval")
 ```
 
 For the development version from GitHub:
@@ -217,8 +218,11 @@ sceval <- Run.HVG(
 )
 
 # View stored gene lists
-names(sceval@gene.lists)
-length(sceval@gene.lists$HVG)
+gene_lists <- sceval@gene.lists
+names(gene_lists)
+if ("HVG" %in% names(gene_lists)) {
+  length(gene_lists$HVG)
+}
 ```
 
 ### Cell Type Marker Genes
@@ -232,7 +236,10 @@ sceval <- Run.GeneMarkers(
 )
 
 # View marker genes
-head(sceval@gene.lists$scran.findMarkers, 20)
+gene_lists <- sceval@gene.lists
+if (!is.null(gene_lists$scran.findMarkers)) {
+  head(gene_lists$scran.findMarkers, 20)
+}
 ```
 
 ### Custom Gene Lists (Optional)
@@ -261,7 +268,10 @@ sceval <- Run.PCA(
 )
 
 # View available reductions
-names(sceval@reductions)
+reductions <- sceval@reductions
+if (length(reductions) > 0) {
+  names(reductions)
+}
 ```
 
 Alternatively, pre-computed embeddings (PCA, UMAP, t-SNE) can be inserted using `add.DimReduction()`.
@@ -320,7 +330,10 @@ sceval <- Run.Dissimilarity(
 
 ```{r view_dissim}
 # List all computed dissimilarity matrices
-names(sceval@dissimilarity)
+dissim <- sceval@dissimilarity
+if (length(dissim) > 0) {
+  names(dissim)
+}
 ```
 
 ## Step 6: Compute Consistency Metrics

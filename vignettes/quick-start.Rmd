@@ -36,7 +36,8 @@ To install `scTypeEval` from Bioconductor:
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
-BiocManager::install("scTypeEval")
+# Install from Bioconductor (when available)
+# BiocManager::install("scTypeEval")
 ```
 
 For the development version from GitHub:
