@@ -54,4 +54,5 @@
 #'
 #' @keywords datasets
 #'
+#' @export
 "black.list"
