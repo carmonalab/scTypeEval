@@ -1,0 +1,71 @@
+#' Default Gene Blacklist for scTypeEval
+#'
+#' @description
+#' A curated list of genes typically excluded from single-cell RNA-seq analysis
+#' to reduce technical artifacts and improve cell type annotation quality.
+#'
+#' @format A character vector with 7,775 gene symbols including:
+#' \describe{
+#'   \item{Mitochondrial genes}{MT- prefix genes (MT-RNR1, MT-RNR2, MT-TA, etc.)}
+#'   \item{Ribosomal genes}{RPL and RPS prefix genes}
+#'   \item{Long non-coding RNAs}{Genes with -AS1, -AS2, -IT1, -DT suffixes}
+#'   \item{MicroRNAs}{MIR prefix genes (MIR1-1, MIR1-2, etc.)}
+#'   \item{Small nuclear RNAs}{SNORA, SNORD, RNU prefix genes}
+#'   \item{Cell cycle genes}{G1/S and G2/M phase markers}
+#'   \item{Sex chromosome genes}{X and Y chromosome specific genes}
+#'   \item{Other technical artifacts}{Heat shock proteins, immediate early genes}
+#' }
+#'
+#' @details
+#' This blacklist is automatically loaded and used by default in scTypeEval
+#' when \code{black.list = NULL} is specified in functions like \code{\link{Run.HVG}}
+#' and \code{\link{Run.GeneMarkers}}. Users can override this default by providing
+#' a custom character vector of gene symbols to exclude.
+#'
+#' The blacklist helps improve downstream analysis by removing:
+#' \itemize{
+#'   \item Genes with high technical variance unrelated to cell type identity
+#'   \item Genes that may confound clustering (e.g., cell cycle genes)
+#'   \item Genes with batch-specific expression patterns
+#'   \item Non-coding RNAs that may not be informative for cell type annotation
+#' }
+#'
+#' @source
+#' Compiled from multiple sources including:
+#' \itemize{
+#'   \item Seurat package default gene lists
+#'   \item Cell cycle gene signatures (Tirosh et al., 2016)
+#'   \item Commonly filtered gene categories in scRNA-seq literature
+#'   \item Manual curation based on scTypeEval benchmarking
+#' }
+#'
+#' @examples
+#' # Load the default blacklist
+#' data(black.list)
+#'
+#' # Check number of genes
+#' length(black.list)
+#'
+#' # View first few genes
+#' head(black.list, 20)
+#'
+#' # Check if specific genes are blacklisted
+#' "MT-ND1" %in% black.list
+#' "CD3D" %in% black.list  # Cell type marker, should be FALSE
+#'
+#' # Use in scTypeEval functions
+#' \dontrun{
+#' # Default behavior: uses black.list automatically
+#' sceval <- Run.HVG(sceval, black.list = NULL)
+#'
+#' # Custom blacklist: only mitochondrial genes
+#' custom_blacklist <- grep("^MT-", black.list, value = TRUE)
+#' sceval <- Run.HVG(sceval, black.list = custom_blacklist)
+#'
+#' # No filtering
+#' sceval <- Run.HVG(sceval, black.list = character())
+#' }
+#'
+#' @seealso \link{Run.HVG}, \link{Run.GeneMarkers}
+#'
+"black.list"
