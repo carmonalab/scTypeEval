@@ -49,15 +49,11 @@ optimal_transport <- function(A, B,
    # - Handles moderately large problems well
    # - Faster than full simplex but more robust than heuristics like "auction"
    # - Does not require specific conditions (e.g., p=2 or grid-based input)
-   suppressWarnings(
-      {
-         suppressMessages(
-            {
-               plan <- quiet_transport(a_weights,
-                                       b_weights,
-                                       costm = cost_matrix,
-                                       method = "shortsimplex")
-            })})
+
+   plan <- quiet_transport(a_weights,
+                           b_weights,
+                           costm = cost_matrix,
+                           method = "shortsimplex")
    
    # Compute the total transportation cost using the optimal plan
    # Multiply transported mass by cost for each (from, to) pair
