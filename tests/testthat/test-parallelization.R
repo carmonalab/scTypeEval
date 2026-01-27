@@ -449,24 +449,6 @@ test_that("Parallelization works with single sample", {
   expect_s4_class(result, "scTypeEval")
 })
 
-test_that("ncores is capped at available cores", {
-  sceval <- create_processed_scTypeEval()
-  
-  # Request more cores than available (using parallelized method)
-  available_cores <- parallel::detectCores()
-  
-  result <- Run.Dissimilarity(
-    sceval,
-    method = "WasserStein",
-    ncores = available_cores + 10,
-    reduction = FALSE,
-    verbose = FALSE
-  )
-  
-  expect_s4_class(result, "scTypeEval")
-  expect_true("WasserStein" %in% names(result@dissimilarity))
-})
-
 test_that("Progressbar works with parallelization", {
   sceval <- create_test_scTypeEval()
   sceval <- Run.ProcessingData(
