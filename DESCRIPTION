@@ -40,7 +40,9 @@ biocViews: SingleCell,
     Transcriptomics,
     GeneExpression,
     CellBasedAssays,
-    DimensionReduction
+    DimensionReduction,
+    Preprocessing,
+    PrincipalComponent
 Depends: R (>= 4.3.0)
 Imports:
   Matrix (>= 1.6-5),
