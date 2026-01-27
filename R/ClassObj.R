@@ -1,3 +1,9 @@
+#' @importFrom methods setOldClass
+NULL
+
+# Register S3 class 'dist' for S4 slots
+methods::setOldClass("dist")
+
 # S4 class object
 methods::setClass("scTypeEval",
                   slots = c(
