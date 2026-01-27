@@ -66,7 +66,6 @@ metadata <- data.frame(
 
 # Create scTypeEval object from matrix
 sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-sceval
 
 # With custom gene lists and active identity
 gene_list <- list(markers = rownames(counts)[1:10])

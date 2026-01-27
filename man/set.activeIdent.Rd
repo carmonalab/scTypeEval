@@ -24,8 +24,23 @@ If no valid identity is provided, an error is raised.
 }
 \examples{
 \donttest{
-sceval <- create.scTypeEval(count_matrix, metadata = metadata)
-sceval <- set.activeIdent(sceval, ident = "cell_type")
+# Create synthetic test data
+library(Matrix)
+counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:50)
+colnames(counts) <- paste0("Cell", 1:20)
+
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 10),
+  sample = rep(paste0("Sample", 1:4), each = 5),
+  row.names = colnames(counts)
+)
+
+# Create scTypeEval object from matrix
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+
+# add active ident
+sceval <- set.activeIdent(sceval, ident = "celltype")
 }
 
 }

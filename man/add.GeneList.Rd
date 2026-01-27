@@ -23,8 +23,29 @@ The function verifies that \code{gene.list} is provided and is a valid list.
 If any elements in \code{gene.list} lack names, they are automatically renamed.
 }
 \examples{
-\donttest{
-sceval <- add.GeneList(sceval, gene.list = list("cytokines" = c("IL10", "IL6", "IL4",...)))
-}
+#' # Create synthetic test data
+library(Matrix)
+counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:50)
+colnames(counts) <- paste0("Cell", 1:20)
+
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 10),
+  sample = rep(paste0("Sample", 1:4), each = 5),
+  row.names = colnames(counts)
+)
+
+# Create scTypeEval object from matrix
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+
+sceval <- create.scTypeEval(
+  matrix = counts, 
+  metadata = metadata,
+  gene.lists = gene_list,
+  active.ident = "celltype"
+)
+
+sceval <- add.GeneList(sceval,
+                      gene.list = list("cytokines" = c("IL10", "IL6", "IL4")))
 
 }

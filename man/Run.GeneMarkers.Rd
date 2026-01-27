@@ -71,14 +71,35 @@ to identify differentially expressed genes per cell type while adjusting for sam
 }
 }
 \examples{
-\donttest{
-# Create scTypeEval object and run preprocessing
-sceval <- create.scTypeEval(seurat_obj)
-sceval <- Run.ProcessingData(sceval)
+# Create and process test data
+library(Matrix)
+counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:100)
+colnames(counts) <- paste0("Cell", 1:60)
+
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 30),
+  sample = rep(paste0("Sample", 1:6), times = 10),
+  row.names = colnames(counts)
+)
+
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+sceval <- Run.ProcessingData(sceval, ident = "celltype", 
+                             aggregation = "pseudobulk",
+                             sample = "sample", min.samples = 3,
+                             min.cells = 3, verbose = FALSE)
+
+# Compute HVGs using scran method
+sceval <- Run.HVG(sceval,
+                  aggregation = "pseudobulk",
+                  var.method = "scran",
+                  ngenes = 50,
+                  verbose = FALSE)
 
 # Identify marker genes per cell type
-sceval <- Run.GeneMarkers(sceval, method = "scran.findMarkers", ngenes.celltype = 50)
-}
+sceval <- Run.GeneMarkers(sceval,
+ method = "scran.findMarkers",
+ ngenes.celltype = 50)
 
 }
 \seealso{

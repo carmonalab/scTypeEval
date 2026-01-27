@@ -47,7 +47,6 @@
 #' 
 #' # Create scTypeEval object from matrix
 #' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval
 #' 
 #' # With custom gene lists and active identity
 #' gene_list <- list(markers = rownames(counts)[1:10])
@@ -167,8 +166,23 @@ create.scTypeEval <- function(matrix = NULL,
 #'
 #' @examples
 #' \donttest{
-#' sceval <- create.scTypeEval(count_matrix, metadata = metadata)
-#' sceval <- set.activeIdent(sceval, ident = "cell_type")
+#' # Create synthetic test data
+#' library(Matrix)
+#' counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:50)
+#' colnames(counts) <- paste0("Cell", 1:20)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 10),
+#'   sample = rep(paste0("Sample", 1:4), each = 5),
+#'   row.names = colnames(counts)
+#' )
+#' 
+#' # Create scTypeEval object from matrix
+#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' 
+#' # add active ident
+#' sceval <- set.activeIdent(sceval, ident = "celltype")
 #' }
 #'
 #' @export set.activeIdent
@@ -518,10 +532,6 @@ Add.ProcessedData <- function(scTypeEval,
 #'                   var.method = "scran",
 #'                   ngenes = 50,
 #'                   verbose = FALSE)
-#' 
-#' # Check HVG genes
-#' gl <- sceval@gene.lists
-#' if ("HVG" %in% names(gl)) length(gl[["HVG"]])
 #'
 #' @export Run.HVG
 
@@ -635,14 +645,35 @@ Run.HVG <- function(scTypeEval,
 #' @seealso \link{Run.ProcessingData}, \link{Add.ProcessedData}
 #'
 #' @examples
-#' \donttest{
-#' # Create scTypeEval object and run preprocessing
-#' sceval <- create.scTypeEval(seurat_obj)
-#' sceval <- Run.ProcessingData(sceval)
+#' # Create and process test data
+#' library(Matrix)
+#' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:100)
+#' colnames(counts) <- paste0("Cell", 1:60)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 30),
+#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   row.names = colnames(counts)
+#' )
+#' 
+#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype", 
+#'                              aggregation = "pseudobulk",
+#'                              sample = "sample", min.samples = 3,
+#'                              min.cells = 3, verbose = FALSE)
+#' 
+#' # Compute HVGs using scran method
+#' sceval <- Run.HVG(sceval,
+#'                   aggregation = "pseudobulk",
+#'                   var.method = "scran",
+#'                   ngenes = 50,
+#'                   verbose = FALSE)
 #'
 #' # Identify marker genes per cell type
-#' sceval <- Run.GeneMarkers(sceval, method = "scran.findMarkers", ngenes.celltype = 50)
-#' }
+#' sceval <- Run.GeneMarkers(sceval,
+#'  method = "scran.findMarkers",
+#'  ngenes.celltype = 50)
 #'
 #' @export Run.GeneMarkers
 
@@ -716,9 +747,30 @@ Run.GeneMarkers <- function(scTypeEval,
 #'          If any elements in `gene.list` lack names, they are automatically renamed.
 #'
 #' @examples
-#' \donttest{
-#' sceval <- add.GeneList(sceval, gene.list = list("cytokines" = c("IL10", "IL6", "IL4",...)))
-#' }
+#' #' # Create synthetic test data
+#' library(Matrix)
+#' counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:50)
+#' colnames(counts) <- paste0("Cell", 1:20)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 10),
+#'   sample = rep(paste0("Sample", 1:4), each = 5),
+#'   row.names = colnames(counts)
+#' )
+#' 
+#' # Create scTypeEval object from matrix
+#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' 
+#' sceval <- create.scTypeEval(
+#'   matrix = counts, 
+#'   metadata = metadata,
+#'   gene.lists = gene_list,
+#'   active.ident = "celltype"
+#' )
+#' 
+#' sceval <- add.GeneList(sceval,
+#'                       gene.list = list("cytokines" = c("IL10", "IL6", "IL4")))
 #'
 #' @export add.GeneList
 
@@ -803,9 +855,6 @@ add.GeneList <- function(scTypeEval,
 #' 
 #' # Run PCA on HVG genes
 #' sceval <- Run.PCA(sceval, gene.list = "HVG", ndim = 5, verbose = FALSE)
-#' 
-#' # Check reductions
-#' names(sceval@reductions)
 #'
 #' @seealso \link{Add.ProcessedData}
 #'
@@ -909,17 +958,54 @@ Run.PCA <- function(scTypeEval,
 #' in the \code{reductions} slot.
 #'
 #' @examples
-#' \donttest{
-#' # Add precomputed PCA embeddings into scTypeEval
-#' sceval <- add.DimReduction(
-#'    scTypeEval = sceval,
-#'    embeddings = my_pca_matrix,
-#'    aggregation = "single-cell",
-#'    ident = celltype_annotation,
-#'    sample = sample_id,
-#'    key = "PCA"
+#' # Create synthetic test data
+#' library(Matrix)
+#' counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:50)
+#' colnames(counts) <- paste0("Cell", 1:20)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 10),
+#'   sample = rep(paste0("Sample", 1:4), each = 5),
+#'   row.names = colnames(counts)
 #' )
-#' }
+#' 
+#' # Create scTypeEval object from matrix
+#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' 
+#' sceval <- create.scTypeEval(
+#'   matrix = counts, 
+#'   metadata = metadata,
+#'   gene.lists = gene_list,
+#'   active.ident = "celltype"
+#' )
+#' 
+#' #' # Process data with filtering
+#' sceval <- Run.ProcessingData(
+#'   sceval,
+#'   ident = "celltype",
+#'   sample = "sample",
+#'   min.samples = 3,
+#'   min.cells = 3,
+#'   verbose = FALSE
+#' )
+#' 
+#' # Create mock embeddings
+#' n_cells <- ncol(sceval@data[["single-cell"]]@matrix)
+#' embeddings <- matrix(rnorm(n_cells * 10), nrow = 10, ncol = n_cells)
+#' 
+#' ident <- sceval@data[["single-cell"]]@ident[[1]]
+#' sample <- sceval@data[["single-cell"]]@sample
+#' 
+#' sceval <- add.DimReduction(
+#'    sceval,
+#'    embeddings = embeddings,
+#'    aggregation = "single-cell",
+#'    ident = ident,
+#'    sample = sample,
+#'    key = "custom_embedding",
+#'   verbose = FALSE
+#' )
 #'
 #' @seealso \link{Run.PCA}
 #'
@@ -1090,9 +1176,6 @@ add.DimReduction <- function(scTypeEval,
 #' # Compute Pseudobulk Euclidean dissimilarity
 #' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 #'                             reduction = FALSE, verbose = FALSE)
-#' 
-#' # Check dissimilarity slot
-#' names(sceval@dissimilarity)
 #'
 #' @seealso 
 #' \code{\link{add.DimReduction}}, \code{\link{Run.PCA}}, 
@@ -1320,9 +1403,8 @@ Run.Dissimilarity <- function(scTypeEval,
 #' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 #'                             reduction = FALSE, verbose = FALSE)
 #' 
-#' # Compute silhouette scores
+#' # Obtain consistency
 #' cons <- get.Consistency(sceval, verbose = FALSE)
-#' head(cons)
 #'
 #' @seealso 
 #' \code{\link{Run.Dissimilarity}}
@@ -1428,10 +1510,36 @@ get.Consistency <- function(scTypeEval,
 #' @seealso \link{add.DimReduction}
 #'
 #' @examples
-#' \donttest{
-#' # plot all PCA dimensional reductions
-#' pca_plots <- plot.PCA(sceval) # scTypeEval object with previously run `add.PCA()`
-#' }
+#' # Create and process test data
+#' library(Matrix)
+#' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+#' rownames(counts) <- paste0("Gene", 1:100)
+#' colnames(counts) <- paste0("Cell", 1:60)
+#' 
+#' metadata <- data.frame(
+#'   celltype = rep(c("TypeA", "TypeB"), each = 30),
+#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   row.names = colnames(counts)
+#' )
+#' 
+#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- Run.ProcessingData(sceval, ident = "celltype", 
+#'                              aggregation = "pseudobulk",
+#'                              sample = "sample", min.samples = 3,
+#'                              min.cells = 3, verbose = FALSE)
+#' sceval <- Run.HVG(sceval,
+#'                   aggregation = "pseudobulk",
+#'                   var.method = "scran",
+#'                   verbose = FALSE)
+#' 
+#' # Run PCA on HVG genes
+#' sceval <- Run.PCA(sceval,
+#'                  gene.list = "HVG",
+#'                  ndim = 5,
+#'                  verbose = FALSE)
+#' 
+#' # plot PCA
+#' plot.PCA(sceval)
 #'
 #' @export plot.PCA
 

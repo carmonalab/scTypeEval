@@ -70,17 +70,54 @@ t-SNE, or any embedding) into an \code{scTypeEval} object. The embeddings are st
 workflow for downstream analysis.
 }
 \examples{
-\donttest{
-# Add precomputed PCA embeddings into scTypeEval
-sceval <- add.DimReduction(
-   scTypeEval = sceval,
-   embeddings = my_pca_matrix,
-   aggregation = "single-cell",
-   ident = celltype_annotation,
-   sample = sample_id,
-   key = "PCA"
+# Create synthetic test data
+library(Matrix)
+counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:50)
+colnames(counts) <- paste0("Cell", 1:20)
+
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 10),
+  sample = rep(paste0("Sample", 1:4), each = 5),
+  row.names = colnames(counts)
 )
-}
+
+# Create scTypeEval object from matrix
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+
+sceval <- create.scTypeEval(
+  matrix = counts, 
+  metadata = metadata,
+  gene.lists = gene_list,
+  active.ident = "celltype"
+)
+
+#' # Process data with filtering
+sceval <- Run.ProcessingData(
+  sceval,
+  ident = "celltype",
+  sample = "sample",
+  min.samples = 3,
+  min.cells = 3,
+  verbose = FALSE
+)
+
+# Create mock embeddings
+n_cells <- ncol(sceval@data[["single-cell"]]@matrix)
+embeddings <- matrix(rnorm(n_cells * 10), nrow = 10, ncol = n_cells)
+
+ident <- sceval@data[["single-cell"]]@ident[[1]]
+sample <- sceval@data[["single-cell"]]@sample
+
+sceval <- add.DimReduction(
+   sceval,
+   embeddings = embeddings,
+   aggregation = "single-cell",
+   ident = ident,
+   sample = sample,
+   key = "custom_embedding",
+  verbose = FALSE
+)
 
 }
 \seealso{

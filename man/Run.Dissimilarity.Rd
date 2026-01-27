@@ -98,9 +98,6 @@ sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", verb
 sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
                             reduction = FALSE, verbose = FALSE)
 
-# Check dissimilarity slot
-names(sceval@dissimilarity)
-
 }
 \seealso{
 \code{\link{add.DimReduction}}, \code{\link{Run.PCA}},

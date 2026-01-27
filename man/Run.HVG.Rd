@@ -98,10 +98,6 @@ sceval <- Run.HVG(sceval,
                   ngenes = 50,
                   verbose = FALSE)
 
-# Check HVG genes
-gl <- sceval@gene.lists
-if ("HVG" \%in\% names(gl)) length(gl[["HVG"]])
-
 }
 \seealso{
 \link{Run.ProcessingData}, \link{Add.ProcessedData}

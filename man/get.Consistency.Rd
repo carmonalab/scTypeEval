@@ -118,9 +118,8 @@ sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", verb
 sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
                             reduction = FALSE, verbose = FALSE)
 
-# Compute silhouette scores
+# Obtain consistency
 cons <- get.Consistency(sceval, verbose = FALSE)
-head(cons)
 
 }
 \seealso{

@@ -69,9 +69,6 @@ sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", verb
 # Run PCA on HVG genes
 sceval <- Run.PCA(sceval, gene.list = "HVG", ndim = 5, verbose = FALSE)
 
-# Check reductions
-names(sceval@reductions)
-
 }
 \seealso{
 \link{Add.ProcessedData}
