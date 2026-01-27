@@ -53,7 +53,7 @@ process_clustering <- function(scTypeEval,
       if(verbose){
          "Not running clustering on low dimensional space, subetting gene list and black list genes if provided."}
       
-      mat_ident <- scTypeEvalTypeEval@data[[slot]]
+      mat_ident <- scTypeEval@data[[slot]]
       if(is.null(mat_ident)){
          stop("No processed data slot found for ", slot ,
               ". Please run before `Run.ProcessingData()` or add a data assay.\n")
