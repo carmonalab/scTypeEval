@@ -30,9 +30,15 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-Accurate cell type annotation is essential but challenging in single-cell RNA sequencing (scRNA-seq). **Manual approaches** are time-consuming, subjective, and inconsistent, while **automated classifiers** often fail to generalize across tissues, conditions, or closely related cell types. A key limitation for both is the **lack of true ground truth** for benchmarking.
+Accurate cell type annotation is essential but challenging in single-cell RNA
+sequencing (scRNA-seq). **Manual approaches** are time-consuming, subjective,
+and inconsistent, while **automated classifiers** often fail to generalize
+across tissues, conditions, or closely related cell types. A key limitation for
+both is the **lack of true ground truth** for benchmarking.
 
-**`scTypeEval`** provides a **ground-truth-agnostic framework** to systematically assess annotation quality using internal validation metrics. It enables:
+**`scTypeEval`** provides a **ground-truth-agnostic framework** to
+systematically assess annotation quality using internal validation metrics. It
+enables:
 
 - Quantification of **inter-sample label consistency**
 - Identification of **ambiguous or misclassified populations**
@@ -42,8 +48,10 @@ Accurate cell type annotation is essential but challenging in single-cell RNA se
 
 - **Ground-truth agnostic** – Evaluate annotations without external references
 - **Cross-dataset benchmarking** – Assess consistency across samples and studies
-- **Customizable** – Works with Seurat, SingleCellExperiment, or matrices; supports custom gene lists
-- **Robust** – Sensitive to misclassification; reliable across batch effects, label granularity, and sample sizes
+- **Customizable** – Works with Seurat, SingleCellExperiment, or matrices;
+  supports custom gene lists
+- **Robust** – Sensitive to misclassification; reliable across batch effects,
+  label granularity, and sample sizes
 
 
 # Quick Start
@@ -57,7 +65,10 @@ library(Matrix)
 
 ## Generate Example Data
 
-For this vignette, we'll create a synthetic dataset representing single-cell RNA-seq data from multiple samples with distinct cell types. This simulates a typical scenario where we want to evaluate the consistency of cell type annotations across biological replicates.
+For this vignette, we'll create a synthetic dataset representing single-cell
+RNA-seq data from multiple samples with distinct cell types. This simulates a
+typical scenario where we want to evaluate the consistency of cell type
+annotations across biological replicates.
 
 ```{r generate_data}
 set.seed(22)
