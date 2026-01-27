@@ -70,14 +70,14 @@ get.Normalization_params <- function(mat,
                                      margin = 2L,
                                      size.factors = TRUE){
    if(method[1] == "pearson"){
-      # Check and install required packages if missing
+      # Check required packages only when pearson is requested
       check_residuals_pck()
    }
    # Run the requested methods
    norm_params <- switch(method[1],
                          "Log1p" = get.SumCounts(mat, margin),
                          "CLR" = get.GeomMean(mat, margin),
-                         "pearson" = transformGamPoi:::.handle_size_factors(size.factors, Y = mat),
+                         "pearson" = getFromNamespace(".handle_size_factors", "transformGamPoi")(size.factors, Y = mat),
                          stop(method, " is not a supported normalization method.")
    )
    
@@ -143,19 +143,13 @@ clr_Normalize <- function(mat,
 }
 
 check_residuals_pck <- function(){
-   # Check and install required packages if missing
+   # Only used when pearson normalization is requested; fail fast if missing
    required_packages <- c("transformGamPoi", "glmGamPoi")
-   missing_packages <- required_packages[!sapply(required_packages,
-                                                 requireNamespace,
-                                                 quietly = TRUE)]
+   missing_packages <- required_packages[!vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)]
    if (length(missing_packages) > 0) {
-      message("Installing missing packages for pearson residuals normalization: ",
-              paste(missing_packages, collapse = ", "))
-      if (!requireNamespace("BiocManager", quietly = TRUE)) {
-         message("Installing BiocManager...\n")
-         install.packages("BiocManager")
-      }
-      BiocManager::install(missing_packages)
+      stop("Missing required packages for pearson residuals normalization: ",
+           paste(missing_packages, collapse = ", "),
+           "\nPlease install them before using method = 'pearson'.", call. = FALSE)
    }
 }
 
@@ -191,19 +185,21 @@ residual_transform <- function(data,
                                                   "working", "response", "quantile", "analytic_pearson"))
    
    if(residual_type == "analytic_pearson"){
-      return(transformGamPoi:::analytic_pearson_residual_transform(data = data,
-                                                                   clipping = clipping,
-                                                                   overdispersion = overdispersion,
-                                                                   size_factors = size_factors,
-                                                                   on_disk = on_disk,
-                                                                   return_fit = return_fit,
-                                                                   verbose = verbose))
+      tg_analytic <- getFromNamespace("analytic_pearson_residual_transform", "transformGamPoi")
+      return(tg_analytic(data = data,
+                clipping = clipping,
+                overdispersion = overdispersion,
+                size_factors = size_factors,
+                on_disk = on_disk,
+                return_fit = return_fit,
+                verbose = verbose))
    }
    
    if(inherits(data, "glmGamPoi")){
       fit <- data
    }else if(offset_model){
-      counts <- transformGamPoi:::.handle_data_parameter(data, on_disk, allow_sparse = FALSE )
+      tg_handle_data <- getFromNamespace(".handle_data_parameter", "transformGamPoi")
+      counts <- tg_handle_data(data, on_disk, allow_sparse = FALSE )
       
       fit <- glmGamPoi::glm_gp(counts, design = ~ 1,
                                size_factors = size_factors,
@@ -212,7 +208,8 @@ residual_transform <- function(data,
                                verbose = verbose,
                                ...)
    }else{
-      counts <- transformGamPoi:::.handle_data_parameter(data, on_disk, allow_sparse = FALSE  )
+      tg_handle_data <- getFromNamespace(".handle_data_parameter", "transformGamPoi")
+      counts <- tg_handle_data(data, on_disk, allow_sparse = FALSE  )
       
       log_sf <- log(size_factors)
       attr(ridge_penalty, "target") <- c(0, 1)
@@ -235,8 +232,10 @@ residual_transform <- function(data,
    if(verbose){message("Calculate ", residual_type, " residuals")}
    
    resid <- stats::residuals(fit, type = residual_type)
-   resid <- transformGamPoi:::clip_residuals(resid, clipping)
-   resid <- transformGamPoi:::.convert_to_output(resid, data)
+   tg_clip <- getFromNamespace("clip_residuals", "transformGamPoi")
+   tg_convert <- getFromNamespace(".convert_to_output", "transformGamPoi")
+   resid <- tg_clip(resid, clipping)
+   resid <- tg_convert(resid, data)
    
    if(! return_fit){
       resid
