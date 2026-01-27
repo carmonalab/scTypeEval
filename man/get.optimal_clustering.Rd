@@ -138,16 +138,31 @@ requiring the number of clusters to be specified a priori.
 }
 \examples{
 \dontrun{
+#' # Create test data with enough samples
+library(Matrix)
+counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
+rownames(counts) <- paste0("Gene", 1:100)
+colnames(counts) <- paste0("Cell", 1:60)
+
+metadata <- data.frame(
+  celltype = rep(c("TypeA", "TypeB"), each = 30),
+  sample = rep(paste0("Sample", 1:6), times = 10),
+  row.names = colnames(counts)
+)
+
+sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
 scTypeEval <- get.optimal_clustering(
   scTypeEval = sceval,
-  ident = "celltype",
-  sample = "sample_id",
+  sample = "sample",
   consistency_method = c(
     "silhouette | RecipClassif:Match",
     "2label.silhouette | Pseudobulk:Cosine"
   ),
+  ndim = 5,
+  min.samples = 3,
+  min.cells = 3,
   min.consistency = 0.6,
-  verbose = TRUE
+  verbose = FALSE
 )
 
 table(scTypeEval@metadata$optimal)
