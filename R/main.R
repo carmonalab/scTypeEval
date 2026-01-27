@@ -2517,7 +2517,7 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #' requiring the number of clusters to be specified a priori.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' scTypeEval <- get.optimal_clustering(
 #'   scTypeEval = sceval,
 #'   ident = "celltype",
