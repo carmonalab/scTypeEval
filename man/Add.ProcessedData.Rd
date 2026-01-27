@@ -66,7 +66,7 @@ pair occurs exactly once (i.e., fully aggregated).
 }
 }
 \examples{
-\dontrun{
+\donttest{
 # Add single-cell processed data
 sceval <- create.scTypeEval(seurat_obj)
 sceval <- Add.ProcessedData(

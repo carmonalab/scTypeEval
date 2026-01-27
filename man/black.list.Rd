@@ -62,7 +62,7 @@ head(black.list, 20)
 "CD3D" \%in\% black.list  # Cell type marker, should be FALSE
 
 # Use in scTypeEval functions
-\dontrun{
+\donttest{
 # Default behavior: uses black.list automatically
 sceval <- Run.HVG(sceval, black.list = NULL)
 

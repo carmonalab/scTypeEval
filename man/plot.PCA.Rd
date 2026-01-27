@@ -36,7 +36,7 @@ This function visualizes Principal Component Analysis (PCA) results stored in th
 \code{reductions} slot of an \code{scTypeEval} object.
 }
 \examples{
-\dontrun{
+\donttest{
 # plot all PCA dimensional reductions
 pca_plots <- plot.PCA(sceval) # scTypeEval object with previously run `add.PCA()`
 }

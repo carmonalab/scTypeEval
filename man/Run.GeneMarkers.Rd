@@ -71,7 +71,7 @@ to identify differentially expressed genes per cell type while adjusting for sam
 }
 }
 \examples{
-\dontrun{
+\donttest{
 # Create scTypeEval object and run preprocessing
 sceval <- create.scTypeEval(seurat_obj)
 sceval <- Run.ProcessingData(sceval)

@@ -52,7 +52,7 @@ to match R’s cell-by-gene convention.
 }
 }
 \examples{
-\dontrun{
+\donttest{
 # Load as counts and metadata
 sce_split <- load_singleCell_object("dataset.rds", split = TRUE)
 

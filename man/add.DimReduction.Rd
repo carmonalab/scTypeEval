@@ -70,7 +70,7 @@ t-SNE, or any embedding) into an \code{scTypeEval} object. The embeddings are st
 workflow for downstream analysis.
 }
 \examples{
-\dontrun{
+\donttest{
 # Add precomputed PCA embeddings into scTypeEval
 sceval <- add.DimReduction(
    scTypeEval = sceval,

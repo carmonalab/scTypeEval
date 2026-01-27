@@ -66,7 +66,7 @@ Each heatmap is rendered with ggplot2, with group boundaries and axis labels
 indicating cell-type structure.
 }
 \examples{
-\dontrun{
+\donttest{
 # Plot heatmaps for all dissimilarity assays
 hm_all <- plot.Heatmap(sceval)
 

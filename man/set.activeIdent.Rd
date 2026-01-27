@@ -23,7 +23,7 @@ The function ensures that the provided identity exists within the metadata befor
 If no valid identity is provided, an error is raised.
 }
 \examples{
-\dontrun{
+\donttest{
 sceval <- create.scTypeEval(count_matrix, metadata = metadata)
 sceval <- set.activeIdent(sceval, ident = "cell_type")
 }

@@ -150,7 +150,7 @@ create.scTypeEval <- function(matrix = NULL,
 #'          If no valid identity is provided, an error is raised.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' sceval <- create.scTypeEval(count_matrix, metadata = metadata)
 #' sceval <- set.activeIdent(sceval, ident = "cell_type")
 #' }
@@ -335,7 +335,7 @@ Run.ProcessingData <- function(scTypeEval,
 #' - Processed data is wrapped in a `DataAssay` object and added to the `scTypeEval`.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Add single-cell processed data
 #' sceval <- create.scTypeEval(seurat_obj)
 #' sceval <- Add.ProcessedData(
@@ -620,7 +620,7 @@ Run.HVG <- function(scTypeEval,
 #' @seealso \link{Run.ProcessingData}, \link{Add.ProcessedData}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Create scTypeEval object and run preprocessing
 #' sceval <- create.scTypeEval(seurat_obj)
 #' sceval <- Run.ProcessingData(sceval)
@@ -701,7 +701,7 @@ Run.GeneMarkers <- function(scTypeEval,
 #'          If any elements in `gene.list` lack names, they are automatically renamed.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' sceval <- add.GeneList(sceval, gene.list = list("cytokines" = c("IL10", "IL6", "IL4",...)))
 #' }
 #'
@@ -894,7 +894,7 @@ Run.PCA <- function(scTypeEval,
 #' in the \code{reductions} slot.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Add precomputed PCA embeddings into scTypeEval
 #' sceval <- add.DimReduction(
 #'    scTypeEval = sceval,
@@ -1413,7 +1413,7 @@ get.Consistency <- function(scTypeEval,
 #' @seealso \link{add.DimReduction}
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # plot all PCA dimensional reductions
 #' pca_plots <- plot.PCA(sceval) # scTypeEval object with previously run `add.PCA()`
 #' }
@@ -1488,7 +1488,7 @@ plot.PCA <- function(scTypeEval,
 #' to the number of unique identities provided in the assay metadata.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Perform hierarchical clustering on all available dissimilarity matrices
 #' hier_results <- get.hierarchy(sceval)
 #' }
@@ -1564,7 +1564,7 @@ get.hierarchy <- function(scTypeEval,
 #' the expected global frequency of each cell type.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' result <- get.NN(scTypeEval = sceval,
 #'                  KNNGraph_k = 5,
 #'                  normalize = TRUE)
@@ -1638,7 +1638,7 @@ get.NN <- function(scTypeEval,
 #' The plot axes correspond to the requested MDS dimensions (`dims`).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Plot MDS for all dissimilarity assays
 #' mds_plots <- plot.MDS(sceval)
 #' }
@@ -1734,7 +1734,7 @@ plot.MDS <- function(scTypeEval,
 #' indicating cell-type structure.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Plot heatmaps for all dissimilarity assays
 #' hm_all <- plot.Heatmap(sceval)
 #'
@@ -1953,7 +1953,7 @@ plot.Heatmap <- function(scTypeEval,
 #'   to match R’s cell-by-gene convention.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Load as counts and metadata
 #' sce_split <- load_singleCell_object("dataset.rds", split = TRUE)
 #'
@@ -2118,7 +2118,7 @@ load_singleCell_object <- function(path,
 #' from raw single-cell data with minimal manual steps.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' sc_res <- wrapper_scTypeEval(
 #'   count_matrix = sc_counts,
 #'   metadata = sc_metadata,
@@ -2309,7 +2309,7 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #' requiring the number of clusters to be specified a priori.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' scTypeEval <- optimal_clustering(
 #'   scTypeEval = sc_obj,
 #'   ident = "celltype",

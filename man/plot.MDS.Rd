@@ -44,7 +44,7 @@ an internal plotting helper.
 The plot axes correspond to the requested MDS dimensions (\code{dims}).
 }
 \examples{
-\dontrun{
+\donttest{
 # Plot MDS for all dissimilarity assays
 mds_plots <- plot.MDS(sceval)
 }

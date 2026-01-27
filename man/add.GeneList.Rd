@@ -23,7 +23,7 @@ The function verifies that \code{gene.list} is provided and is a valid list.
 If any elements in \code{gene.list} lack names, they are automatically renamed.
 }
 \examples{
-\dontrun{
+\donttest{
 sceval <- add.GeneList(sceval, gene.list = list("cytokines" = c("IL10", "IL6", "IL4",...)))
 }
 

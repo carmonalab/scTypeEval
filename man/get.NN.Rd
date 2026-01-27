@@ -45,7 +45,7 @@ normalization is enabled, the observed neighbor proportions are scaled relative 
 the expected global frequency of each cell type.
 }
 \examples{
-\dontrun{
+\donttest{
 result <- get.NN(scTypeEval = sceval,
                  KNNGraph_k = 5,
                  normalize = TRUE)

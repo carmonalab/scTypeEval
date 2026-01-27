@@ -117,7 +117,7 @@ This provides a simple entry point for end-to-end setup and dissimilarity comput
 from raw single-cell data with minimal manual steps.
 }
 \examples{
-\dontrun{
+\donttest{
 sc_res <- wrapper_scTypeEval(
   count_matrix = sc_counts,
   metadata = sc_metadata,

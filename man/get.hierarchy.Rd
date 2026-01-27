@@ -38,7 +38,7 @@ to the stored dissimilarity matrix. The number of clusters is set equal
 to the number of unique identities provided in the assay metadata.
 }
 \examples{
-\dontrun{
+\donttest{
 # Perform hierarchical clustering on all available dissimilarity matrices
 hier_results <- get.hierarchy(sceval)
 }

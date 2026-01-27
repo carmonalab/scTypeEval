@@ -137,7 +137,7 @@ This strategy identifies a data-driven clustering resolution without
 requiring the number of clusters to be specified a priori.
 }
 \examples{
-\dontrun{
+\donttest{
 scTypeEval <- optimal_clustering(
   scTypeEval = sc_obj,
   ident = "celltype",
