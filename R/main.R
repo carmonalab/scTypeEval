@@ -498,7 +498,11 @@ Add.ProcessedData <- function(scTypeEval,
 #'                              min.cells = 3, verbose = FALSE)
 #' 
 #' # Compute HVGs using scran method
-#' sceval <- Run.HVG(sceval, aggregation = "pseudobulk", var.method = "scran", ngenes = 50, verbose = FALSE)
+#' sceval <- Run.HVG(sceval,
+#'                   aggregation = "pseudobulk",
+#'                   var.method = "scran",
+#'                   ngenes = 50,
+#'                   verbose = FALSE)
 #' 
 #' # Check HVG genes
 #' length(sceval@gene.lists[["HVG"]])
