@@ -26,7 +26,9 @@ knitr::opts_chunk$set(
 
 # Overview
 
-This quick start guide demonstrates the essential steps for evaluating cell type annotations using `scTypeEval`. For a comprehensive tutorial, see the main vignette.
+This quick start guide demonstrates the essential steps for evaluating cell type
+annotations using `scTypeEval`. For a comprehensive tutorial, see the main
+vignette.
 
 
 ```{r load}
@@ -56,22 +58,33 @@ metadata <- data.frame(
 sceval <- create.scTypeEval(matrix=counts, metadata=metadata)
 
 # Process data
-sceval <- Run.ProcessingData(sceval, ident="celltype", sample="sample", 
-                             min.samples=3, min.cells=5)
+sceval <- Run.ProcessingData(
+  sceval,
+  ident = "celltype",
+  sample = "sample",
+  min.samples = 3,
+  min.cells = 5
+)
 
 # Identify features
-sceval <- Run.HVG(sceval, ngenes=1000)
+sceval <- Run.HVG(sceval, ngenes = 1000)
 
 # Run PCA
-sceval <- Run.PCA(sceval, ndim=20)
+sceval <- Run.PCA(sceval, ndim = 20)
 
 # Compute dissimilarity
-sceval <- Run.Dissimilarity(sceval, method="Pseudobulk:Euclidean", reduction=TRUE)
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "Pseudobulk:Euclidean",
+  reduction = TRUE
+)
 
 # Get consistency
-results <- get.Consistency(sceval, 
-                          dissimilarity.slot="Pseudobulk:Euclidean",
-                          Consistency.metric="silhouette")
+results <- get.Consistency(
+  sceval,
+  dissimilarity.slot = "Pseudobulk:Euclidean",
+  Consistency.metric = "silhouette"
+)
 print(results)
 ```
 
@@ -84,19 +97,23 @@ library(Seurat)
 sceval <- create.scTypeEval(seurat_obj)
 
 # Continue with standard workflow
-sceval <- Run.ProcessingData(sceval, 
-                             ident="celltype",      # Adjust to your metadata column
-                             sample="orig.ident",   # Adjust to your sample column
-                             min.samples=5, 
-                             min.cells=10)
+sceval <- Run.ProcessingData(
+  sceval,
+  ident = "celltype",      # Adjust to your metadata column
+  sample = "orig.ident",   # Adjust to your sample column
+  min.samples = 5,
+  min.cells = 10
+)
 
 sceval <- Run.HVG(sceval)
-sceval <- Run.PCA(sceval, ndim=30)
-sceval <- Run.Dissimilarity(sceval, method="Pseudobulk:Euclidean")
+sceval <- Run.PCA(sceval, ndim = 30)
+sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean")
 
-consistency <- get.Consistency(sceval, 
-                              dissimilarity.slot="Pseudobulk:Euclidean",
-                              Consistency.metric="silhouette")
+consistency <- get.Consistency(
+  sceval,
+  dissimilarity.slot = "Pseudobulk:Euclidean",
+  Consistency.metric = "silhouette"
+)
 ```
 
 ## From a SingleCellExperiment Object
@@ -116,14 +133,30 @@ sceval <- create.scTypeEval(sce)
 
 ```{r compare_methods, eval=FALSE}
 # Compute different dissimilarity methods
-sceval <- Run.Dissimilarity(sceval, method="Pseudobulk:Euclidean", reduction=TRUE)
-sceval <- Run.Dissimilarity(sceval, method="Pseudobulk:Cosine", reduction=TRUE)
-sceval <- Run.Dissimilarity(sceval, method="WasserStein", reduction=TRUE)
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "Pseudobulk:Euclidean",
+  reduction = TRUE
+)
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "Pseudobulk:Cosine",
+  reduction = TRUE
+)
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "WasserStein",
+  reduction = TRUE
+)
 
 # Compare consistency across methods
 methods <- c("Pseudobulk:Euclidean", "Pseudobulk:Cosine", "WasserStein")
 comparison <- lapply(methods, function(m) {
-  get.Consistency(sceval, dissimilarity.slot=m, Consistency.metric="silhouette")
+  get.Consistency(
+    sceval,
+    dissimilarity.slot = m,
+    Consistency.metric = "silhouette"
+  )
 })
 results_df <- do.call(rbind, comparison)
 ```
@@ -135,9 +168,11 @@ results_df <- do.call(rbind, comparison)
 metrics <- c("silhouette", "NeighborhoodPurity", "Average.similarity")
 
 all_metrics <- lapply(metrics, function(metric) {
-  get.Consistency(sceval, 
-                 dissimilarity.slot="Pseudobulk:Euclidean",
-                 Consistency.metric=metric)
+  get.Consistency(
+    sceval,
+    dissimilarity.slot = "Pseudobulk:Euclidean",
+    Consistency.metric = metric
+  )
 })
 
 combined_results <- do.call(rbind, all_metrics)
@@ -147,27 +182,35 @@ combined_results <- do.call(rbind, all_metrics)
 
 ```{r visualize, eval=FALSE}
 # Heatmap of dissimilarities
-plot.Heatmap(sceval, 
-            dissimilarity.slot="Pseudobulk:Euclidean",
-            sort.consistency="silhouette")
+plot.Heatmap(
+  sceval,
+  dissimilarity.slot = "Pseudobulk:Euclidean",
+  sort.consistency = "silhouette"
+)
 
-plot.PCA(sceval, 
-         reduction.slot = "pseudobulk")
+plot.PCA(
+  sceval,
+  reduction.slot = "pseudobulk"
+)
 ```
 
 ## Using Marker Genes Instead of HVGs
 
 ```{r markers, eval=FALSE}
 # Identify cell type markers
-sceval <- Run.GeneMarkers(sceval, 
-                         method="scran.findMarkers",
-                         ngenes.celltype=50)
+sceval <- Run.GeneMarkers(
+  sceval,
+  method = "scran.findMarkers",
+  ngenes.celltype = 50
+)
 
 # Use markers for dissimilarity calculation
-sceval <- Run.Dissimilarity(sceval, 
-                           method="Pseudobulk:Euclidean",
-                           gene.list="Marker_genes",
-                           reduction=FALSE)
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "Pseudobulk:Euclidean",
+  gene.list = "Marker_genes",
+  reduction = FALSE
+)
 ```
 
 ## Focus on Specific Gene Sets
@@ -175,15 +218,19 @@ sceval <- Run.Dissimilarity(sceval,
 ```{r gene_sets, eval=FALSE}
 # Add custom gene list
 immune_genes <- c("CD3D", "CD4", "CD8A", "CD19", "CD14", "NCAM1")
-sceval <- add.GeneList(sceval, 
-                      list.name="immune_markers",
-                      gene.list=immune_genes)
+sceval <- add.GeneList(
+  sceval,
+  list.name = "immune_markers",
+  gene.list = immune_genes
+)
 
 # Run analysis on custom genes
-sceval <- Run.Dissimilarity(sceval, 
-                           method="Pseudobulk:Euclidean",
-                           gene.list="immune_markers",
-                           reduction=FALSE)
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "Pseudobulk:Euclidean",
+  gene.list = "immune_markers",
+  reduction = FALSE
+)
 ```
 
 # Interpreting Results
@@ -198,7 +245,8 @@ Low consistency scores may indicate:
 
 ## Next Steps for Low-Scoring Cell Types
 
-1. **Visualize** using `plot.Heatmap()` or `plot.PCA()` to identify problematic samples
+1. **Visualize** using `plot.Heatmap()` or `plot.PCA()` to identify
+  problematic samples
 2. **Investigate** biological differences (e.g., disease vs. healthy)
 3. **Refine** annotations by splitting or merging cell types
 

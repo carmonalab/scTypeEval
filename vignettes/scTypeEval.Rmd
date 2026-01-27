@@ -1,5 +1,5 @@
 ---
-title: "scTypeEval: Evaluating Cell Type Classifications in Single-Cell Transcriptomics"
+title: "scTypeEval: Evaluating Cell Type Labels in scRNA-seq"
 author:
   - name: Josep Garnica
     affiliation: University of Geneva
@@ -42,7 +42,8 @@ enables:
 
 - Quantification of **inter-sample label consistency**
 - Identification of **ambiguous or misclassified populations**
-- Reproducible **benchmarking of manual annotations, automated classifiers, or clustering results**
+- Reproducible **benchmarking of manual annotations, automated classifiers, or
+  clustering results**
 
 ## Key Features
 
@@ -126,7 +127,9 @@ for (i in seq_along(cell_types)) {
 for (s in seq_len(n_samples)) {
   sample_cells <- which(samples == paste0("Sample", s))
   batch_effect <- rnorm(1, mean = 1, sd = 0.1)
-  count_matrix[, sample_cells] <- round(count_matrix[, sample_cells] * batch_effect)
+  count_matrix[, sample_cells] <- round(
+    count_matrix[, sample_cells] * batch_effect
+  )
 }
 
 # Convert to sparse matrix
@@ -136,7 +139,10 @@ count_matrix <- Matrix(count_matrix, sparse = TRUE)
 metadata <- data.frame(
   celltype = celltypes,
   sample = samples,
-  batch = rep(c("Batch1", "Batch2"), each = n_cells_per_sample * (n_samples/2)),
+  batch = rep(
+    c("Batch1", "Batch2"),
+    each = n_cells_per_sample * (n_samples/2)
+  ),
   row.names = colnames(count_matrix),
   stringsAsFactors = FALSE
 )
@@ -165,11 +171,13 @@ sceval <- create.scTypeEval(
 
 ```
 
-The `scTypeEval` object stores the raw count data and metadata, which will be processed in subsequent steps.
+The `scTypeEval` object stores the raw count data and metadata, which will be
+processed in subsequent steps.
 
 ## Step 2: Process Data
 
-Process and normalize the data, creating both single-cell and pseudobulk representations. This step:
+Process and normalize the data, creating both single-cell and pseudobulk
+representations. This step:
 
 - Aggregates counts by cell type and sample (pseudobulk)
 - Filters out cell types with insufficient samples or cells
@@ -187,13 +195,16 @@ sceval <- Run.ProcessingData(
 
 ```
 
-The processed data is stored as `DataAssay` objects within the `scTypeEval` object, accessible for downstream analysis.
+The processed data is stored as `DataAssay` objects within the `scTypeEval`
+object, accessible for downstream analysis.
 
 ## Step 3: Extract Relevant Features
 
-Identify biologically relevant features for evaluating consistency. `scTypeEval` supports:
+Identify biologically relevant features for evaluating consistency.
+`scTypeEval` supports:
 
-- **Highly Variable Genes (HVGs)**: Genes with high variability across the dataset
+- **Highly Variable Genes (HVGs)**: Genes with high variability across the
+  dataset
 - **Cell Type Marker Genes**: Genes differentially expressed in each cell type
 - **Custom Gene Lists**: User-defined gene sets
 
@@ -249,7 +260,9 @@ sceval <- add.GeneList(
 
 ## Step 4: Dimensional Reduction (Optional but Recommended)
 
-Consistency metrics can be computed directly on the selected features. However, computing them in a **low-dimensional space** (e.g., PCA) significantly speeds up the analysis while yielding similar results.
+Consistency metrics can be computed directly on the selected features.
+However, computing them in a **low-dimensional space** (e.g., PCA)
+significantly speeds up the analysis while yielding similar results.
 
 ```{r pca}
 # Run PCA on processed data
@@ -265,11 +278,13 @@ if (length(reductions) > 0) {
 }
 ```
 
-Alternatively, pre-computed embeddings (PCA, UMAP, t-SNE) can be inserted using `add.DimReduction()`.
+Alternatively, pre-computed embeddings (PCA, UMAP, t-SNE) can be inserted using
+`add.DimReduction()`.
 
 ## Step 5: Compute Dissimilarity Matrices
 
-The core of `scTypeEval` is computing pairwise dissimilarities between cell types across samples. Multiple dissimilarity methods are supported:
+The core of `scTypeEval` is computing pairwise dissimilarities between cell
+types across samples. Multiple dissimilarity methods are supported:
 
 ### Pseudobulk-based Distances
 
@@ -329,7 +344,8 @@ if (length(dissim) > 0) {
 
 ## Step 6: Compute Consistency Metrics
 
-Evaluate inter-sample consistency for each cell type using internal validation metrics. `scTypeEval` supports multiple consistency metrics:
+Evaluate inter-sample consistency for each cell type using internal validation
+metrics. `scTypeEval` supports multiple consistency metrics:
 
 - **silhouette**: Standard cohesion/separation score
 - **2label.silhouette**: Silhouette comparing "own type" vs. all others
@@ -352,7 +368,9 @@ consistency_sil <- get.Consistency(
 print(consistency_sil)
 ```
 
-Higher values indicate better consistency (i.e., samples with the same cell type annotation are more similar to each other than to samples with different annotations).
+Higher values indicate better consistency (samples with the same cell type
+annotation are more similar to each other than to samples with different
+annotations).
 
 ### Compute Neighborhood Purity
 
@@ -391,7 +409,8 @@ print(consistency_df)
 
 ## Dissimilarity Heatmap
 
-Visualize dissimilarity matrices as annotated heatmaps. Cell types can be ordered by similarity or consistency scores:
+Visualize dissimilarity matrices as annotated heatmaps. Cell types can be
+ordered by similarity or consistency scores:
 
 ```{r plot_heatmap, fig.width=8, fig.height=7}
 # Plot dissimilarity heatmap with consistency-based ordering
@@ -403,13 +422,16 @@ plot.Heatmap(
 )
 ```
 
-The heatmap shows pairwise dissimilarities between samples, grouped by cell type. Cell types with higher consistency (e.g., more coherent annotations) show tighter clustering of their samples.
+The heatmap shows pairwise dissimilarities between samples, grouped by cell
+type. Cell types with higher consistency (e.g., more coherent annotations)
+show tighter clustering of their samples.
 
 # Advanced Usage
 
 ## Using Different Dissimilarity Methods
 
-Different dissimilarity methods capture different aspects of cell type similarity:
+Different dissimilarity methods capture different aspects of cell type
+similarity:
 
 ```{r compare_methods}
 # Compute multiple dissimilarity methods
@@ -438,7 +460,8 @@ print(comparison_df)
 
 ## Working with Real Data
 
-When working with real scRNA-seq data from Seurat or SingleCellExperiment:
+When working with real scRNA-seq data from Seurat or
+SingleCellExperiment:
 
 ```{r real_data_example, eval=FALSE}
 # From Seurat object
@@ -487,15 +510,18 @@ sceval <- Run.Dissimilarity(
 
 Cell types with low consistency scores may indicate:
 
-1. **Ambiguous cell type boundaries**: Related cell types (e.g., activated vs. resting T cells) may overlap
-2. **Heterogeneous populations**: A single label covering multiple biological states
+1. **Ambiguous cell type boundaries**: Related cell types (e.g., activated vs.
+  resting T cells) may overlap
+2. **Heterogeneous populations**: A single label covering multiple biological
+  states
 3. **Annotation errors**: Inconsistent labeling across samples
 
 ## Recommendations
 
 - Investigate cell types with low consistency using the heatmap visualization
 - Consider refining annotations for cell types with negative consistency scores
-- Use biological knowledge to interpret whether low consistency reflects true biology or annotation issues
+- Use biological knowledge to interpret whether low consistency reflects true
+  biology or annotation issues
 
 # Session Information
 
@@ -505,7 +531,8 @@ sessionInfo()
 
 # References
 
-The manuscript describing these methods is currently in preparation. For questions or issues, please visit:
+The manuscript describing these methods is currently in preparation. For
+questions or issues, please visit:
 
 - GitHub: https://github.com/carmonalab/scTypeEval
 - Bug reports: https://github.com/carmonalab/scTypeEval/issues
