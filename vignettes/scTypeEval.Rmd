@@ -211,10 +211,10 @@ Identify biologically relevant features for evaluating consistency.
 ### Highly Variable Genes
 
 ```{r hvg}
-# Identify HVGs using the scran method
+# Identify HVGs using the basic method
 sceval <- Run.HVG(
   scTypeEval = sceval,
-  var.method = "scran",        # Method for variance modeling
+  var.method = "basic",        # Method for variance modeling
   ngenes = 2000,               # Number of HVGs to retain
   sample = TRUE                # Perform sample-level blocking
 )

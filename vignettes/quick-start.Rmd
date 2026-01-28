@@ -67,7 +67,9 @@ sceval <- Run.ProcessingData(
 )
 
 # Identify features
-sceval <- Run.HVG(sceval, ngenes = 1000)
+sceval <- Run.HVG(sceval,
+                  var.method = "basic",
+                  ngenes = 1000)
 
 # Run PCA
 sceval <- Run.PCA(sceval, ndim = 20)
