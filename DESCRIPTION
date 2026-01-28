@@ -24,10 +24,7 @@ Description: scTypeEval provides tools to evaluate and validate cell type
  matrices, internal validation metrics (for example, silhouette-based
  summaries), and visualization utilities to inspect heatmaps and PCA plots.
  Functions support common single-cell containers and enable comparison of
- clustering and labeling strategies across datasets. Optional Pearson residual
- normalization is available via the transformGamPoi/glmGamPoi ecosystem and is
- used only when explicitly requested. Vignettes demonstrate typical analyses
- and reproducible workflows.
+ clustering and labeling strategies across datasets.
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
