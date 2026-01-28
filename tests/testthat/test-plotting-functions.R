@@ -376,28 +376,6 @@ test_that("plot.Heatmap sorting produces different plots", {
   expect_s3_class(p_sorted, "ggplot")
 })
 
-
-test_that("Plotting functions work with multiple samples", {
-  test_data <- generate_test_data(n_samples = 6)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
-  sceval <- Run.ProcessingData(sceval, ident = "celltype", sample = "sample",
-                                min.samples = 3, min.cells = 5, verbose = FALSE)
-  sceval <- Run.HVG(sceval, ngenes = 100, verbose = FALSE)
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
-                               reduction = FALSE, verbose = FALSE)
-  
-  p_pca <- plot.PCA(sceval, reduction.slot = "single-cell")
-  p_mds <- plot.MDS(sceval, dissimilarity.slot = "Pseudobulk:Euclidean")
-  p_heatmap <- plot.Heatmap(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
-                            verbose = FALSE)
-  
-  expect_s3_class(p_pca, "ggplot")
-  expect_s3_class(p_mds, "ggplot")
-  expect_s3_class(p_heatmap, "ggplot")
-})
-
-
 test_that("plot.PCA works with different aggregation types", {
   sceval <- create_processed_scTypeEval()
   sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)

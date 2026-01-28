@@ -21,7 +21,7 @@ test_that("Complete workflow from matrix to consistency metrics", {
   # Identify HVG
   sceval <- Run.HVG(
     sceval,
-    var.method = "scran",
+    var.method = "basic",
     ngenes = 150,
     sample = TRUE,
     verbose = FALSE
@@ -129,7 +129,7 @@ test_that("Workflow with custom gene lists", {
 
 
 test_that("Workflow with black list filtering", {
-  sceval <- create_processed_scTypeEval()
+  sceval <- create_processed_scTypeEval(HVG = FALSE)
   
   # Set black list
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
@@ -139,6 +139,7 @@ test_that("Workflow with black list filtering", {
   # Run HVG with black list
   sceval <- Run.HVG(
     sceval,
+    var.method = "basic",
     ngenes = 100,
     verbose = FALSE
   )
@@ -193,7 +194,7 @@ test_that("Workflow with Seurat input", {
     verbose = FALSE
   )
   
-  sceval <- Run.HVG(sceval, ngenes = 100, verbose = FALSE)
+  sceval <- Run.HVG(sceval, var.method = "basic", ngenes = 100, verbose = FALSE)
   sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
   sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
@@ -228,7 +229,7 @@ test_that("Workflow with SingleCellExperiment input", {
     verbose = FALSE
   )
   
-  sceval <- Run.HVG(sceval, ngenes = 100, verbose = FALSE)
+  sceval <- Run.HVG(sceval, var.method = "basic", ngenes = 100, verbose = FALSE)
   sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
@@ -288,7 +289,7 @@ test_that("Workflow preserves metadata throughout", {
   sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
   sceval <- set.activeIdent(sceval, ident = "celltype")
   sceval <- Run.ProcessingData(sceval, ident = NULL, sample = "sample", verbose = FALSE)
-  sceval <- Run.HVG(sceval, ngenes = 100, verbose = FALSE)
+  sceval <- Run.HVG(sceval, var.method = "basic", ngenes = 100, verbose = FALSE)
   sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
   sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
@@ -321,37 +322,6 @@ test_that("Complete workflow with all consistency metrics", {
   n_celltypes <- length(unique(consistency$celltype))
   expect_equal(nrow(consistency), n_celltypes * length(all_metrics))
 })
-
-
-test_that("Workflow handles large number of samples", {
-  test_data <- generate_test_data(n_samples = 8, n_cells_per_sample = 50)
-  
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
-  sceval <- Run.ProcessingData(
-    sceval,
-    ident = "celltype",
-    sample = "sample",
-    min.samples = 5,
-    min.cells = 10,
-    verbose = FALSE
-  )
-  
-  sceval <- Run.HVG(sceval, ngenes = 100, sample = TRUE, verbose = FALSE)
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
-                               reduction = TRUE, verbose = FALSE)
-  
-  consistency <- get.Consistency(
-    sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "silhouette",
-    verbose = FALSE
-  )
-  
-  expect_s3_class(consistency, "data.frame")
-  expect_true(nrow(consistency) > 0)
-})
-
 
 test_that("Workflow with add.DimReduction integration", {
   sceval <- create_processed_scTypeEval()

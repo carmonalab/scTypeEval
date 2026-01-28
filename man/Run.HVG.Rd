@@ -90,9 +90,9 @@ sceval <- Run.ProcessingData(sceval, ident = "celltype",
                              sample = "sample", min.samples = 3,
                              min.cells = 3, verbose = FALSE)
 
-# Compute HVGs using scran method
+# Compute HVGs using basic method
 sceval <- Run.HVG(sceval,
-                  var.method = "scran",
+                  var.method = "basic",
                   ngenes = 10,
                   verbose = FALSE)
 

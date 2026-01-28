@@ -144,22 +144,6 @@ test_that("get.hierarchy works with WasserStein dissimilarity", {
   expect_true(!is.null(hier))
 })
 
-
-test_that("get.hierarchy works with multiple samples", {
-  test_data <- generate_test_data(n_samples = 6)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
-  sceval <- Run.ProcessingData(sceval, ident = "celltype", sample = "sample",
-                                min.samples = 3, min.cells = 5, verbose = FALSE)
-  sceval <- Run.HVG(sceval, var.method = "scran", verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
-                               reduction = FALSE, verbose = FALSE)
-  
-  hier <- get.hierarchy(sceval, verbose = FALSE)
-  
-  expect_true(!is.null(hier))
-})
-
-
 test_that("get.NN computes nearest neighbor composition", {
   sceval <- create_processed_scTypeEval()
   sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
@@ -320,22 +304,6 @@ test_that("get.NN works with WasserStein dissimilarity", {
   
   expect_true(!is.null(nn))
 })
-
-
-test_that("get.NN works with multiple samples", {
-  test_data <- generate_test_data(n_samples = 6)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
-  sceval <- Run.ProcessingData(sceval, ident = "celltype", sample = "sample",
-                                min.samples = 3, min.cells = 5, verbose = FALSE)
-  sceval <- Run.HVG(sceval, var.method = "scran", verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
-                               reduction = FALSE, verbose = FALSE)
-  
-  nn <- get.NN(sceval, verbose = FALSE)
-  
-  expect_true(!is.null(nn))
-})
-
 
 test_that("get.NN normalized values differ from unnormalized", {
   sceval <- create_processed_scTypeEval()

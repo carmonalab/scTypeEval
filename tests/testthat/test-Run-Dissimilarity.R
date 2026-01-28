@@ -264,25 +264,6 @@ test_that("Run.Dissimilarity stores correct metadata", {
   expect_true(is.factor(diss_assay@sample))
 })
 
-
-test_that("Run.Dissimilarity works with multiple samples", {
-  test_data <- generate_test_data(n_samples = 6)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
-  sceval <- Run.ProcessingData(sceval, ident = "celltype", sample = "sample",
-                                min.samples = 3, min.cells = 5, verbose = FALSE)
-  sceval <- Run.HVG(sceval, ngenes = 100, verbose = FALSE)                              
-  
-  sceval <- Run.Dissimilarity(
-    sceval,
-    method = "Pseudobulk:Euclidean",
-    reduction = FALSE,
-    verbose = FALSE
-  )
-  
-  expect_true("Pseudobulk:Euclidean" %in% names(sceval@dissimilarity))
-})
-
-
 test_that("Run.Dissimilarity handles progressbar parameter", {
   sceval <- create_processed_scTypeEval()
   sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)

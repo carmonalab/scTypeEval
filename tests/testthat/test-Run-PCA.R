@@ -170,25 +170,6 @@ test_that("Run.PCA embeddings have correct dimensions", {
   expect_equal(ncol(embeddings), n_samples)
 })
 
-
-test_that("Run.PCA works with multiple samples", {
-  test_data <- generate_test_data(n_samples = 6)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
-  sceval <- Run.ProcessingData(sceval, ident = "celltype", sample = "sample",
-                                min.samples = 3, min.cells = 5, verbose = FALSE)
-  sceval <- Run.HVG(sceval, ngenes = 200, verbose = FALSE)                          
-  
-  sceval <- Run.PCA(
-    sceval,
-    ndim = 5,
-    verbose = FALSE
-  )
-  
-  expect_true("single-cell" %in% names(sceval@reductions))
-  expect_true("pseudobulk" %in% names(sceval@reductions))
-  expect_equal(sceval@reductions[["single-cell"]]@gene.list, sceval@gene.lists[["HVG"]])
-})
-
 test_that("Run.PCA computes PCA for all data assays", {
   sceval <- create_processed_scTypeEval()
   

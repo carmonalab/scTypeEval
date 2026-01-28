@@ -241,8 +241,7 @@ test_that("add.DimReduction accepts feature.loadings parameter", {
 
 
 test_that("add.DimReduction handles gene.list parameter", {
-  sceval <- create_processed_scTypeEval()
-  sceval <- Run.HVG(sceval, ngenes = 100, verbose = FALSE)
+  sceval <- create_processed_scTypeEval() # already producing HVG
   
   n_cells <- ncol(sceval@data[["single-cell"]]@matrix)
   embeddings <- matrix(rnorm(n_cells * 10), nrow = 10, ncol = n_cells)

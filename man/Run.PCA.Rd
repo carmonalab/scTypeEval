@@ -64,7 +64,7 @@ sceval <- Run.ProcessingData(sceval, ident = "celltype",
                              sample = "sample", min.samples = 3,
                              min.cells = 3, verbose = FALSE)
 sceval <- Run.HVG(sceval,
-                  var.method = "scran",
+                  var.method = "basic",
                   ngenes = 20,
                   verbose = FALSE)
 

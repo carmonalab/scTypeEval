@@ -120,8 +120,7 @@ test_that("Multiple dissimilarity methods can coexist", {
 
 
 test_that("Multiple gene lists can coexist", {
-  sceval <- create_processed_scTypeEval()
-  sceval <- Run.HVG(sceval, ngenes = 100, verbose = FALSE)
+  sceval <- create_processed_scTypeEval() # already producing HVG
   sceval <- Run.GeneMarkers(sceval, ngenes.celltype = 50, verbose = FALSE)
   
   expect_true(all(c("HVG", "scran.findMarkers") %in% names(sceval@gene.lists)))

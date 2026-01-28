@@ -25,7 +25,7 @@ test_that("Run.HVG works with ncores = 1", {
   expect_true(length(result@gene.lists) > 0)
 })
 
-test_that("Run.HVG respects ncores parameter", {
+test_that("Run.HVG basic respects ncores parameter", {
   sceval <- create_test_scTypeEval()
   sceval <- Run.ProcessingData(
     sceval,
@@ -54,6 +54,36 @@ test_that("Run.HVG respects ncores parameter", {
   expect_equal(length(result_serial@gene.lists), length(result_parallel@gene.lists))
 })
 
+test_that("Run.HVG scran respects ncores parameter", {
+  skip_if_not_installed("bluster")
+  sceval <- create_test_scTypeEval()
+  sceval <- Run.ProcessingData(
+    sceval,
+    ident = "celltype",
+    sample = "sample",
+    verbose = FALSE
+  )
+  
+  # Test with ncores = 1
+  result_serial <- Run.HVG(
+    sceval,
+    var.method = "scran",
+    ncores = 1,
+    verbose = FALSE
+  )
+  
+  # Test with ncores = 2 (if available)
+  result_parallel <- Run.HVG(
+    sceval,
+    var.method = "scran",
+    ncores = 2,
+    verbose = FALSE
+  )
+  
+  # Results should have same gene lists
+  expect_equal(length(result_serial@gene.lists), length(result_parallel@gene.lists))
+})
+
 test_that("Run.HVG works with bparam parameter", {
   skip_if_not_installed("BiocParallel")
   
@@ -70,7 +100,7 @@ test_that("Run.HVG works with bparam parameter", {
   
   result <- Run.HVG(
     sceval,
-    var.method = "scran",
+    var.method = "basic",
     bparam = bparam,
     verbose = FALSE
   )

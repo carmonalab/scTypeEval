@@ -525,9 +525,9 @@ Add.ProcessedData <- function(scTypeEval,
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' 
-#' # Compute HVGs using scran method
+#' # Compute HVGs using basic method
 #' sceval <- Run.HVG(sceval,
-#'                   var.method = "scran",
+#'                   var.method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #'
@@ -842,7 +842,7 @@ add.GeneList <- function(scTypeEval,
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' sceval <- Run.HVG(sceval,
-#'                   var.method = "scran",
+#'                   var.method = "basic",
 #'                   ngenes = 20,
 #'                   verbose = FALSE)
 #' 
@@ -1163,7 +1163,7 @@ add.DimReduction <- function(scTypeEval,
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' sceval <- Run.HVG(sceval,
-#'                   var.method = "scran",
+#'                   var.method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' 
@@ -1393,7 +1393,7 @@ Run.Dissimilarity <- function(scTypeEval,
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' sceval <- Run.HVG(sceval,
-#'                   var.method = "scran",
+#'                   var.method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
@@ -1523,7 +1523,7 @@ get.Consistency <- function(scTypeEval,
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' sceval <- Run.HVG(sceval,
-#'                   var.method = "scran",
+#'                   var.method = "basic",
 #'                   ngenes = 20,
 #'                   verbose = FALSE)
 #' 
@@ -1623,7 +1623,7 @@ plot.PCA <- function(scTypeEval,
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' sceval <- Run.HVG(sceval,
-#'                   var.method = "scran",
+#'                   var.method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' 
@@ -1721,7 +1721,7 @@ get.hierarchy <- function(scTypeEval,
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' sceval <- Run.HVG(sceval,
-#'                   var.method = "scran",
+#'                   var.method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' 
@@ -1819,7 +1819,7 @@ get.NN <- function(scTypeEval,
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' sceval <- Run.HVG(sceval,
-#'                   var.method = "scran",
+#'                   var.method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' 
@@ -1937,7 +1937,7 @@ plot.MDS <- function(scTypeEval,
 #'                              sample = "sample", min.samples = 3,
 #'                              min.cells = 3, verbose = FALSE)
 #' sceval <- Run.HVG(sceval,
-#'                   var.method = "scran",
+#'                   var.method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' 
