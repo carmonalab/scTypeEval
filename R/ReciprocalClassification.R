@@ -245,7 +245,7 @@ RecipClassif <- function(mat,
                         stop(classifier, " classifier not supported")
    )
    
-   if(verbose){message("Computing pairwise BesHiT similarity... \n")}
+   if(verbose){message("Computing pairwise Reciprocal Classification similarity... \n")}
    df.tmp <- BiocParallel::bplapply(combs,
                                     BPPARAM = param,
                                     function(i) {
