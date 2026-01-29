@@ -667,6 +667,8 @@ Run.HVG <- function(scTypeEval,
 #'  ngenes.celltype = 10,
 #'  verbose = FALSE)
 #'
+#' @import bluster
+#'
 #' @export Run.GeneMarkers
 
 
