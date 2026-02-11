@@ -146,9 +146,6 @@ The test suite contains **311 comprehensive tests** across 13 test files:
 #### 13. Data Loading (`test-load-SingleCell-object.R`; 54 tests)
 - Loading Seurat objects (.rds) with split/unsplit modes
 - Loading SingleCellExperiment objects (.rds) with split/unsplit modes
-- Loading AnnData objects (.h5ad) with counts layer
-- Loading AnnData objects (.h5ad) with X layer only
-- Loading AnnData objects (.h5ad) with custom layers
 - Error handling for missing files and unsupported formats
 - Error handling for missing packages
 - Data integrity and format validation
@@ -195,7 +192,6 @@ The synthetic data includes:
 - Full suite: `devtools::test()`
 - Single file: `devtools::test(filter = "create-scTypeEval")` (replace with your target file stem)
 - Faster reruns in dev: `testthat::test_file("tests/testthat/test-load-SingleCell-object.R")`
-- H5AD checks: ensure Python `anndata` is installed (`install.packages("anndata")` will pull via reticulate)
 
 ### Run all tests
 ```r
