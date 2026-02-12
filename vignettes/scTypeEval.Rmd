@@ -491,8 +491,9 @@ Focus analysis on specific gene sets (e.g., immune genes, pathways):
 # Add pathway-specific genes
 sceval <- add.GeneList(
   scTypeEval = sceval,
-  list.name = "TCR_signaling",
-  gene.list = c("CD3D", "CD3E", "CD3G", "CD247", "LCK", "ZAP70")
+  gene.list = list("TCR_signaling" = c("CD3D", "CD3E", "CD3G",
+                                       "CD247", "LCK", "ZAP70")
+                   )
 )
 
 # Run analysis focused on these genes
