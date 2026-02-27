@@ -15,7 +15,7 @@ Accurate cell type annotation is essential but difficult in single-cell RNA sequ
 - A key limitation for both is the **lack of true ground truth** for benchmarking.  
 
 **`scTypeEval`** provides a **ground-truth-agnostic framework** to systematically assess annotation quality using internal validation metrics.  
-- Quantifies **inter-sample label consistency**.  
+- Quantifies **inter-sample label consistency (ISC)**.  
 - Identifies **ambiguous or misclassified populations**.  
 - Enables reproducible **benchmarking of manual annotations, automated classifiers, or clustering results**.  
 
@@ -232,6 +232,96 @@ Example of results table:
 
 
 </details>
+
+
+## Recommended metrics
+
+Based on our benchmark across **31 real scRNA-seq datasets**, we recommend the following ISC metric choices:
+
+By default (and in the benchmark), these metrics are computed on **highly variable genes (HVGs) identified with `scran`** via `Run.HVG(var.method = "scran")`.
+
+In our benchmark we observed a trade-off: some metrics are more sensitive to **global, gradual signal degradation**, while others are more sensitive to **local structural inconsistencies/over-partitioning**, so we recommend using one from each class.
+
+- **Local consistency (over-partitioning / fragmentation sensitive)**: `silhouette` in the **reciprocal-classification match** space (`RecipClassif:Match`) — also the top-ranked overall choice in the benchmark.
+- **Global consistency (signal degradation sensitive)**: `2label.silhouette` in **pseudobulk cosine** space (`Pseudobulk:Cosine`).
+- **Integrated score**: combine local + global ISC score by taking the **geometric mean**. In some datasets with high granularity (e.g. only CD8+ T cells subsets) usage of only Local consistency is recommended.
+
+<p align="center">
+
+<img src="docs/benchmark_results.png" height="550"/>
+
+</p>
+
+### Minimal code to compute the recommended metrics on your own dataset:
+
+```r
+library(dplyr)
+library(scTypeEval)
+
+## Assumes you already created `sceval` and ran processing (see Usage above)
+
+# Default feature space used in the benchmark: scran HVGs (optionally sample-blocked)
+sceval <- Run.HVG(
+  scTypeEval = sceval,
+  var.method = "scran",
+  ngenes = 2000,
+  sample = TRUE
+)
+
+# Not affecting RecipClassif:Match but for Pseudobulk-based metrics,
+# computation in PCA space is faster with similar results.
+
+# (1) Overall best: silhouette in reciprocal-classification match space
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "RecipClassif:Match",
+  ReciprocalClassifier = "SingleR"
+)
+# (2) Complementary: 2-label silhouette in pseudobulk cosine space
+sceval <- Run.Dissimilarity(
+  sceval,
+  method = "Pseudobulk:Cosine",
+  reduction = FALSE
+)
+# (3) Obtain consistency scores for computed dissimilarities and for silhouette and 2label.silhouette
+isc <- get.Consistency(
+  sceval,
+  dissimilarity.slot = c("RecipClassif:Match", "Pseudobulk:Cosine"),
+  Consistency.metric = c("silhouette", "2label.silhouette")
+)
+
+# (4) Filter to obtain best combinations for each cell type
+sel.methods <- c("local" = "silhouette | RecipClassif:Match",
+                "global" = "2label.silhouette | Pseudobulk:Cosine")
+
+isc_sel <- isc |>
+  mutate(method.type = paste(consistency.metric, dissimilarity_method, sep = " | ")) |>
+  filter(method.type %in% sel.methods)
+
+# Optional: manuscript-style integrated score (geometric mean of rescaled local + global)
+rescale01 <- function(x) {
+  rng <- range(x, na.rm = TRUE)
+  if (diff(rng) == 0) return(rep(0, length(x)))
+  (x - rng[1]) / diff(rng)
+}
+
+isc_local <- isc_sel |>
+  filter(method.type == sel.methods[["local"]]) |>
+  select(celltype, ident, local = measure)
+
+isc_global <- isc_sel |>
+  filter(method.type == sel.methods[["global"]]) |>
+  select(celltype, ident, global = measure)
+
+isc_integrated <- left_join(isc_local, isc_global, by = c("celltype", "ident")) |>
+  mutate(
+    local_01 = rescale01(local),
+    global_01 = rescale01(global),
+    isc_integrated = sqrt(local_01 * global_01)
+  )
+```
+
+Benchmarking utilities used for the manuscript (task simulations + scoring helpers) are in `inst/benchmarking/`.
 
 
 ## Citation  
