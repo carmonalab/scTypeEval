@@ -260,8 +260,10 @@ library(scTypeEval)
 
 ## Assumes you already created `sceval` and ran processing (see Usage above)
 
-# Default feature space used in the benchmark: scran HVGs, sample-blocked, on single-cell data
-# Also, we recommend removing from selected genes within HVG the black listed genes with high inter-sample variability
+# Default feature space used in the benchmark: scran HVGs, sample-blocked,
+# on single-cell data
+# Also, we recommend removing from selected genes within HVG the black listed
+# genes with high inter-sample variability
 bl <- list(black.list$TCR,
            black.list$Immunoglobulins,
            black.list$Ygenes) |>
@@ -277,21 +279,25 @@ sceval <- Run.HVG(
 )
 
 # Not affecting RecipClassif:Match but for Pseudobulk-based metrics,
-# computation in PCA space is faster with similar results (See Usage above to add dimensional reduction).
+# computation in PCA space is faster with similar results
+# (See Usage above to add dimensional reduction).
 
-# (1) Overall best and local structure: silhouette in reciprocal-classification match space
+# (1) Overall best and local structure: silhouette in
+# reciprocal-classification match space
 sceval <- Run.Dissimilarity(
   sceval,
   method = "RecipClassif:Match",
   reduction = FALSE
 )
-# (2) Complementary for global structure: 2-label silhouette in pseudobulk cosine space
+# (2) Complementary for global structure: 2-label silhouette 
+# in pseudobulk cosine space
 sceval <- Run.Dissimilarity(
   sceval,
   method = "Pseudobulk:Cosine",
   reduction = TRUE
 )
-# (3) Obtain consistency scores for computed dissimilarities and for silhouette and 2label.silhouette
+# (3) Obtain consistency scores for computed dissimilarities and
+# for silhouette and 2label.silhouette
 isc <- get.Consistency(
   sceval,
   dissimilarity.slot = c("RecipClassif:Match", "Pseudobulk:Cosine"),
