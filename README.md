@@ -261,7 +261,7 @@ library(scTypeEval)
 ## Assumes you already created `sceval` and ran processing (see Usage above)
 
 # Default feature space used in the benchmark: scran HVGs, sample-blocked, on single-cell data
-# Also, we commended remove from selected genes in HVG the black list genes
+# Also, we recommend removing from selected genes within HVG the black listed genes with high inter-sample variability
 bl <- list(black.list$TCR,
            black.list$Immunoglobulins,
            black.list$Ygenes) |>
