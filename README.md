@@ -260,28 +260,36 @@ library(scTypeEval)
 
 ## Assumes you already created `sceval` and ran processing (see Usage above)
 
-# Default feature space used in the benchmark: scran HVGs (optionally sample-blocked)
+# Default feature space used in the benchmark: scran HVGs, sample-blocked, on single-cell data
+# Also, we commended remove from selected genes in HVG the black list genes
+bl <- list(black.list$TCR,
+           black.list$Immunoglobulins,
+           black.list$Ygenes) |>
+       unlist()
+       
 sceval <- Run.HVG(
   scTypeEval = sceval,
   var.method = "scran",
   ngenes = 2000,
-  sample = TRUE
+  sample = TRUE,
+  aggregation = "single-cell",
+  black.list = bl
 )
 
 # Not affecting RecipClassif:Match but for Pseudobulk-based metrics,
-# computation in PCA space is faster with similar results.
+# computation in PCA space is faster with similar results (See Usage above to add dimensional reduction).
 
-# (1) Overall best: silhouette in reciprocal-classification match space
+# (1) Overall best and local structure: silhouette in reciprocal-classification match space
 sceval <- Run.Dissimilarity(
   sceval,
   method = "RecipClassif:Match",
-  ReciprocalClassifier = "SingleR"
+  reduction = FALSE
 )
-# (2) Complementary: 2-label silhouette in pseudobulk cosine space
+# (2) Complementary for global structure: 2-label silhouette in pseudobulk cosine space
 sceval <- Run.Dissimilarity(
   sceval,
   method = "Pseudobulk:Cosine",
-  reduction = FALSE
+  reduction = TRUE
 )
 # (3) Obtain consistency scores for computed dissimilarities and for silhouette and 2label.silhouette
 isc <- get.Consistency(
@@ -294,34 +302,15 @@ isc <- get.Consistency(
 sel.methods <- c("local" = "silhouette | RecipClassif:Match",
                 "global" = "2label.silhouette | Pseudobulk:Cosine")
 
-isc_sel <- isc |>
-  mutate(method.type = paste(consistency.metric, dissimilarity_method, sep = " | ")) |>
+isc |>
+  mutate(method.type = paste(consistency.metric,
+                             dissimilarity_method,
+                             sep = " | ")
+                             ) |>
   filter(method.type %in% sel.methods)
-
-# Optional: manuscript-style integrated score (geometric mean of rescaled local + global)
-rescale01 <- function(x) {
-  rng <- range(x, na.rm = TRUE)
-  if (diff(rng) == 0) return(rep(0, length(x)))
-  (x - rng[1]) / diff(rng)
-}
-
-isc_local <- isc_sel |>
-  filter(method.type == sel.methods[["local"]]) |>
-  select(celltype, ident, local = measure)
-
-isc_global <- isc_sel |>
-  filter(method.type == sel.methods[["global"]]) |>
-  select(celltype, ident, global = measure)
-
-isc_integrated <- left_join(isc_local, isc_global, by = c("celltype", "ident")) |>
-  mutate(
-    local_01 = rescale01(local),
-    global_01 = rescale01(global),
-    isc_integrated = sqrt(local_01 * global_01)
-  )
 ```
 
-Benchmarking utilities used for the manuscript (task simulations + scoring helpers) are in `inst/benchmarking/`.
+Benchmarking utilities used for the manuscript (task simulations + scoring helpers) are in [`inst/benchmarking/`](https://github.com/carmonalab/scTypeEval/tree/master/inst/benchmarking).
 
 
 ## Citation  
