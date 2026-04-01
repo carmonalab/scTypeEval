@@ -1,4 +1,4 @@
-fit.ReferenceLine <- function(x, y) {
+fit_reference_line <- function(x, y) {
    # Remove NA values
    valid_idx <- !is.na(x) & !is.na(y)
    x <- x[valid_idx]
@@ -6,8 +6,8 @@ fit.ReferenceLine <- function(x, y) {
    
    # Check for sufficient data (at least 2 points required)
    if (length(x) < 2 || length(y) < 2) {
-      warning("Not enough points for computing fit.ReferenceLine")
-      return(list("r.squared" = NA, "p.value" = NA))
+      warning("Not enough points for computing fit_reference_line")
+      return(list("r_squared" = NA, "p_value" = NA))
    }
    # Compute residuals for y relative to the reference line
    residuals <- y - x
@@ -17,7 +17,7 @@ fit.ReferenceLine <- function(x, y) {
    # Use ANOVA to compare the full model to the null hypothesis (y = x)
    # Full model: y ~ x (allowing slope and intercept to vary)
    model_full <- lm(y ~ x)
-   #r_squared <- summary(model_full)$r.squared
+   #r_squared <- summary(model_full)$r_squared
    # Null model: force y = x (slope = 1 and intercept = 0)
    model_null <- lm(y ~ offset(x))
    # Perform ANOVA comparison
@@ -28,15 +28,15 @@ fit.ReferenceLine <- function(x, y) {
    
    # Return results
    ret <- list(
-      "r.squared" = ss_residual,         # R-squared value
-      "p.value" = p_value_anova  # p-value from ANOVA
+      "r_squared" = ss_residual,         # R-squared value
+      "p_value" = p_value_anova  # p-value from ANOVA
    )
    return(ret)
 }
 
 
 
-fit.Constant <- function(x, y,
+fit_constant <- function(x, y,
                          lim = TRUE,
                          inverse = TRUE) {
    # remove NA
@@ -44,9 +44,9 @@ fit.Constant <- function(x, y,
    
    # if fewer than 2 values, return NA
    if (length(y) < 2) {
-      warning("Not enough points for computing fit.Constant")
-      return(list("1-rss" = NA,
-                  "p.value" = NA))
+      warning("Not enough points for computing fit_constant")
+      return(list("one_minus_rss" = NA,
+                  "p_value" = NA))
    }
    
    # Calculate mean of y
@@ -65,11 +65,11 @@ fit.Constant <- function(x, y,
    }
    
    # Compute p-value for residuals (testing if mean residual = 0)
-   p_value <- t.test(residuals, mu = 0)$p.value
+   p_value <- t.test(residuals, mu = 0)[["p.value"]]
    if(is.na(p_value)){p_value <- 1}
    # Return results
-   ret <- list("1-rss" = rss,
-               "p.value" = p_value)
+   ret <- list("one_minus_rss" = rss,
+               "p_value" = p_value)
    return(ret)
 }
 

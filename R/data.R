@@ -1,6 +1,6 @@
 #' Default Gene Blacklist for scTypeEval
 #'
-#' @name black.list
+#' @name black_list
 #'
 #' @description
 #' A curated list of genes typically excluded from single-cell RNA-seq analysis
@@ -20,8 +20,8 @@
 #'
 #' @details
 #' This blacklist is automatically loaded and used by default in scTypeEval
-#' when \code{black.list = NULL} is specified in functions like \code{\link{Run.HVG}}
-#' and \code{\link{Run.GeneMarkers}}. Users can override this default by providing
+#' when \code{black_list = NULL} is specified in functions like \code{\link{run_hvg}}
+#' and \code{\link{run_gene_markers}}. Users can override this default by providing
 #' a custom character vector of gene symbols to exclude.
 #'
 #' The blacklist helps improve downstream analysis by removing:
@@ -47,12 +47,12 @@
 #'
 #' @examples
 #' # Load the default gene blacklist
-#' data(black.list)
+#' data(black_list)
 #'
 #' # Inspect the first few entries
-#' head(black.list)
+#' head(black_list)
 #'
-#' @seealso \code{\link{Run.HVG}}, \code{\link{Run.GeneMarkers}}
+#' @seealso \code{\link{run_hvg}}, \code{\link{run_gene_markers}}
 #'
 #' @keywords datasets
 NULL

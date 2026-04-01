@@ -1,133 +1,133 @@
-test_that("get.Consistency computes silhouette metric", {
+test_that("get_consistency computes silhouette metric", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "silhouette",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "silhouette",
     verbose = FALSE
   )
   
   expect_s3_class(consistency, "data.frame")
   expect_true("celltype" %in% colnames(consistency))
   expect_true("measure" %in% colnames(consistency))
-  expect_true("consistency.metric" %in% colnames(consistency))
-  expect_true("silhouette" %in% consistency$consistency.metric)
+  expect_true("consistency_metric" %in% colnames(consistency))
+  expect_true("silhouette" %in% consistency$consistency_metric)
 })
 
 
-test_that("get.Consistency computes 2label.silhouette metric", {
+test_that("get_consistency computes 2label_silhouette metric", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "2label.silhouette",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "2label_silhouette",
     verbose = FALSE
   )
   
-  expect_true("2label.silhouette" %in% consistency$consistency.metric)
+  expect_true("2label_silhouette" %in% consistency$consistency_metric)
 })
 
 
-test_that("get.Consistency computes NeighborhoodPurity metric", {
+test_that("get_consistency computes NeighborhoodPurity metric", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "NeighborhoodPurity",
-    KNNGraph_k = 5,
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "NeighborhoodPurity",
+    knn_graph_k = 5,
     verbose = FALSE
   )
   
-  expect_true("NeighborhoodPurity" %in% consistency$consistency.metric)
+  expect_true("NeighborhoodPurity" %in% consistency$consistency_metric)
 })
 
 
-test_that("get.Consistency computes ward.PropMatch metric", {
+test_that("get_consistency computes ward_PropMatch metric", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "ward.PropMatch",
-    hclust.method = "ward.D2",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "ward_PropMatch",
+    hclust_method = "ward.D2",
     verbose = FALSE
   )
   
-  expect_true("ward.PropMatch" %in% consistency$consistency.metric)
+  expect_true("ward_PropMatch" %in% consistency$consistency_metric)
 })
 
 
-test_that("get.Consistency computes Orbital.medoid metric", {
+test_that("get_consistency computes Orbital_medoid metric", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "Orbital.medoid",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "Orbital_medoid",
     verbose = FALSE
   )
   
-  expect_true("Orbital.medoid" %in% consistency$consistency.metric)
+  expect_true("Orbital_medoid" %in% consistency$consistency_metric)
 })
 
 
-test_that("get.Consistency computes Average.similarity metric", {
+test_that("get_consistency computes Average_similarity metric", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "Average.similarity",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "Average_similarity",
     verbose = FALSE
   )
   
-  expect_true("Average.similarity" %in% consistency$consistency.metric)
+  expect_true("Average_similarity" %in% consistency$consistency_metric)
 })
 
 
-test_that("get.Consistency computes multiple metrics", {
+test_that("get_consistency computes multiple metrics", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = c("silhouette", "2label.silhouette", "Average.similarity"),
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = c("silhouette", "2label_silhouette", "Average_similarity"),
     verbose = FALSE
   )
   
-  expect_true(all(c("silhouette", "2label.silhouette", "Average.similarity") 
-                  %in% consistency$consistency.metric))
+  expect_true(all(c("silhouette", "2label_silhouette", "Average_similarity") 
+                   %in% consistency$consistency_metric))
 })
 
 
-test_that("get.Consistency works with dissimilarity.slot = 'all'", {
+test_that("get_consistency works with dissimilarity_slot = 'all'", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Cosine", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Cosine", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "all",
-    Consistency.metric = "silhouette",
+    dissimilarity_slot = "all",
+    consistency_metric = "silhouette",
     verbose = FALSE
   )
   
@@ -136,16 +136,16 @@ test_that("get.Consistency works with dissimilarity.slot = 'all'", {
 })
 
 
-test_that("get.Consistency respects KNNGraph_k parameter", {
+test_that("get_consistency respects knn_graph_k parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "NeighborhoodPurity",
-    KNNGraph_k = 3,
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "NeighborhoodPurity",
+    knn_graph_k = 3,
     verbose = FALSE
   )
   
@@ -153,16 +153,16 @@ test_that("get.Consistency respects KNNGraph_k parameter", {
 })
 
 
-test_that("get.Consistency respects hclust.method parameter", {
+test_that("get_consistency respects hclust_method parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "ward.PropMatch",
-    hclust.method = "ward.D",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "ward_PropMatch",
+    hclust_method = "ward.D",
     verbose = FALSE
   )
   
@@ -170,15 +170,15 @@ test_that("get.Consistency respects hclust.method parameter", {
 })
 
 
-test_that("get.Consistency respects normalize parameter", {
+test_that("get_consistency respects normalize parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "silhouette",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "silhouette",
     normalize = TRUE,
     verbose = FALSE
   )
@@ -187,16 +187,16 @@ test_that("get.Consistency respects normalize parameter", {
 })
 
 
-test_that("get.Consistency handles return.scTypeEval = TRUE", {
+test_that("get_consistency handles return_scTypeEval = TRUE", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  sceval_out <- get.Consistency(
+  sceval_out <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "silhouette",
-    return.scTypeEval = TRUE,
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "silhouette",
+    return_scTypeEval = TRUE,
     verbose = FALSE
   )
   
@@ -205,16 +205,16 @@ test_that("get.Consistency handles return.scTypeEval = TRUE", {
 })
 
 
-test_that("get.Consistency handles return.scTypeEval = FALSE", {
+test_that("get_consistency handles return_scTypeEval = FALSE", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "silhouette",
-    return.scTypeEval = FALSE,
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "silhouette",
+    return_scTypeEval = FALSE,
     verbose = FALSE
   )
   
@@ -222,15 +222,15 @@ test_that("get.Consistency handles return.scTypeEval = FALSE", {
 })
 
 
-test_that("get.Consistency includes all cell types in results", {
+test_that("get_consistency includes all cell types in results", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "silhouette",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "silhouette",
     verbose = FALSE
   )
   
@@ -239,17 +239,17 @@ test_that("get.Consistency includes all cell types in results", {
 })
 
 
-test_that("get.Consistency handles verbose parameter", {
+test_that("get_consistency handles verbose parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
   # verbose = TRUE should produce messages
   expect_message(
-    consistency <- get.Consistency(
+    consistency <- get_consistency(
       sceval,
-      dissimilarity.slot = "Pseudobulk:Euclidean",
-      Consistency.metric = "silhouette",
+      dissimilarity_slot = "Pseudobulk:Euclidean",
+      consistency_metric = "silhouette",
       verbose = TRUE
     ),
     "Computing internal validation metrics"
@@ -257,25 +257,25 @@ test_that("get.Consistency handles verbose parameter", {
   
   # verbose = FALSE should suppress messages
   expect_silent(
-    consistency <- get.Consistency(
+    consistency <- get_consistency(
       sceval,
-      dissimilarity.slot = "Pseudobulk:Euclidean",
-      Consistency.metric = "silhouette",
+      dissimilarity_slot = "Pseudobulk:Euclidean",
+      consistency_metric = "silhouette",
       verbose = FALSE
     )
   )
 })
 
 
-test_that("get.Consistency returns numeric measures", {
+test_that("get_consistency returns numeric measures", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  consistency <- get.Consistency(
+  consistency <- get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = "silhouette",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = "silhouette",
     verbose = FALSE
   )
   
@@ -283,14 +283,14 @@ test_that("get.Consistency returns numeric measures", {
 })
 
 
-test_that("get.Consistency errors without dissimilarity data", {
+test_that("get_consistency errors without dissimilarity data", {
   sceval <- create_processed_scTypeEval()
   
   expect_error(
-    get.Consistency(
+    get_consistency(
       sceval,
-      dissimilarity.slot = "Pseudobulk:Euclidean",
-      Consistency.metric = "silhouette",
+      dissimilarity_slot = "Pseudobulk:Euclidean",
+      consistency_metric = "silhouette",
       verbose = FALSE
     )
   )

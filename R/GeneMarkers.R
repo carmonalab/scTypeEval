@@ -32,14 +32,14 @@ compute_hvg <- function(mat,
    return(hvg)
 }
 
-get.HVG <- function(norm.mat, 
+get_hvg <- function(norm_mat, 
                     sample = NULL,
                     ngenes = 500, 
                     margin = 1L,
                     bparam = BiocParallel::SerialParam()) {
    # If sample is NULL, compute HVGs for the entire matrix
    if (is.null(sample)) {
-      top_hvgs <- compute_hvg(mat = norm.mat,
+   top_hvgs <- compute_hvg(mat = norm_mat,
                               ngenes = ngenes,
                               margin = margin)
    } else {
@@ -48,7 +48,7 @@ get.HVG <- function(norm.mat,
       hvg_per_sample <- BiocParallel::bplapply(unique(sample),
                                                BPPARAM = bparam,
                                                function(s) {
-                                                  sample_mat <- norm.mat[, sample == s, drop = FALSE]
+                                                  sample_mat <- norm_mat[, sample == s, drop = FALSE]
                                                   compute_hvg(mat = sample_mat,
                                                               ngenes = ngenes * 2, # double ngenes to get final list desired
                                                               margin = margin)
@@ -82,14 +82,14 @@ get.HVG <- function(norm.mat,
 }
 
 
-get.GeneVar <- function(norm.mat,
+get_gene_var <- function(norm_mat,
                         sample = NULL,
                         ngenes = 500, 
                         equiweight = TRUE,
                         bparam = BiocParallel::SerialParam(),
                         ...){
    
-   var <- scran::modelGeneVar(x = norm.mat,
+   var <- scran::modelGeneVar(x = norm_mat,
                               block = sample,
                               BPPARAM = bparam,
                               equiweight = equiweight,
@@ -105,15 +105,15 @@ get.GeneVar <- function(norm.mat,
 
 
 # get markers using scran findMarkers
-get.DEG <- function(mat, # normalized gene expression matrix!,
+get_deg <- function(mat, # normalized gene expression matrix!,
                     ident,
                     block = NULL,
-                    ngenes.celltype = 50,
-                    test.type = "t",
+                    ngenes_celltype = 50,
+                    test_type = "t",
                     ncores = 1,
                     bparam = NULL,
                     progressbar = TRUE,
-                    min.prop = 0.6,
+                    min_prop = 0.6,
                     unlist = TRUE, # wheter to return a vector of genes (TRUE) or a list per ident (FALSE)
                     ...){
    
@@ -126,8 +126,8 @@ get.DEG <- function(mat, # normalized gene expression matrix!,
                             block = block,
                             pval.type = "some",
                             BPPARAM = param,
-                            min.prop = min.prop,
-                            test.type = test.type,
+                            min.prop = min_prop,
+                            test.type = test_type,
                             ...)
    
    markers <- lapply(de,
@@ -136,7 +136,7 @@ get.DEG <- function(mat, # normalized gene expression matrix!,
                       as.data.frame() |>
                       dplyr::filter(FDR < 0.05) |>
                       dplyr::arrange(dplyr::desc(summary.logFC)) |>
-                      head(ngenes.celltype)
+                      head(ngenes_celltype)
                    
                    return(rownames(d))
                 })

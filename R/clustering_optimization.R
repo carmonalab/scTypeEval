@@ -5,9 +5,9 @@ process_clustering <- function(scTypeEval,
                                sample = "sample",
                                reduction = TRUE,
                                ndim = 30,
-                               gene.list = NULL,
-                               hvg.ngenes = 2000,
-                               normalization.method = "Log1p",
+                               gene_list = NULL,
+                               hvg_ngenes = 2000,
+                               normalization_method = "Log1p",
                                ncores = 1,
                                verbose = TRUE){
    
@@ -22,33 +22,33 @@ process_clustering <- function(scTypeEval,
       ) |>
       dplyr::select(k, sample)
    
-   scTypeEval <- Run.ProcessingData(scTypeEval,
+   scTypeEval <- run_processing_data(scTypeEval,
                                     aggregation = slot,
-                                    normalization.method = normalization.method,
+                                    normalization_method = normalization_method,
                                     ident = "k",
                                     sample = "sample",
                                     verbose = verbose,
-                                    min.samples = 1,
-                                    min.cells = 1)
+                                    min_samples = 1,
+                                    min_cells = 1)
    
-   if(is.null(gene.list)){
+   if(is.null(gene_list)){
       if(verbose){message("No gene list provided, computing HVG")}
-      scTypeEval <- Run.HVG(scTypeEval,
-                            ngenes = hvg.ngenes,
+      scTypeEval <- run_hvg(scTypeEval,
+                            ngenes = hvg_ngenes,
                             aggregation = slot,
                             ncores = ncores, 
                             verbose = verbose)
    } else {
-      if(verbose){message("Using provided gene list: ", names(gene.list))}
-      scTypeEval <- add.GeneList(scTypeEval, gene.list = gene.list)
+      if(verbose){message("Using provided gene list: ", names(gene_list))}
+      scTypeEval <- add_gene_list(scTypeEval, gene_list = gene_list)
    }
    
    if(reduction){
       if(verbose){message("Producing PCA embeddings")}
-      scTypeEval <- Run.PCA(scTypeEval, 
+      scTypeEval <- run_pca(scTypeEval, 
                             ndim = ndim,
                             verbose = FALSE)
-      X <- scTypeEval@reductions[[slot]]@embeddings
+      x <- scTypeEval@reductions[[slot]]@embeddings
    } else {
       if(verbose){
          "Not running clustering on low dimensional space, subetting gene list and black list genes if provided."}
@@ -56,19 +56,19 @@ process_clustering <- function(scTypeEval,
       mat_ident <- scTypeEval@data[[slot]]
       if(is.null(mat_ident)){
          stop("No processed data slot found for ", slot ,
-              ". Please run before `Run.ProcessingData()` or add a data assay.\n")
+              ". Please run before `run_processing_data()` or add a data assay.\n")
       }
-      gene.list <- .check_genelist(scTypeEval, gene.list, verbose = verbose)
-      black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
-      mat_ident <- .general_filtering(mat_ident,
-                                      black.list = black.list,
-                                      gene.list = gene.list,
+      gene_list <- check_genelist(scTypeEval, gene_list, verbose = verbose)
+      black_list <- check_blacklist(scTypeEval, NULL, verbose = verbose)
+      mat_ident <- general_filtering(mat_ident,
+                       black_list = black_list,
+                       gene_list = gene_list,
                                       verbose = verbose)
-      X <- mat_ident@matrix
+      x <- mat_ident@matrix
    }
    
-   ret <- list(X = X,
-               gene.list = scTypeEval@gene.lists)
+   ret <- list(x = x,
+            gene_list = scTypeEval@gene_lists)
    return(ret)
 }
 
@@ -78,15 +78,15 @@ process_clustering <- function(scTypeEval,
 compute_consistency <- function(scTypeEval,
                                 ident,
                                 sample = "sample",
-                                gene.list = NULL,
+                                gene_list = NULL,
                                 consistency_method,
-                                min.samples = 5,
-                                min.cells = 10,
+                                min_samples = 5,
+                                min_cells = 10,
                                 ncores = 1,
                                 verbose = FALSE) {
    
-   dissimilarity.method <- sapply(consistency_method, \(x) strsplit(x, " [|] ")[[1]][2])
-   consistency.metric  <- sapply(consistency_method, \(x) strsplit(x, " [|] ")[[1]][1])
+   dissimilarity_method <- sapply(consistency_method, \(x) strsplit(x, " [|] ")[[1]][2])
+   consistency_metric  <- sapply(consistency_method, \(x) strsplit(x, " [|] ")[[1]][1])
    
    # all expected clusters
    all_clusters <- purge_label(unique(scTypeEval@metadata[[ident]]))
@@ -97,26 +97,26 @@ compute_consistency <- function(scTypeEval,
       aggregation = NULL,
       ident = ident,
       sample = sample,
-      gene.list = gene.list,
-      dissimilarity.method = dissimilarity.method,
-      min.samples = min.samples,
-      min.cells = min.cells,
+      gene_list = gene_list,
+      dissimilarity_method = dissimilarity_method,
+      min_samples = min_samples,
+      min_cells = min_cells,
       ncores = ncores,
       verbose = verbose
    )
    
-   cons <- get.Consistency(
+   cons <- get_consistency(
       diss,
-      dissimilarity.slot = dissimilarity.method,
-      Consistency.metric = consistency.metric,
+      dissimilarity_slot = dissimilarity_method,
+      consistency_metric = consistency_metric,
       verbose = verbose
    ) |>
       dplyr::mutate(
-         consistency.method = paste(consistency.metric,
+         consistency.method = paste(consistency_metric,
                                     dissimilarity_method,
                                     sep = " | ")
       ) |> 
-      dplyr::select(-consistency.metric, -dissimilarity_method) |>
+      dplyr::select(-consistency_metric, -dissimilarity_method) |>
       dplyr::filter(consistency.method %in% consistency_method) |>
       tidyr::pivot_wider(
          names_from = "consistency.method",
@@ -135,8 +135,8 @@ compute_consistency <- function(scTypeEval,
 
 # function to split clusters
 
-get.clusters <- function(
-      X,
+get_clusters <- function(
+   x,
       clustering_method = c("kmeans", "louvain", "leiden"),
       nclusters = 2,
       nstart = 30,
@@ -159,7 +159,7 @@ get.clusters <- function(
       param <- set_parallel_params(ncores = ncores,
                                    bparam = bparam,
                                    progressbar = progressbar)
-      g <- scran::buildSNNGraph(X,
+      g <- scran::buildSNNGraph(x,
                                 k = k,
                                 transposed = transposed,
                                 BPPARAM = param)
@@ -169,7 +169,7 @@ get.clusters <- function(
       clustering_method,
       
       "kmeans" = {
-         return(kmeans(X, centers = nclusters, nstart = nstart)$cluster)
+         return(kmeans(x, centers = nclusters, nstart = nstart)$cluster)
       },
       
       "louvain" = {

@@ -1,76 +1,76 @@
-test_that("Run.HVG identifies highly variable genes with scran method", {
+test_that("run_hvg identifies highly variable genes with scran method", {
   skip_if_not_installed("bluster")
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "scran",
+    var_method = "scran",
     ngenes = 100,
     sample = TRUE,
     aggregation = "single-cell",
     verbose = FALSE
   )
   
-  expect_true("HVG" %in% names(sceval@gene.lists))
-  expect_true(length(sceval@gene.lists$HVG) > 0)
-  expect_true(length(sceval@gene.lists$HVG) <= 100)
+  expect_true("HVG" %in% names(sceval@gene_lists))
+  expect_true(length(sceval@gene_lists$HVG) > 0)
+  expect_true(length(sceval@gene_lists$HVG) <= 100)
 })
 
 
-test_that("Run.HVG identifies highly variable genes with basic method", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg identifies highly variable genes with basic method", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ngenes = 100,
     sample = TRUE,
     aggregation = "single-cell",
     verbose = FALSE
   )
   
-  expect_true("HVG" %in% names(sceval@gene.lists))
-  expect_true(length(sceval@gene.lists$HVG) > 0)
+  expect_true("HVG" %in% names(sceval@gene_lists))
+  expect_true(length(sceval@gene_lists$HVG) > 0)
 })
 
 
-test_that("Run.HVG basic respects ngenes parameter", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg basic respects ngenes parameter", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ngenes = 50,
     sample = TRUE,
     verbose = FALSE
   )
   
-  expect_true(length(sceval@gene.lists$HVG) <= 50)
+  expect_true(length(sceval@gene_lists$HVG) <= 50)
 })
 
 
-test_that("Run.HVG basic works with sample blocking", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg basic works with sample blocking", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ngenes = 100,
     sample = TRUE,
     verbose = FALSE
   )
   
-  expect_true("HVG" %in% names(sceval@gene.lists))
+  expect_true("HVG" %in% names(sceval@gene_lists))
 })
 
 
-test_that("Run.HVG basic works without sample blocking", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg basic works without sample blocking", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
   expect_warning(
-    sceval <- Run.HVG(
+    sceval <- run_hvg(
       sceval,
-      var.method = "basic",
+      var_method = "basic",
       ngenes = 100,
       sample = FALSE,
       verbose = FALSE
@@ -78,49 +78,49 @@ test_that("Run.HVG basic works without sample blocking", {
     "Not leveraging sample information"
   )
   
-  expect_true("HVG" %in% names(sceval@gene.lists))
+  expect_true("HVG" %in% names(sceval@gene_lists))
 })
 
-test_that("Run.HVG scran respects ngenes parameter", {
+test_that("run_hvg scran respects ngenes parameter", {
   skip_if_not_installed("bluster")
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "scran",
+    var_method = "scran",
     ngenes = 50,
     sample = TRUE,
     verbose = FALSE
   )
   
-  expect_true(length(sceval@gene.lists$HVG) <= 50)
+  expect_true(length(sceval@gene_lists$HVG) <= 50)
 })
 
 
-test_that("Run.HVG scran works with sample blocking", {
+test_that("run_hvg scran works with sample blocking", {
   skip_if_not_installed("bluster")
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "scran",
+    var_method = "scran",
     ngenes = 100,
     sample = TRUE,
     verbose = FALSE
   )
   
-  expect_true("HVG" %in% names(sceval@gene.lists))
+  expect_true("HVG" %in% names(sceval@gene_lists))
 })
 
 
-test_that("Run.HVG scran works without sample blocking", {
+test_that("run_hvg scran works without sample blocking", {
   skip_if_not_installed("bluster")
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
   expect_warning(
-    sceval <- Run.HVG(
+    sceval <- run_hvg(
       sceval,
-      var.method = "scran",
+      var_method = "scran",
       ngenes = 100,
       sample = FALSE,
       verbose = FALSE
@@ -128,87 +128,87 @@ test_that("Run.HVG scran works without sample blocking", {
     "Not leveraging sample information"
   )
   
-  expect_true("HVG" %in% names(sceval@gene.lists))
+  expect_true("HVG" %in% names(sceval@gene_lists))
 })
 
 
-test_that("Run.HVG basic works with pseudobulk aggregation", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg basic works with pseudobulk aggregation", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ngenes = 100,
     aggregation = "pseudobulk",
     verbose = FALSE
   )
   
-  expect_true("HVG" %in% names(sceval@gene.lists))
+  expect_true("HVG" %in% names(sceval@gene_lists))
 })
 
-test_that("Run.HVG scran works with pseudobulk aggregation", {
+test_that("run_hvg scran works with pseudobulk aggregation", {
   skip_if_not_installed("bluster")
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "scran",
+    var_method = "scran",
     ngenes = 100,
     aggregation = "pseudobulk",
     verbose = FALSE
   )
   
-  expect_true("HVG" %in% names(sceval@gene.lists))
+  expect_true("HVG" %in% names(sceval@gene_lists))
 })
 
 
 
-test_that("Run.HVG respects black.list parameter", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg respects black_list parameter", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
   # Get some gene names
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
   black_genes <- all_genes[1:10]
   
-  sceval@black.list <- black_genes
+  sceval@black_list <- black_genes
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ngenes = 100,
     verbose = FALSE
   )
   
   # HVG should not contain blacklisted genes
-  expect_true(!any(sceval@gene.lists$HVG %in% black_genes))
+  expect_true(!any(sceval@gene_lists$HVG %in% black_genes))
 })
 
 
-test_that("Run.HVG accepts custom black.list parameter", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg accepts custom black_list parameter", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
   custom_black <- all_genes[1:5]
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ngenes = 100,
-    black.list = custom_black,
+    black_list = custom_black,
     verbose = FALSE
   )
   
-  expect_true(!any(sceval@gene.lists$HVG %in% custom_black))
+  expect_true(!any(sceval@gene_lists$HVG %in% custom_black))
 })
 
 
-test_that("Run.HVG errors without processed data", {
+test_that("run_hvg errors without processed data", {
   sceval <- create_test_scTypeEval()
   
   expect_error(
-    Run.HVG(
+    run_hvg(
       sceval,
-      var.method = "scran",
+      var_method = "scran",
       ngenes = 100,
       verbose = FALSE
     ),
@@ -217,13 +217,13 @@ test_that("Run.HVG errors without processed data", {
 })
 
 
-test_that("Run.HVG errors on invalid aggregation type", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg errors on invalid aggregation type", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
   expect_error(
-    Run.HVG(
+    run_hvg(
       sceval,
-      var.method = "scran",
+      var_method = "scran",
       ngenes = 100,
       aggregation = "invalid_type",
       verbose = FALSE
@@ -233,13 +233,13 @@ test_that("Run.HVG errors on invalid aggregation type", {
 })
 
 
-test_that("Run.HVG errors on unsupported var.method", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg errors on unsupported var_method", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
   expect_error(
-    Run.HVG(
+    run_hvg(
       sceval,
-      var.method = "unsupported_method",
+      var_method = "unsupported_method",
       ngenes = 100,
       verbose = FALSE
     ),
@@ -248,14 +248,14 @@ test_that("Run.HVG errors on unsupported var.method", {
 })
 
 
-test_that("Run.HVG handles verbose parameter", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg handles verbose parameter", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
   # verbose = TRUE should produce messages
   expect_message(
-    sceval <- Run.HVG(
+    sceval <- run_hvg(
       sceval,
-      var.method = "basic",
+      var_method = "basic",
       ngenes = 100,
       verbose = TRUE
     ),
@@ -263,11 +263,11 @@ test_that("Run.HVG handles verbose parameter", {
   )
   
   # verbose = FALSE should suppress messages
-  sceval2 <- create_processed_scTypeEval(HVG = FALSE)
+  sceval2 <- create_processed_scTypeEval(hvg = FALSE)
   expect_silent(
-    sceval2 <- Run.HVG(
+    sceval2 <- run_hvg(
       sceval2,
-      var.method = "basic",
+      var_method = "basic",
       ngenes = 100,
       verbose = FALSE
     )
@@ -275,32 +275,32 @@ test_that("Run.HVG handles verbose parameter", {
 })
 
 
-test_that("Run.HVG handles ncores parameter", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg handles ncores parameter", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ngenes = 100,
     ncores = 1,
     verbose = FALSE
   )
   
-  expect_true("HVG" %in% names(sceval@gene.lists))
+  expect_true("HVG" %in% names(sceval@gene_lists))
 })
 
 
-test_that("Run.HVG returns genes present in the data", {
-  sceval <- create_processed_scTypeEval(HVG = FALSE)
+test_that("run_hvg returns genes present in the data", {
+  sceval <- create_processed_scTypeEval(hvg = FALSE)
   
-  sceval <- Run.HVG(
+  sceval <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ngenes = 100,
     verbose = FALSE
   )
   
   available_genes <- rownames(sceval@data[["single-cell"]]@matrix)
-  expect_true(all(sceval@gene.lists$HVG %in% available_genes))
+  expect_true(all(sceval@gene_lists$HVG %in% available_genes))
 })
 

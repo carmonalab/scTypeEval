@@ -165,7 +165,7 @@ create_test_scTypeEval <- function(small = TRUE) {
     test_data <- generate_test_data()
   }
   
-  sceval <- create.scTypeEval(
+  sceval <- create_scTypeEval(
     matrix = test_data$counts,
     metadata = test_data$metadata
   )
@@ -178,25 +178,25 @@ create_test_scTypeEval <- function(small = TRUE) {
 #'
 #' @param small Logical, whether to use small dataset (default: TRUE)
 #' @return Processed scTypeEval object with HVGs computed
-create_processed_scTypeEval <- function(small = TRUE, HVG = TRUE) {
+create_processed_scTypeEval <- function(small = TRUE, hvg = TRUE) {
   sceval <- create_test_scTypeEval(small = small)
   
   # Run processing
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    min.samples = 3,
-    min.cells = 5,
+    min_samples = 3,
+    min_cells = 5,
     verbose = FALSE
   )
   
-  if(HVG){
+  if(hvg){
     # Add HVG genes (required for downstream analyses)
     # Use "basic" method to avoid parallelization issues in tests
-    sceval <- Run.HVG(
+    sceval <- run_hvg(
       sceval,
-      var.method = "basic",
+      var_method = "basic",
       ngenes = 100,
       verbose = FALSE
     )

@@ -1,6 +1,6 @@
 # Plot PCA
-helper.plot.scatter <- function(df,
-                                show.legend = FALSE,
+helper_plot_scatter <- function(df,
+                                show_legend = FALSE,
                                 label = TRUE) {
    pl <- ggplot2::ggplot() +
       ggplot2::geom_point(
@@ -10,7 +10,7 @@ helper.plot.scatter <- function(df,
             y = .data[[names(df)[2]]],  # Second column
             color = .data[[names(df)[3]]]  # Third column
          ),
-         show.legend = show.legend) +
+         show.legend = show_legend) +
       ggplot2::theme_bw()
    
    if(label){

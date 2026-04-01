@@ -50,7 +50,7 @@ split_matrix <- function(mat,
                                            new.mat <- mat[, sample == s, drop = FALSE]
                                            new.ident <- ident[sample == s]
                                            
-                                           ret <- new("Mat_ident",
+                                           ret <- new("mat_ident",
                                                       matrix = new.mat,
                                                       group = factor(),
                                                       ident = factor(new.ident),
@@ -84,29 +84,29 @@ minmax_norm <- function(value, min_value, max_value, inverse = FALSE) {
 
 
 
-custom_prcomp <- function(norm.mat,
+custom_prcomp <- function(norm_mat,
                           ndim = 30, 
                           verbose = TRUE){
    # if ncol or nrow is below given ndim use this number
-   ndim <- min(c((dim(norm.mat)-1), ndim))
+   ndim <- min(c((dim(norm_mat)-1), ndim))
    
    if(verbose){message("   > Returning ", ndim, " dimensions for PCA")}
    
    # compute PCA
-   pr <- irlba::prcomp_irlba(as.matrix(Matrix::t(norm.mat)),
+   pr <- irlba::prcomp_irlba(as.matrix(Matrix::t(norm_mat)),
                              n = ndim,
                              center = TRUE,
                              scale. = FALSE)
    
    # keep colnames
-   rownames(pr$x) <- colnames(norm.mat)
+   rownames(pr$x) <- colnames(norm_mat)
    
    return(pr)
 }
 
 # function to compute variance captured in PC components
 
-var_PCA <- function(pca_embeddings){
+var_pca <- function(pca_embeddings){
    # Compute variance per PC
    n_samples <- nrow(pca_embeddings)  # Number of samples
    variance_per_pc <- colSums(pca_embeddings^2) / (n_samples - 1)
@@ -175,30 +175,30 @@ sample_variable_length_combinations <- function(elements,
 }
 
 
-.general_filtering <- function(mat, # Mat_ident object
-                               black.list = NULL,
-                               gene.list = NULL,
+general_filtering <- function(mat, # mat_ident object
+                               black_list = NULL,
+                               gene_list = NULL,
                                verbose = TRUE){
-   norm.mat <- mat@matrix
+   norm_mat <- mat@matrix
    # remove blacked listed genes
-   if(!is.null(black.list) && verbose){message("   Filtering out black listed genes... \n")}
-   norm.mat <- norm.mat[!rownames(norm.mat) %in% black.list,]
+   if(!is.null(black_list) && verbose){message("   Filtering out black listed genes... \n")}
+   norm_mat <- norm_mat[!rownames(norm_mat) %in% black_list,]
    
    # keep only gene list features
    if(verbose){message("   Filtering gene list... \n")}
-   norm.mat <- norm.mat[rownames(norm.mat) %in% gene.list,]
+   norm_mat <- norm_mat[rownames(norm_mat) %in% gene_list,]
    
    # remove rows or columns with only 0
-   mat@matrix <- norm.mat
+   mat@matrix <- norm_mat
    if(verbose){message("   Filtering empty rows and cols... \n")}
    mat <- filter_empty(mat)
    return(mat)
 }
 
 # Helper function to compute centroids for each cluster
-compute_centroids <- function(norm.mat, ident) {
-   centroid.list <- tapply(seq_len(ncol(norm.mat)), ident, function(idx) {
-      Matrix::rowMeans(norm.mat[, idx, drop = FALSE])
+compute_centroids <- function(norm_mat, ident) {
+   centroid.list <- tapply(seq_len(ncol(norm_mat)), ident, function(idx) {
+      Matrix::rowMeans(norm_mat[, idx, drop = FALSE])
    })
    # Combine the list of centroids into a matrix
    centroids <- do.call(cbind, centroid.list) 

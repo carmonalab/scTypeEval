@@ -4,13 +4,13 @@ dissimilarity_methods <-
      "Pseudobulk:Euclidean" = "pseudobulk",
      "Pseudobulk:Cosine" = "pseudobulk",
      "Pseudobulk:Pearson" = "pseudobulk",
-     "RecipClassif:Match" = "pseudobulk",
-     "RecipClassif:Score" = "pseudobulk"
+     "recip_classif:Match" = "pseudobulk",
+     "recip_classif:Score" = "pseudobulk"
    )
 
 
-no_dr_ds <- c("RecipClassif:Match",
-              "RecipClassif:Score")
+no_dr_ds <- c("recip_classif:Match",
+              "recip_classif:Score")
 
 quiet_transport <- function(...) {
    suppressWarnings(
@@ -25,21 +25,21 @@ quiet_transport <- function(...) {
 }
 
 
-optimal_transport <- function(A, B,
+optimal_transport <- function(a, b,
                               p = 2,
                               squared = FALSE){
    # Ensure required packages are available
    if (!requireNamespace("transport", quietly = TRUE)) {
       stop("Please install the 'transport' package first.")
    }
-   # Check inputs: A and B must be matrices or data frames with same number of columns (features)
-   n <- nrow(A)
-   m <- nrow(B)
-   # Compute pairwise ground cost matrix between all points in A and B
+   # Check inputs: a and b must be matrices or data frames with same number of columns (features)
+   n <- nrow(a)
+   m <- nrow(b)
+   # Compute pairwise ground cost matrix between all points in a and b
    # We use Euclidean distance (L2 norm), raised to the power p
    # This is common for Wasserstein-p distances, especially p = 1 or 2
-   cost_matrix <- compute_fast_euclidean_2obj(A,B)^p
-   # Assign uniform weights to both point sets A and B
+   cost_matrix <- compute_fast_euclidean_2obj(a, b)^p
+   # Assign uniform weights to both point sets a and b
    # This assumes empirical measures where each point has equal weight
    a_weights <- rep(1 / n, n)
    b_weights <- rep(1 / m, m)

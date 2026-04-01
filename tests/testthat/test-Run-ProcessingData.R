@@ -1,7 +1,7 @@
-test_that("Run.ProcessingData processes single-cell data", {
+test_that("run_processing_data processes single-cell data", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
@@ -10,15 +10,15 @@ test_that("Run.ProcessingData processes single-cell data", {
   )
   
   expect_true("single-cell" %in% names(sceval@data))
-  expect_s4_class(sceval@data[["single-cell"]], "DataAssay")
+  expect_s4_class(sceval@data[["single-cell"]], "data_assay")
   expect_s4_class(sceval@data[["single-cell"]]@matrix, "dgCMatrix")
 })
 
 
-test_that("Run.ProcessingData processes pseudobulk data", {
+test_that("run_processing_data processes pseudobulk data", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
@@ -27,15 +27,15 @@ test_that("Run.ProcessingData processes pseudobulk data", {
   )
   
   expect_true("pseudobulk" %in% names(sceval@data))
-  expect_s4_class(sceval@data[["pseudobulk"]], "DataAssay")
+  expect_s4_class(sceval@data[["pseudobulk"]], "data_assay")
   expect_s4_class(sceval@data[["pseudobulk"]]@matrix, "dgCMatrix")
 })
 
 
-test_that("Run.ProcessingData processes both aggregation types", {
+test_that("run_processing_data processes both aggregation types", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
@@ -47,11 +47,11 @@ test_that("Run.ProcessingData processes both aggregation types", {
 })
 
 
-test_that("Run.ProcessingData uses active.ident when ident is NULL", {
+test_that("run_processing_data uses active_ident when ident is NULL", {
   sceval <- create_test_scTypeEval()
-  sceval <- set.activeIdent(sceval, ident = "celltype")
+  sceval <- set_active_ident(sceval, ident = "celltype")
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = NULL,
     sample = "sample",
@@ -62,16 +62,16 @@ test_that("Run.ProcessingData uses active.ident when ident is NULL", {
 })
 
 
-test_that("Run.ProcessingData respects min.samples parameter", {
+test_that("run_processing_data respects min_samples parameter", {
   test_data <- generate_test_data(n_samples = 7)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    min.samples = 5,
-    min.cells = 5,
+    min_samples = 5,
+    min_cells = 5,
     verbose = FALSE
   )
   
@@ -81,19 +81,19 @@ test_that("Run.ProcessingData respects min.samples parameter", {
 })
 
 
-test_that("Run.ProcessingData warns when dataset has fewer than 5 samples", {
+test_that("run_processing_data warns when dataset has fewer than 5 samples", {
   # Create dataset with only 3 samples - should trigger warning
   test_data <- generate_test_data(n_samples = 3)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
   # Should produce warning about total number of samples < 5
   expect_warning(
-    sceval <- Run.ProcessingData(
+    sceval <- run_processing_data(
       sceval,
       ident = "celltype",
       sample = "sample",
-      min.samples = 2,
-      min.cells = 5,
+      min_samples = 2,
+      min_cells = 5,
       verbose = FALSE
     ),
     "Only 3 samples detected.*For inter-sample comparison 5 or more samples is recommended"
@@ -101,18 +101,18 @@ test_that("Run.ProcessingData warns when dataset has fewer than 5 samples", {
 })
 
 
-test_that("Run.ProcessingData works without warning when dataset has 5 or more samples", {
+test_that("run_processing_data works without warning when dataset has 5 or more samples", {
   # Create dataset with 6 samples - should not trigger warning
   test_data <- generate_test_data(n_samples = 6)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
   # Should process successfully without the sample count warning
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    min.samples = 3,
-    min.cells = 5,
+    min_samples = 3,
+    min_cells = 5,
     verbose = FALSE
   )
   
@@ -120,16 +120,16 @@ test_that("Run.ProcessingData works without warning when dataset has 5 or more s
 })
 
 
-test_that("Run.ProcessingData respects min.cells parameter", {
+test_that("run_processing_data respects min_cells parameter", {
   test_data <- generate_small_test_data()
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    min.samples = 3,
-    min.cells = 5,
+    min_samples = 3,
+    min_cells = 5,
     verbose = FALSE
   )
   
@@ -138,14 +138,14 @@ test_that("Run.ProcessingData respects min.cells parameter", {
 })
 
 
-test_that("Run.ProcessingData accepts normalization.method parameter", {
+test_that("run_processing_data accepts normalization_method parameter", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    normalization.method = "Log1p",
+    normalization_method = "Log1p",
     verbose = FALSE
   )
   
@@ -155,14 +155,14 @@ test_that("Run.ProcessingData accepts normalization.method parameter", {
 
 # Tests for different normalization methods ---------------------------------
 
-test_that("Run.ProcessingData works with Log1p normalization", {
+test_that("run_processing_data works with Log1p normalization", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    normalization.method = "Log1p",
+    normalization_method = "Log1p",
     aggregation = "single-cell",
     verbose = FALSE
   )
@@ -175,14 +175,14 @@ test_that("Run.ProcessingData works with Log1p normalization", {
 })
 
 
-test_that("Run.ProcessingData works with CLR normalization", {
+test_that("run_processing_data works with CLR normalization", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    normalization.method = "CLR",
+    normalization_method = "CLR",
     aggregation = "single-cell",
     verbose = FALSE
   )
@@ -192,14 +192,14 @@ test_that("Run.ProcessingData works with CLR normalization", {
 })
 
 
-test_that("Run.ProcessingData works with pearson normalization", {
+test_that("run_processing_data works with pearson normalization", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    normalization.method = "pearson",
+    normalization_method = "pearson",
     aggregation = "single-cell",
     verbose = FALSE
   )
@@ -209,33 +209,33 @@ test_that("Run.ProcessingData works with pearson normalization", {
 })
 
 
-test_that("Run.ProcessingData normalization methods produce different results", {
+test_that("run_processing_data normalization methods produce different results", {
   sceval <- create_test_scTypeEval()
   
   # Log1p normalization
-  sceval_log <- Run.ProcessingData(
+  sceval_log <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    normalization.method = "Log1p",
+    normalization_method = "Log1p",
     verbose = FALSE
   )
   
   # CLR normalization
-  sceval_clr <- Run.ProcessingData(
+  sceval_clr <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    normalization.method = "CLR",
+    normalization_method = "CLR",
     verbose = FALSE
   )
   
   # Pearson normalization
-  sceval_pears <- Run.ProcessingData(
+  sceval_pears <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    normalization.method = "pearson",
+    normalization_method = "pearson",
     verbose = FALSE
   )
   
@@ -256,14 +256,14 @@ test_that("Run.ProcessingData normalization methods produce different results", 
 })
 
 
-test_that("Run.ProcessingData Log1p normalization with pseudobulk", {
+test_that("run_processing_data Log1p normalization with pseudobulk", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    normalization.method = "Log1p",
+    normalization_method = "Log1p",
     aggregation = "pseudobulk",
     verbose = FALSE
   )
@@ -274,14 +274,14 @@ test_that("Run.ProcessingData Log1p normalization with pseudobulk", {
 })
 
 
-test_that("Run.ProcessingData CLR normalization with pseudobulk", {
+test_that("run_processing_data CLR normalization with pseudobulk", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    normalization.method = "CLR",
+    normalization_method = "CLR",
     aggregation = "pseudobulk",
     verbose = FALSE
   )
@@ -291,14 +291,14 @@ test_that("Run.ProcessingData CLR normalization with pseudobulk", {
 })
 
 
-test_that("Run.ProcessingData pearson normalization with pseudobulk", {
+test_that("run_processing_data pearson normalization with pseudobulk", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    normalization.method = "pearson",
+    normalization_method = "pearson",
     aggregation = "pseudobulk",
     verbose = FALSE
   )
@@ -308,16 +308,16 @@ test_that("Run.ProcessingData pearson normalization with pseudobulk", {
 })
 
 
-test_that("Run.ProcessingData normalization methods with both aggregations", {
+test_that("run_processing_data normalization methods with both aggregations", {
   sceval <- create_test_scTypeEval()
   
   # Test each normalization method with both aggregations
   for (norm_method in c("Log1p", "CLR", "pearson")) {
-    sceval_test <- Run.ProcessingData(
+    sceval_test <- run_processing_data(
       sceval,
       ident = "celltype",
       sample = "sample",
-      normalization.method = norm_method,
+      normalization_method = norm_method,
       aggregation = c("single-cell", "pseudobulk"),
       verbose = FALSE
     )
@@ -330,15 +330,15 @@ test_that("Run.ProcessingData normalization methods with both aggregations", {
 })
 
 
-test_that("Run.ProcessingData invalid normalization method errors gracefully", {
+test_that("run_processing_data invalid normalization method errors gracefully", {
   sceval <- create_test_scTypeEval()
   
   expect_error(
-    Run.ProcessingData(
+    run_processing_data(
       sceval,
       ident = "celltype",
       sample = "sample",
-      normalization.method = "invalid_method",
+      normalization_method = "invalid_method",
       verbose = FALSE
     ),
     "not a supported normalization method"
@@ -346,7 +346,7 @@ test_that("Run.ProcessingData invalid normalization method errors gracefully", {
 })
 
 
-test_that("Run.ProcessingData normalization methods preserve matrix dimensions", {
+test_that("run_processing_data normalization methods preserve matrix dimensions", {
   sceval <- create_test_scTypeEval()
   
   # Get dimensions before normalization
@@ -354,14 +354,14 @@ test_that("Run.ProcessingData normalization methods preserve matrix dimensions",
   n_cells <- ncol(sceval@counts)
   
   for (norm_method in c("Log1p", "CLR", "pearson")) {
-    sceval_test <- Run.ProcessingData(
+    sceval_test <- run_processing_data(
       sceval,
       ident = "celltype",
       sample = "sample",
-      normalization.method = norm_method,
+      normalization_method = norm_method,
       aggregation = "single-cell",
-      min.samples = 2,
-      min.cells = 5,
+      min_samples = 2,
+      min_cells = 5,
       verbose = FALSE
     )
     
@@ -375,10 +375,10 @@ test_that("Run.ProcessingData normalization methods preserve matrix dimensions",
 })
 
 
-test_that("Run.ProcessingData stores correct metadata in DataAssay", {
+test_that("run_processing_data stores correct metadata in data_assay", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
@@ -394,12 +394,12 @@ test_that("Run.ProcessingData stores correct metadata in DataAssay", {
 })
 
 
-test_that("Run.ProcessingData handles verbose parameter", {
+test_that("run_processing_data handles verbose parameter", {
   sceval <- create_test_scTypeEval()
   
   # verbose = TRUE should produce messages
   expect_message(
-    sceval <- Run.ProcessingData(
+    sceval <- run_processing_data(
       sceval,
       ident = "celltype",
       sample = "sample",
@@ -411,7 +411,7 @@ test_that("Run.ProcessingData handles verbose parameter", {
   # verbose = FALSE should suppress messages
   sceval2 <- create_test_scTypeEval()
   expect_silent(
-    sceval2 <- Run.ProcessingData(
+    sceval2 <- run_processing_data(
       sceval2,
       ident = "celltype",
       sample = "sample",
@@ -421,11 +421,11 @@ test_that("Run.ProcessingData handles verbose parameter", {
 })
 
 
-test_that("Run.ProcessingData errors on invalid ident", {
+test_that("run_processing_data errors on invalid ident", {
   sceval <- create_test_scTypeEval()
   
   expect_error(
-    Run.ProcessingData(
+    run_processing_data(
       sceval,
       ident = "nonexistent_column",
       sample = "sample",
@@ -435,11 +435,11 @@ test_that("Run.ProcessingData errors on invalid ident", {
 })
 
 
-test_that("Run.ProcessingData errors on invalid sample", {
+test_that("run_processing_data errors on invalid sample", {
   sceval <- create_test_scTypeEval()
   
   expect_error(
-    Run.ProcessingData(
+    run_processing_data(
       sceval,
       ident = "celltype",
       sample = "nonexistent_column",
@@ -449,11 +449,11 @@ test_that("Run.ProcessingData errors on invalid sample", {
 })
 
 
-test_that("Run.ProcessingData errors on invalid aggregation type", {
+test_that("run_processing_data errors on invalid aggregation type", {
   sceval <- create_test_scTypeEval()
   
   expect_error(
-    Run.ProcessingData(
+    run_processing_data(
       sceval,
       ident = "celltype",
       sample = "sample",
@@ -465,16 +465,16 @@ test_that("Run.ProcessingData errors on invalid aggregation type", {
 })
 
 
-test_that("Run.ProcessingData handles multiple samples correctly", {
+test_that("run_processing_data handles multiple samples correctly", {
   test_data <- generate_test_data(n_samples = 6)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    min.samples = 5,
-    min.cells = 10,
+    min_samples = 5,
+    min_cells = 10,
     verbose = FALSE
   )
   
@@ -484,17 +484,17 @@ test_that("Run.ProcessingData handles multiple samples correctly", {
 })
 
 
-test_that("Run.ProcessingData creates proper pseudobulk aggregation", {
+test_that("run_processing_data creates proper pseudobulk aggregation", {
   test_data <- generate_test_data(n_samples = 6)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
     aggregation = "pseudobulk",
-    min.samples = 3,
-    min.cells = 10,
+    min_samples = 3,
+    min_cells = 10,
     verbose = FALSE
   )
   
@@ -507,61 +507,61 @@ test_that("Run.ProcessingData creates proper pseudobulk aggregation", {
 })
 
 
-test_that("Run.ProcessingData errors when min.samples is too high", {
+test_that("run_processing_data errors when min_samples is too high", {
   test_data <- generate_test_data(n_samples = 5)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
   # Require more samples than available - should result in error or empty data
   expect_error(
-    Run.ProcessingData(
+    run_processing_data(
       sceval,
       ident = "celltype",
       sample = "sample",
-      min.samples = 10,  # More than the 3 samples available
-      min.cells = 5,
+      min_samples = 10,  # More than the 3 samples available
+      min_cells = 5,
       verbose = FALSE
     )
   )
 })
 
 
-test_that("Run.ProcessingData errors when min.cells is too high", {
+test_that("run_processing_data errors when min_cells is too high", {
   test_data <- generate_test_data(n_samples = 5)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
   # Require more cells per sample-celltype than available
   expect_error(
-    Run.ProcessingData(
+    run_processing_data(
       sceval,
       ident = "celltype",
       sample = "sample",
-      min.samples = 5,
-      min.cells = 1000,  # More cells than available per group
+      min_samples = 5,
+      min_cells = 1000,  # More cells than available per group
       verbose = FALSE
     )
   )
 })
 
 
-test_that("Run.ProcessingData filtering reduces cell types correctly", {
+test_that("run_processing_data filtering reduces cell types correctly", {
   # Create data with 6 samples and 4 cell types
   test_data <- generate_test_data(
     n_samples = 6,
     n_cells_per_sample = 100,
     cell_types = c("CellA", "CellB", "CellC", "CellD")
   )
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
   # Count original cell types
   original_celltypes <- unique(test_data$metadata$celltype)
   
   # Process with lenient thresholds - should keep all cell types
-  sceval_lenient <- Run.ProcessingData(
+  sceval_lenient <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    min.samples = 3,
-    min.cells = 10,
+    min_samples = 3,
+    min_cells = 10,
     verbose = FALSE
   )
   
@@ -573,21 +573,21 @@ test_that("Run.ProcessingData filtering reduces cell types correctly", {
 })
 
 
-test_that("Run.ProcessingData filtering verifies correct number of samples per cell type", {
+test_that("run_processing_data filtering verifies correct number of samples per cell type", {
   # Create data with known structure
   test_data <- generate_test_data(n_samples = 6, n_cells_per_sample = 80)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    min.samples = 4,
-    min.cells = 10,
+    min_samples = 4,
+    min_cells = 10,
     verbose = FALSE
   )
   
-  # Check that each retained cell type appears in at least min.samples
+  # Check that each retained cell type appears in at least min_samples
   sc_data <- sceval@data[["single-cell"]]
   
   # Extract sample-celltype combinations
@@ -597,57 +597,57 @@ test_that("Run.ProcessingData filtering verifies correct number of samples per c
     # Extract unique samples for this cell type
     ct_samples <- unique(sapply(as.character(ct_groups), function(x) strsplit(x, "_")[[1]][1]))
     
-    # Each cell type should be in at least min.samples (4)
+    # Each cell type should be in at least min_samples (4)
     expect_true(length(ct_samples) >= 4,
                 info = paste("Cell type", ct, "has", length(ct_samples), "samples"))
   }
 })
 
 
-test_that("Run.ProcessingData filtering verifies correct number of cells per group", {
+test_that("run_processing_data filtering verifies correct number of cells per group", {
   # Create data with known structure
   test_data <- generate_test_data(n_samples = 6, n_cells_per_sample = 100)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    min.samples = 3,
-    min.cells = 15,
+    min_samples = 3,
+    min_cells = 15,
     verbose = FALSE
   )
   
-  # Check that each sample-celltype combination has at least min.cells
+  # Check that each sample-celltype combination has at least min_cells
   sc_data <- sceval@data[["single-cell"]]
   
   # Count cells per group
   group_counts <- table(sc_data@group)
   
-  # Each group should have at least min.cells (15)
+  # Each group should have at least min_cells (15)
   expect_true(all(group_counts >= 15),
               info = paste("Some groups have fewer than 15 cells:",
                           paste(names(group_counts[group_counts < 15]), collapse = ", ")))
 })
 
 
-test_that("Run.ProcessingData pseudobulk filtering verifies sample-celltype combinations", {
+test_that("run_processing_data pseudobulk filtering verifies sample-celltype combinations", {
   test_data <- generate_test_data(n_samples = 6, n_cells_per_sample = 80)
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
     aggregation = "pseudobulk",
-    min.samples = 4,
-    min.cells = 10,
+    min_samples = 4,
+    min_cells = 10,
     verbose = FALSE
   )
   
   pb_data <- sceval@data[["pseudobulk"]]
   
-  # Each cell type should appear in at least min.samples (4)
+  # Each cell type should appear in at least min_samples (4)
   for (ct in unique(pb_data@ident[[1]])) {
     ct_samples <- pb_data@sample[pb_data@ident[[1]] == ct]
     n_samples <- length(unique(ct_samples))
@@ -658,7 +658,7 @@ test_that("Run.ProcessingData pseudobulk filtering verifies sample-celltype comb
 })
 
 
-test_that("Run.ProcessingData correctly removes cell types below threshold", {
+test_that("run_processing_data correctly removes cell types below threshold", {
   # Create custom data where we know one cell type will be filtered
   test_data <- generate_test_data(
     n_samples = 6,
@@ -675,14 +675,14 @@ test_that("Run.ProcessingData correctly removes cell types below threshold", {
   test_data$counts <- test_data$counts[, !to_remove]
   test_data$metadata <- test_data$metadata[!to_remove, ]
   
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    min.samples = 4,  # CellD only in 2 samples, should be filtered
-    min.cells = 5,
+    min_samples = 4,  # CellD only in 2 samples, should be filtered
+    min_cells = 5,
     verbose = FALSE
   )
   

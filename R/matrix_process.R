@@ -3,38 +3,38 @@
 aggregation_types <- c("single-cell", "pseudobulk")
 
 
-valid.indices <- function(groups,
+valid_indices <- function(groups,
                           ident,
                           sample,
-                          min.cells = 10,
-                          min.samples = 5,
+                          min_cells = 10,
+                          min_samples = 5,
                           sep = "_"){
    
    
    # Count the number of cells per group
    cell_counts <- table(groups)
    
-   # Filter groups with at least `min.cells` cells
-   valid_groups <- names(cell_counts[cell_counts >= min.cells])
+   # Filter groups with at least `min_cells` cells
+   valid_groups <- names(cell_counts[cell_counts >= min_cells])
    
    #update ident
    nident <- ident[groups %in% valid_groups]
    
-   # Check that each ident has at least `min.samples` samples with more than `min.cells` cells
+   # Check that each ident has at least `min_samples` samples with more than `min_cells` cells
    if (!is.null(sample)) {
       # update samples
       nsample <- sample[groups %in% valid_groups]
       # Split by ident and check sample distribution
       ident_samples_count <- vapply(unique(nident), function(cell_type) {
          sample_counts <- table(nsample[nident == cell_type])
-         sum(sample_counts >= min.samples)
+         sum(sample_counts >= min_samples)
       }, integer(1))
       
       names(ident_samples_count) <- unique(nident)
       
-      valid_idents <- names(ident_samples_count[ident_samples_count >= min.samples])
+      valid_idents <- names(ident_samples_count[ident_samples_count >= min_samples])
       
-      # Filter valid groups based on the number of samples with at least `min.cells` cells
+      # Filter valid groups based on the number of samples with at least `min_cells` cells
       valid_groups <- valid_groups[vapply(valid_groups, function(g) {
          ident_name <- strsplit(g, sep)[[1]][2]
          ident_name %in% valid_idents
@@ -55,8 +55,8 @@ valid.indices <- function(groups,
 get_pseudobulk <- function(mat, 
                            ident, 
                            sample = NULL, 
-                           min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
-                           min.cells = 10,   # Minimum cells per pseudobulk to be included 
+                           min_samples = 5,  # Minimum number of samples with > 5 cells for each ident
+                           min_cells = 10,   # Minimum cells per pseudobulk to be included 
                            sep = "_") {  
    
    if (is.null(sample)) {
@@ -67,11 +67,11 @@ get_pseudobulk <- function(mat,
       groups <- factor(paste(sample, ident, sep = sep))
    }
    
-   valid_indices <- valid.indices(groups = groups,
+   valid_indices <- valid_indices(groups = groups,
                                   ident = ident,
                                   sample = sample,
-                                  min.samples = min.samples,
-                                  min.cells = min.cells,
+                                  min_samples = min_samples,
+                                  min_cells = min_cells,
                                   sep = sep)
 
    groups <- factor(groups[valid_indices])
@@ -106,7 +106,7 @@ get_pseudobulk <- function(mat,
       new.sample <- NULL
    }
    
-   ret <- new("Mat_ident",
+   ret <- new("mat_ident",
               matrix = summed_matrix,
               group = new.group,
               ident = new.ident,
@@ -121,8 +121,8 @@ get_pseudobulk <- function(mat,
 get_singlecell <- function(mat, 
                            ident, 
                            sample = NULL, 
-                           min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
-                           min.cells = 10,   # Minimum cells per pseudobulk to be included 
+                           min_samples = 5,  # Minimum number of samples with > 5 cells for each ident
+                           min_cells = 10,   # Minimum cells per pseudobulk to be included 
                            sep = "_") {  
    
    if (is.null(sample)) {
@@ -133,11 +133,11 @@ get_singlecell <- function(mat,
       groups <- factor(paste(sample, ident, sep = sep))
    }
    
-   valid_indices <- valid.indices(groups = groups,
+   valid_indices <- valid_indices(groups = groups,
                                   ident = ident,
                                   sample = sample,
-                                  min.samples = min.samples,
-                                  min.cells = min.cells,
+                                  min_samples = min_samples,
+                                  min_cells = min_cells,
                                   sep = sep)
    
    
@@ -152,7 +152,7 @@ get_singlecell <- function(mat,
    }
    
    
-   ret <- new("Mat_ident",
+   ret <- new("mat_ident",
               matrix = mat,
               group = new.group,
               ident = new.ident,
@@ -163,29 +163,29 @@ get_singlecell <- function(mat,
 
 
 # get matrix according to the data type
-get.matrix <- function(matrix,
+get_matrix <- function(matrix,
                        aggregation,
                        ident,
                        sample,
-                       min.samples = 5,  # Minimum number of samples with > 5 cells for each ident
-                       min.cells = 10 # Minimum cells per sample-ident to be included 
-                       ){
+                       min_samples = 5,  # Minimum number of samples with > 5 cells for each ident
+                       min_cells = 10 # Minimum cells per sample-ident to be included 
+){
    
    
    mat <- switch(aggregation,
                  "single-cell" = get_singlecell(mat = matrix,
-                                        ident = ident,
-                                        sample = sample,
-                                        min.samples = min.samples,
-                                        min.cells = min.cells
-                                        ),
+                                                ident = ident,
+                                                sample = sample,
+                                                min_samples = min_samples,
+                                                min_cells = min_cells
+                 ),
                  "pseudobulk" = get_pseudobulk(mat = matrix, 
                                                ident = ident, 
                                                sample = sample,
-                                               min.samples = min.samples,
-                                               min.cells = min.cells
-                                               ),
-                 stop(data.type, " is not a supported aggregation method.")
+                                               min_samples = min_samples,
+                                               min_cells = min_cells
+                 ),
+                 stop(aggregation, " is not a supported aggregation method.")
    )
    
    return(mat)
@@ -197,7 +197,7 @@ filter_empty <- function(mat_ident){
    # Extract slots
    mat <- mat_ident@matrix
    group <- mat_ident@group
-   ident.name <- names(mat_ident@ident)
+   ident_name <- names(mat_ident@ident)
    ident <- unlist(mat_ident@ident)
    sample <- mat_ident@sample
    
@@ -215,8 +215,8 @@ filter_empty <- function(mat_ident){
    sample_filtered <- factor(sample[keep_cols])
    names(sample_filtered) <- group_filtered
    
-   # Return new Mat_ident object
-   ret <- new("Mat_ident",
+   # Return new mat_ident object
+   ret <- new("mat_ident",
               matrix = mat_filtered,
               group = group_filtered,
               ident = ident_filtered,

@@ -11,19 +11,19 @@ test_that("scTypeEval object has correct slots", {
   expect_true(is.list(sceval@data))
   expect_true(is.list(sceval@dissimilarity))
   expect_true(is.list(sceval@consistency))
-  expect_true(is.list(sceval@gene.lists))
+  expect_true(is.list(sceval@gene_lists))
   expect_true(is.list(sceval@reductions))
 })
 
 
-test_that("DataAssay S4 class is defined correctly", {
+test_that("data_assay S4 class is defined correctly", {
   sceval <- create_processed_scTypeEval()
   
-  expect_s4_class(sceval@data[["single-cell"]], "DataAssay")
+  expect_s4_class(sceval@data[["single-cell"]], "data_assay")
 })
 
 
-test_that("DataAssay object has correct slots", {
+test_that("data_assay object has correct slots", {
   sceval <- create_processed_scTypeEval()
   assay <- sceval@data[["single-cell"]]
   
@@ -35,18 +35,18 @@ test_that("DataAssay object has correct slots", {
 })
 
 
-test_that("DissimilarityAssay S4 class is defined correctly", {
+test_that("dissimilarity_assay S4 class is defined correctly", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  expect_s4_class(sceval@dissimilarity[["Pseudobulk:Euclidean"]], "DissimilarityAssay")
+  expect_s4_class(sceval@dissimilarity[["Pseudobulk:Euclidean"]], "dissimilarity_assay")
 })
 
 
-test_that("DissimilarityAssay object has correct slots", {
+test_that("dissimilarity_assay object has correct slots", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   assay <- sceval@dissimilarity[["Pseudobulk:Euclidean"]]
   
@@ -58,21 +58,21 @@ test_that("DissimilarityAssay object has correct slots", {
 })
 
 
-test_that("DimRed S4 class is defined correctly", {
+test_that("dim_red S4 class is defined correctly", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  expect_s4_class(sceval@reductions[["single-cell"]], "DimRed")
+  expect_s4_class(sceval@reductions[["single-cell"]], "dim_red")
 })
 
 
-test_that("DimRed object has correct slots", {
+test_that("dim_red object has correct slots", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   dimred <- sceval@reductions[["single-cell"]]
   
   expect_true(is.matrix(dimred@embeddings))
-  expect_true(is.matrix(dimred@feature.loadings))
+  expect_true(is.matrix(dimred@feature_loadings))
   expect_true(is.character(dimred@aggregation))
   expect_true(is.factor(dimred@group))
   expect_true(is.factor(dimred@sample))
@@ -83,13 +83,13 @@ test_that("DimRed object has correct slots", {
 
 test_that("scTypeEval object initialization sets defaults", {
   test_data <- generate_small_test_data()
-  sceval <- create.scTypeEval(test_data$counts, test_data$metadata)
+  sceval <- create_scTypeEval(test_data$counts, test_data$metadata)
   
   expect_equal(length(sceval@data), 0)
   expect_equal(length(sceval@dissimilarity), 0)
   expect_equal(length(sceval@consistency), 0)
   expect_equal(length(sceval@reductions), 0)
-  expect_equal(length(sceval@gene.lists), 0)
+  expect_equal(length(sceval@gene_lists), 0)
 })
 
 
@@ -109,9 +109,9 @@ test_that("Multiple aggregation types can coexist", {
 
 test_that("Multiple dissimilarity methods can coexist", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Cosine", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Cosine", 
                                reduction = FALSE, verbose = FALSE)
   
   expect_true(all(c("Pseudobulk:Euclidean", "Pseudobulk:Cosine") 
@@ -121,9 +121,9 @@ test_that("Multiple dissimilarity methods can coexist", {
 
 test_that("Multiple gene lists can coexist", {
   sceval <- create_processed_scTypeEval() # already producing HVG
-  sceval <- Run.GeneMarkers(sceval, ngenes.celltype = 50, verbose = FALSE)
+  sceval <- run_gene_markers(sceval, ngenes_celltype = 50, verbose = FALSE)
   
-  expect_true(all(c("HVG", "scran.findMarkers") %in% names(sceval@gene.lists)))
+  expect_true(all(c("HVG", "scran.findMarkers") %in% names(sceval@gene_lists)))
 })
 
 
@@ -131,17 +131,17 @@ test_that("Object structure is preserved after multiple operations", {
   sceval <- create_test_scTypeEval()
   
   # Run multiple operations
-  sceval <- set.activeIdent(sceval, ident = "celltype")
-  sceval <- Run.ProcessingData(sceval, ident = NULL, sample = "sample", verbose = FALSE)
-  sceval <- Run.HVG(sceval, ngenes = 100, verbose = FALSE)
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- set_active_ident(sceval, ident = "celltype")
+  sceval <- run_processing_data(sceval, ident = NULL, sample = "sample", verbose = FALSE)
+  sceval <- run_hvg(sceval, ngenes = 100, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
   # Object should still be valid
   expect_s4_class(sceval, "scTypeEval")
   expect_true(length(sceval@data) > 0)
-  expect_true(length(sceval@gene.lists) > 0)
+  expect_true(length(sceval@gene_lists) > 0)
   expect_true(length(sceval@reductions) > 0)
   expect_true(length(sceval@dissimilarity) > 0)
 })

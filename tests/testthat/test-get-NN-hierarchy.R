@@ -1,48 +1,48 @@
-test_that("get.hierarchy computes hierarchical clustering", {
+test_that("get_hierarchy computes hierarchical clustering", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  hier <- get.hierarchy(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+  hier <- get_hierarchy(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                         verbose = FALSE)
   
   expect_true(is.table(hier) || is.matrix(hier))
 })
 
 
-test_that("get.hierarchy works with default parameters", {
+test_that("get_hierarchy works with default parameters", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  hier <- get.hierarchy(sceval, verbose = FALSE)
+  hier <- get_hierarchy(sceval, verbose = FALSE)
   
   expect_true(!is.null(hier))
 })
 
 
-test_that("get.hierarchy works with dissimilarity.slot = 'all'", {
+test_that("get_hierarchy works with dissimilarity_slot = 'all'", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Cosine", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Cosine", 
                                reduction = FALSE, verbose = FALSE)
   
-  hier <- get.hierarchy(sceval, dissimilarity.slot = "all", verbose = FALSE)
+  hier <- get_hierarchy(sceval, dissimilarity_slot = "all", verbose = FALSE)
   
   expect_type(hier, "list")
   expect_true(all(c("Pseudobulk:Euclidean", "Pseudobulk:Cosine") %in% names(hier)))
 })
 
 
-test_that("get.hierarchy respects hierarchy.method parameter", {
+test_that("get_hierarchy respects hierarchy_method parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  hier_ward <- get.hierarchy(sceval, hierarchy.method = "ward.D2", verbose = FALSE)
-  hier_complete <- get.hierarchy(sceval, hierarchy.method = "complete", verbose = FALSE)
-  hier_average <- get.hierarchy(sceval, hierarchy.method = "average", verbose = FALSE)
+  hier_ward <- get_hierarchy(sceval, hierarchy_method = "ward.D2", verbose = FALSE)
+  hier_complete <- get_hierarchy(sceval, hierarchy_method = "complete", verbose = FALSE)
+  hier_average <- get_hierarchy(sceval, hierarchy_method = "average", verbose = FALSE)
   
   expect_true(!is.null(hier_ward))
   expect_true(!is.null(hier_complete))
@@ -50,30 +50,30 @@ test_that("get.hierarchy respects hierarchy.method parameter", {
 })
 
 
-test_that("get.hierarchy handles verbose parameter", {
+test_that("get_hierarchy handles verbose parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
   # verbose = TRUE should produce messages
   expect_message(
-    hier <- get.hierarchy(sceval, verbose = TRUE),
+    hier <- get_hierarchy(sceval, verbose = TRUE),
     "Computing hierarchical clustering"
   )
   
   # verbose = FALSE should suppress messages
   expect_silent(
-    hier <- get.hierarchy(sceval, verbose = FALSE)
+    hier <- get_hierarchy(sceval, verbose = FALSE)
   )
 })
 
 
-test_that("get.hierarchy returns table with correct dimensions", {
+test_that("get_hierarchy returns table with correct dimensions", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  hier <- get.hierarchy(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+  hier <- get_hierarchy(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                         verbose = FALSE)
   
   # Should be a contingency table
@@ -83,12 +83,12 @@ test_that("get.hierarchy returns table with correct dimensions", {
 })
 
 
-test_that("get.hierarchy clusters match number of cell types", {
+test_that("get_hierarchy clusters match number of cell types", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  hier <- get.hierarchy(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+  hier <- get_hierarchy(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                         verbose = FALSE)
   
   # Number of clusters should equal number of unique cell types
@@ -97,12 +97,12 @@ test_that("get.hierarchy clusters match number of cell types", {
 })
 
 
-test_that("get.hierarchy returns single table for single dissimilarity slot", {
+test_that("get_hierarchy returns single table for single dissimilarity slot", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  hier <- get.hierarchy(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+  hier <- get_hierarchy(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                         verbose = FALSE)
   
   expect_true(is.table(hier) || is.matrix(hier))
@@ -110,85 +110,85 @@ test_that("get.hierarchy returns single table for single dissimilarity slot", {
 })
 
 
-test_that("get.hierarchy errors without dissimilarity data", {
+test_that("get_hierarchy errors without dissimilarity data", {
   sceval <- create_processed_scTypeEval()
   
   expect_error(
-    get.hierarchy(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+    get_hierarchy(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                   verbose = FALSE)
   )
 })
 
 
-test_that("get.hierarchy works with different dissimilarity methods", {
+test_that("get_hierarchy works with different dissimilarity methods", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Pearson", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Pearson", 
                                reduction = FALSE, verbose = FALSE)
   
-  hier <- get.hierarchy(sceval, dissimilarity.slot = "Pseudobulk:Pearson", 
+  hier <- get_hierarchy(sceval, dissimilarity_slot = "Pseudobulk:Pearson", 
                         verbose = FALSE)
   
   expect_true(!is.null(hier))
 })
 
 
-test_that("get.hierarchy works with WasserStein dissimilarity", {
+test_that("get_hierarchy works with WasserStein dissimilarity", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "WasserStein", 
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_dissimilarity(sceval, method = "WasserStein", 
                                reduction = TRUE, verbose = FALSE)
   
-  hier <- get.hierarchy(sceval, dissimilarity.slot = "WasserStein", 
+  hier <- get_hierarchy(sceval, dissimilarity_slot = "WasserStein", 
                         verbose = FALSE)
   
   expect_true(!is.null(hier))
 })
 
-test_that("get.NN computes nearest neighbor composition", {
+test_that("get_nn computes nearest neighbor composition", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn <- get.NN(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+  nn <- get_nn(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                verbose = FALSE)
   
   expect_true(is.data.frame(nn) || is.matrix(nn))
 })
 
 
-test_that("get.NN works with default parameters", {
+test_that("get_nn works with default parameters", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn <- get.NN(sceval, verbose = FALSE)
+  nn <- get_nn(sceval, verbose = FALSE)
   
   expect_true(!is.null(nn))
 })
 
 
-test_that("get.NN works with dissimilarity.slot = 'all'", {
+test_that("get_nn works with dissimilarity_slot = 'all'", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Cosine", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Cosine", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn <- get.NN(sceval, dissimilarity.slot = "all", verbose = FALSE)
+  nn <- get_nn(sceval, dissimilarity_slot = "all", verbose = FALSE)
   
   expect_type(nn, "list")
   expect_true(all(c("Pseudobulk:Euclidean", "Pseudobulk:Cosine") %in% names(nn)))
 })
 
 
-test_that("get.NN respects KNNGraph_k parameter", {
+test_that("get_nn respects knn_graph_k parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn_k3 <- get.NN(sceval, KNNGraph_k = 3, verbose = FALSE)
-  nn_k5 <- get.NN(sceval, KNNGraph_k = 5, verbose = FALSE)
-  nn_k10 <- get.NN(sceval, KNNGraph_k = 10, verbose = FALSE)
+  nn_k3 <- get_nn(sceval, knn_graph_k = 3, verbose = FALSE)
+  nn_k5 <- get_nn(sceval, knn_graph_k = 5, verbose = FALSE)
+  nn_k10 <- get_nn(sceval, knn_graph_k = 10, verbose = FALSE)
   
   expect_true(!is.null(nn_k3))
   expect_true(!is.null(nn_k5))
@@ -196,43 +196,43 @@ test_that("get.NN respects KNNGraph_k parameter", {
 })
 
 
-test_that("get.NN respects normalize parameter", {
+test_that("get_nn respects normalize parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn_norm <- get.NN(sceval, normalize = TRUE, verbose = FALSE)
-  nn_no_norm <- get.NN(sceval, normalize = FALSE, verbose = FALSE)
+  nn_norm <- get_nn(sceval, normalize = TRUE, verbose = FALSE)
+  nn_no_norm <- get_nn(sceval, normalize = FALSE, verbose = FALSE)
   
   expect_true(!is.null(nn_norm))
   expect_true(!is.null(nn_no_norm))
 })
 
 
-test_that("get.NN handles verbose parameter", {
+test_that("get_nn handles verbose parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
   # verbose = TRUE should produce messages
   expect_message(
-    nn <- get.NN(sceval, verbose = TRUE),
+    nn <- get_nn(sceval, verbose = TRUE),
     "Computing hierarchical clustering"
   )
   
   # verbose = FALSE should suppress messages
   expect_silent(
-    nn <- get.NN(sceval, verbose = FALSE)
+    nn <- get_nn(sceval, verbose = FALSE)
   )
 })
 
 
-test_that("get.NN returns matrix/dataframe with correct structure", {
+test_that("get_nn returns matrix/dataframe with correct structure", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn <- get.NN(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+  nn <- get_nn(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                verbose = FALSE)
   
   # Should be a matrix or data frame
@@ -242,12 +242,12 @@ test_that("get.NN returns matrix/dataframe with correct structure", {
 })
 
 
-test_that("get.NN dimensions match cell types", {
+test_that("get_nn dimensions match cell types", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn <- get.NN(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+  nn <- get_nn(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                verbose = FALSE)
   
   # Rows and columns should represent cell types
@@ -258,12 +258,12 @@ test_that("get.NN dimensions match cell types", {
 })
 
 
-test_that("get.NN returns single result for single dissimilarity slot", {
+test_that("get_nn returns single result for single dissimilarity slot", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn <- get.NN(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+  nn <- get_nn(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                verbose = FALSE)
   
   expect_true(is.data.frame(nn) || is.matrix(nn))
@@ -271,47 +271,47 @@ test_that("get.NN returns single result for single dissimilarity slot", {
 })
 
 
-test_that("get.NN errors without dissimilarity data", {
+test_that("get_nn errors without dissimilarity data", {
   sceval <- create_processed_scTypeEval()
   
   expect_error(
-    get.NN(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+    get_nn(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
            verbose = FALSE)
   )
 })
 
 
-test_that("get.NN works with different dissimilarity methods", {
+test_that("get_nn works with different dissimilarity methods", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Pearson", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Pearson", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn <- get.NN(sceval, dissimilarity.slot = "Pseudobulk:Pearson", 
+  nn <- get_nn(sceval, dissimilarity_slot = "Pseudobulk:Pearson", 
                verbose = FALSE)
   
   expect_true(!is.null(nn))
 })
 
 
-test_that("get.NN works with WasserStein dissimilarity", {
+test_that("get_nn works with WasserStein dissimilarity", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "WasserStein", 
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_dissimilarity(sceval, method = "WasserStein", 
                                reduction = TRUE, verbose = FALSE)
   
-  nn <- get.NN(sceval, dissimilarity.slot = "WasserStein", 
+  nn <- get_nn(sceval, dissimilarity_slot = "WasserStein", 
                verbose = FALSE)
   
   expect_true(!is.null(nn))
 })
 
-test_that("get.NN normalized values differ from unnormalized", {
+test_that("get_nn normalized values differ from unnormalized", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn_norm <- get.NN(sceval, normalize = TRUE, verbose = FALSE)
-  nn_no_norm <- get.NN(sceval, normalize = FALSE, verbose = FALSE)
+  nn_norm <- get_nn(sceval, normalize = TRUE, verbose = FALSE)
+  nn_no_norm <- get_nn(sceval, normalize = FALSE, verbose = FALSE)
   
   # Both should be valid results
   expect_true(!is.null(nn_norm))
@@ -322,13 +322,13 @@ test_that("get.NN normalized values differ from unnormalized", {
 })
 
 
-test_that("get.NN with different k values produces different results", {
+test_that("get_nn with different k values produces different results", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  nn_k3 <- get.NN(sceval, KNNGraph_k = 3, verbose = FALSE)
-  nn_k10 <- get.NN(sceval, KNNGraph_k = 10, verbose = FALSE)
+  nn_k3 <- get_nn(sceval, knn_graph_k = 3, verbose = FALSE)
+  nn_k10 <- get_nn(sceval, knn_graph_k = 10, verbose = FALSE)
   
   # Both should be valid
   expect_true(!is.null(nn_k3))
@@ -339,56 +339,56 @@ test_that("get.NN with different k values produces different results", {
 })
 
 
-test_that("get.hierarchy and get.NN work together in analysis workflow", {
+test_that("get_hierarchy and get_nn work together in analysis workflow", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  hier <- get.hierarchy(sceval, verbose = FALSE)
-  nn <- get.NN(sceval, KNNGraph_k = 5, verbose = FALSE)
+  hier <- get_hierarchy(sceval, verbose = FALSE)
+  nn <- get_nn(sceval, knn_graph_k = 5, verbose = FALSE)
   
   expect_true(!is.null(hier))
   expect_true(!is.null(nn))
 })
 
 
-test_that("get.hierarchy with multiple dissimilarity methods", {
+test_that("get_hierarchy with multiple dissimilarity methods", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "WasserStein", 
+  sceval <- run_dissimilarity(sceval, method = "WasserStein", 
                                reduction = TRUE, verbose = FALSE)
   
-  hier_all <- get.hierarchy(sceval, dissimilarity.slot = "all", verbose = FALSE)
+  hier_all <- get_hierarchy(sceval, dissimilarity_slot = "all", verbose = FALSE)
   
   expect_type(hier_all, "list")
   expect_equal(length(hier_all), 2)
 })
 
 
-test_that("get.NN with multiple dissimilarity methods", {
+test_that("get_nn with multiple dissimilarity methods", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "WasserStein", 
+  sceval <- run_dissimilarity(sceval, method = "WasserStein", 
                                reduction = TRUE, verbose = FALSE)
   
-  nn_all <- get.NN(sceval, dissimilarity.slot = "all", verbose = FALSE)
+  nn_all <- get_nn(sceval, dissimilarity_slot = "all", verbose = FALSE)
   
   expect_type(nn_all, "list")
   expect_equal(length(nn_all), 2)
 })
 
 
-test_that("get.hierarchy different methods produce different clusterings", {
+test_that("get_hierarchy different methods produce different clusterings", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  hier_ward <- get.hierarchy(sceval, hierarchy.method = "ward.D2", verbose = FALSE)
-  hier_single <- get.hierarchy(sceval, hierarchy.method = "single", verbose = FALSE)
+  hier_ward <- get_hierarchy(sceval, hierarchy_method = "ward.D2", verbose = FALSE)
+  hier_single <- get_hierarchy(sceval, hierarchy_method = "single", verbose = FALSE)
   
   # Both should be valid tables
   expect_true(is.table(hier_ward) || is.matrix(hier_ward))

@@ -34,19 +34,19 @@ The test suite contains **311 comprehensive tests** across 13 test files:
 
 | Test File | Tests | Functions Covered |
 |-----------|-------|-------------------|
-| test-create-scTypeEval.R | 17 | create.scTypeEval() |
-| test-Run-ProcessingData.R | 24 | Run.ProcessingData() |
-| test-Run-HVG.R | 16 | Run.HVG() |
-| test-Run-GeneMarkers.R | 15 | Run.GeneMarkers() |
-| test-Run-PCA.R | 15 | Run.PCA() |
-| test-Run-Dissimilarity.R | 22 | Run.Dissimilarity() |
-| test-get-Consistency.R | 20 | get.Consistency() |
-| test-utility-functions.R | 18 | set.activeIdent(), add.GeneList(), add.DimReduction(), Add.ProcessedData() |
+| test-create-scTypeEval.R | 17 | create_scTypeEval() |
+| test-Run-ProcessingData.R | 24 | run_processing_data() |
+| test-Run-HVG.R | 16 | run_hvg() |
+| test-Run-GeneMarkers.R | 15 | run_gene_markers() |
+| test-Run-PCA.R | 15 | run_pca() |
+| test-Run-Dissimilarity.R | 22 | run_dissimilarity() |
+| test-get-Consistency.R | 20 | get_consistency() |
+| test-utility-functions.R | 18 | set_active_ident(), add_gene_list(), add_dim_reduction(), add_processed_data() |
 | test-S4-classes.R | 16 | S4 class structure validation |
 | test-integration-workflows.R | 15 | Complete analysis pipelines |
-| test-plotting-functions.R | 39 | plot.PCA(), plot.MDS(), plot.Heatmap() |
-| test-get-NN-hierarchy.R | 40 | get.NN(), get.hierarchy() |
-| test-load-SingleCell-object.R | 54 | load_singleCell_object() |
+| test-plotting-functions.R | 39 | plot_pca(), plot_mds(), plot_heatmap() |
+| test-get-NN-hierarchy.R | 40 | get_nn(), get_hierarchy() |
+| test-load-SingleCell-object.R | 54 | load_single_cell_object() |
 
 ### Test Details
 
@@ -62,7 +62,7 @@ The test suite contains **311 comprehensive tests** across 13 test files:
 - Single-cell aggregation
 - Pseudobulk aggregation
 - Normalization methods
-- Filtering (min.samples, min.cells)
+- Filtering (min_samples, min_cells)
 - Sample and identity validation
 - Verbose output control
 
@@ -106,17 +106,17 @@ The test suite contains **311 comprehensive tests** across 13 test files:
 - Return format options
 
 #### 8. Utility Functions (`test-utility-functions.R`; 18 tests)
-- `set.activeIdent()`
-- `add.GeneList()`
-- `add.DimReduction()`
-- `Add.ProcessedData()`
+- `set_active_ident()`
+- `add_gene_list()`
+- `add_dim_reduction()`
+- `add_processed_data()`
 - Function integration
 
 #### 9. S4 Classes (`test-S4-classes.R`; 16 tests)
 - scTypeEval class structure
-- DataAssay class structure
-- DissimilarityAssay class structure
-- DimRed class structure
+- data_assay class structure
+- dissimilarity_assay class structure
+- dim_red class structure
 - Slot validation
 - Data integrity
 
@@ -127,17 +127,17 @@ The test suite contains **311 comprehensive tests** across 13 test files:
 - Output validation
 
 #### 11. Plotting Functions (`test-plotting-functions.R`; 39 tests)
-- `plot.PCA()` with various parameters and customizations
-- `plot.MDS()` with various parameters and customizations
-- `plot.Heatmap()` with various parameters and customizations
+- `plot_pca()` with various parameters and customizations
+- `plot_mds()` with various parameters and customizations
+- `plot_heatmap()` with various parameters and customizations
 - Color schemes and aesthetic options
 - Legend configurations
 - Different aggregation methods
 - Dimension selection
 
 #### 12. Nearest Neighbor and Hierarchy (`test-get-NN-hierarchy.R`; 40 tests)
-- `get.hierarchy()` with various clustering methods (ward.D2, complete, average, single)
-- `get.NN()` with varying KNN parameters (k=3, 5, 10)
+- `get_hierarchy()` with various clustering methods (ward.D2, complete, average, single)
+- `get_nn()` with varying KNN parameters (k=3, 5, 10)
 - Normalization options
 - Return format validation
 - Integration with other analysis functions

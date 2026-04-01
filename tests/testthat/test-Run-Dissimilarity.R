@@ -1,8 +1,8 @@
-test_that("Run.Dissimilarity computes Pseudobulk:Euclidean dissimilarity", {
+test_that("run_dissimilarity computes Pseudobulk:Euclidean dissimilarity", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "Pseudobulk:Euclidean",
     reduction = FALSE,
@@ -10,16 +10,16 @@ test_that("Run.Dissimilarity computes Pseudobulk:Euclidean dissimilarity", {
   )
   
   expect_true("Pseudobulk:Euclidean" %in% names(sceval@dissimilarity))
-  expect_s4_class(sceval@dissimilarity[["Pseudobulk:Euclidean"]], "DissimilarityAssay")
+  expect_s4_class(sceval@dissimilarity[["Pseudobulk:Euclidean"]], "dissimilarity_assay")
   expect_s3_class(sceval@dissimilarity[["Pseudobulk:Euclidean"]]@dissimilarity, "dist")
 })
 
 
-test_that("Run.Dissimilarity computes Pseudobulk:Cosine dissimilarity", {
+test_that("run_dissimilarity computes Pseudobulk:Cosine dissimilarity", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "Pseudobulk:Cosine",
     reduction = FALSE,
@@ -31,11 +31,11 @@ test_that("Run.Dissimilarity computes Pseudobulk:Cosine dissimilarity", {
 })
 
 
-test_that("Run.Dissimilarity computes Pseudobulk:Pearson dissimilarity", {
+test_that("run_dissimilarity computes Pseudobulk:Pearson dissimilarity", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "Pseudobulk:Pearson",
     reduction = FALSE,
@@ -47,11 +47,11 @@ test_that("Run.Dissimilarity computes Pseudobulk:Pearson dissimilarity", {
 })
 
 
-test_that("Run.Dissimilarity computes WasserStein dissimilarity", {
+test_that("run_dissimilarity computes WasserStein dissimilarity", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     reduction = TRUE,
@@ -63,47 +63,47 @@ test_that("Run.Dissimilarity computes WasserStein dissimilarity", {
 })
 
 
-test_that("Run.Dissimilarity computes RecipClassif:Match dissimilarity", {
+test_that("run_dissimilarity computes recip_classif:Match dissimilarity", {
   skip_if_not_installed("SingleR")
   
   sceval <- create_processed_scTypeEval()
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
-    method = "RecipClassif:Match",
-    ReciprocalClassifier = "SingleR",
+    method = "recip_classif:Match",
+    reciprocal_classifier = "SingleR",
     reduction = FALSE,
     verbose = FALSE
   )
   
-  expect_true("RecipClassif:Match" %in% names(sceval@dissimilarity))
-  expect_equal(sceval@dissimilarity[["RecipClassif:Match"]]@method, "RecipClassif:Match")
+  expect_true("recip_classif:Match" %in% names(sceval@dissimilarity))
+  expect_equal(sceval@dissimilarity[["recip_classif:Match"]]@method, "recip_classif:Match")
 })
 
 
-test_that("Run.Dissimilarity computes RecipClassif:Score dissimilarity", {
+test_that("run_dissimilarity computes recip_classif:Score dissimilarity", {
   skip_if_not_installed("SingleR")
   
   sceval <- create_processed_scTypeEval()
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
-    method = "RecipClassif:Score",
-    ReciprocalClassifier = "SingleR",
+    method = "recip_classif:Score",
+    reciprocal_classifier = "SingleR",
     reduction = FALSE,
     verbose = FALSE
   )
   
-  expect_true("RecipClassif:Score" %in% names(sceval@dissimilarity))
-  expect_equal(sceval@dissimilarity[["RecipClassif:Score"]]@method, "RecipClassif:Score")
+  expect_true("recip_classif:Score" %in% names(sceval@dissimilarity))
+  expect_equal(sceval@dissimilarity[["recip_classif:Score"]]@method, "recip_classif:Score")
 })
 
 
-test_that("Run.Dissimilarity works with reduction = TRUE", {
+test_that("run_dissimilarity works with reduction = TRUE", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "Pseudobulk:Euclidean",
     reduction = TRUE,
@@ -114,10 +114,10 @@ test_that("Run.Dissimilarity works with reduction = TRUE", {
 })
 
 
-test_that("Run.Dissimilarity works with reduction = FALSE", {
+test_that("run_dissimilarity works with reduction = FALSE", {
   sceval <- create_processed_scTypeEval()
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "Pseudobulk:Euclidean",
     reduction = FALSE,
@@ -128,44 +128,44 @@ test_that("Run.Dissimilarity works with reduction = FALSE", {
 })
 
 
-test_that("Run.Dissimilarity uses gene.list parameter", {
+test_that("run_dissimilarity uses gene_list parameter", {
   sceval <- create_processed_scTypeEval()
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "Pseudobulk:Euclidean",
     reduction = FALSE,
-    gene.list = "HVG",
+    gene_list = "HVG",
     verbose = FALSE
   )
   
-  expect_equal(sceval@dissimilarity[["Pseudobulk:Euclidean"]]@gene.list, sceval@gene.lists[["HVG"]])
+  expect_equal(sceval@dissimilarity[["Pseudobulk:Euclidean"]]@gene_list, sceval@gene_lists[["HVG"]])
 })
 
 
-test_that("Run.Dissimilarity respects black.list parameter", {
+test_that("run_dissimilarity respects black_list parameter", {
   sceval <- create_processed_scTypeEval()
   
   all_genes <- rownames(sceval@data[["pseudobulk"]]@matrix)
   black_genes <- all_genes[1:10]
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "Pseudobulk:Euclidean",
     reduction = FALSE,
-    black.list = black_genes,
+    black_list = black_genes,
     verbose = FALSE
   )
   
-  expect_true(length(sceval@dissimilarity[["Pseudobulk:Euclidean"]]@black.list) > 0)
+  expect_true(length(sceval@dissimilarity[["Pseudobulk:Euclidean"]]@black_list) > 0)
 })
 
 
-test_that("Run.Dissimilarity errors without processed data", {
+test_that("run_dissimilarity errors without processed data", {
   sceval <- create_test_scTypeEval()
   
   expect_error(
-    Run.Dissimilarity(
+    run_dissimilarity(
       sceval,
       method = "Pseudobulk:Euclidean",
       reduction = FALSE,
@@ -176,11 +176,11 @@ test_that("Run.Dissimilarity errors without processed data", {
 })
 
 
-test_that("Run.Dissimilarity errors without PCA when reduction = TRUE", {
+test_that("run_dissimilarity errors without PCA when reduction = TRUE", {
   sceval <- create_processed_scTypeEval()
   
   expect_error(
-    Run.Dissimilarity(
+    run_dissimilarity(
       sceval,
       method = "Pseudobulk:Euclidean",
       reduction = TRUE,
@@ -191,11 +191,11 @@ test_that("Run.Dissimilarity errors without PCA when reduction = TRUE", {
 })
 
 
-test_that("Run.Dissimilarity errors on unsupported method", {
+test_that("run_dissimilarity errors on unsupported method", {
   sceval <- create_processed_scTypeEval()
   
   expect_error(
-    Run.Dissimilarity(
+    run_dissimilarity(
       sceval,
       method = "UnsupportedMethod",
       reduction = FALSE,
@@ -206,12 +206,12 @@ test_that("Run.Dissimilarity errors on unsupported method", {
 })
 
 
-test_that("Run.Dissimilarity handles verbose parameter", {
+test_that("run_dissimilarity handles verbose parameter", {
   sceval <- create_processed_scTypeEval()
   
   # verbose = TRUE should produce messages
   expect_message(
-    sceval <- Run.Dissimilarity(
+    sceval <- run_dissimilarity(
       sceval,
       method = "Pseudobulk:Euclidean",
       reduction = FALSE,
@@ -222,7 +222,7 @@ test_that("Run.Dissimilarity handles verbose parameter", {
   # verbose = FALSE should suppress messages
   sceval2 <- create_processed_scTypeEval()
   expect_silent(
-    sceval2 <- Run.Dissimilarity(
+    sceval2 <- run_dissimilarity(
       sceval2,
       method = "Pseudobulk:Euclidean",
       reduction = FALSE,
@@ -232,10 +232,10 @@ test_that("Run.Dissimilarity handles verbose parameter", {
 })
 
 
-test_that("Run.Dissimilarity handles ncores parameter", {
+test_that("run_dissimilarity handles ncores parameter", {
   sceval <- create_processed_scTypeEval()
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     reduction = FALSE,
@@ -247,10 +247,10 @@ test_that("Run.Dissimilarity handles ncores parameter", {
 })
 
 
-test_that("Run.Dissimilarity stores correct metadata", {
+test_that("run_dissimilarity stores correct metadata", {
   sceval <- create_processed_scTypeEval()
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "Pseudobulk:Euclidean",
     reduction = FALSE,
@@ -264,11 +264,11 @@ test_that("Run.Dissimilarity stores correct metadata", {
   expect_true(is.factor(diss_assay@sample))
 })
 
-test_that("Run.Dissimilarity handles progressbar parameter", {
+test_that("run_dissimilarity handles progressbar parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     reduction = TRUE,
@@ -280,17 +280,17 @@ test_that("Run.Dissimilarity handles progressbar parameter", {
 })
 
 
-test_that("Run.Dissimilarity switches reduction to FALSE for RecipClassif methods", {
+test_that("run_dissimilarity switches reduction to FALSE for recip_classif methods", {
   skip_if_not_installed("SingleR")
   
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
   expect_warning(
-    sceval <- Run.Dissimilarity(
+    sceval <- run_dissimilarity(
       sceval,
-      method = "RecipClassif:Match",
-      ReciprocalClassifier = "SingleR",
+      method = "recip_classif:Match",
+      reciprocal_classifier = "SingleR",
       reduction = TRUE,
       verbose = FALSE
     ),
@@ -299,12 +299,12 @@ test_that("Run.Dissimilarity switches reduction to FALSE for RecipClassif method
 })
 
 
-test_that("Run.Dissimilarity uses multiple cores for WasserStein method", {
+test_that("run_dissimilarity uses multiple cores for WasserStein method", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
   # Test with ncores = 2
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     reduction = TRUE,
@@ -313,39 +313,39 @@ test_that("Run.Dissimilarity uses multiple cores for WasserStein method", {
   )
   
   expect_true("WasserStein" %in% names(sceval@dissimilarity))
-  expect_s4_class(sceval@dissimilarity[["WasserStein"]], "DissimilarityAssay")
+  expect_s4_class(sceval@dissimilarity[["WasserStein"]], "dissimilarity_assay")
   expect_equal(sceval@dissimilarity[["WasserStein"]]@method, "WasserStein")
 })
 
 
-test_that("Run.Dissimilarity uses multiple cores for RecipClassif methods", {
+test_that("run_dissimilarity uses multiple cores for recip_classif methods", {
   skip_if_not_installed("SingleR")
   
   sceval <- create_processed_scTypeEval()
   
-  # Test RecipClassif:Match with ncores = 2
-  sceval <- Run.Dissimilarity(
+  # Test recip_classif:Match with ncores = 2
+  sceval <- run_dissimilarity(
     sceval,
-    method = "RecipClassif:Match",
-    ReciprocalClassifier = "SingleR",
+    method = "recip_classif:Match",
+    reciprocal_classifier = "SingleR",
     reduction = FALSE,
     ncores = 2,
     verbose = FALSE
   )
   
-  expect_true("RecipClassif:Match" %in% names(sceval@dissimilarity))
-  expect_equal(sceval@dissimilarity[["RecipClassif:Match"]]@method, "RecipClassif:Match")
+  expect_true("recip_classif:Match" %in% names(sceval@dissimilarity))
+  expect_equal(sceval@dissimilarity[["recip_classif:Match"]]@method, "recip_classif:Match")
 })
 
 
-test_that("Run.Dissimilarity ncores parameter works for both parallelizable methods", {
+test_that("run_dissimilarity ncores parameter works for both parallelizable methods", {
   skip_if_not_installed("SingleR")
   
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
   # Test WasserStein
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     reduction = TRUE,
@@ -353,26 +353,26 @@ test_that("Run.Dissimilarity ncores parameter works for both parallelizable meth
     verbose = FALSE
   )
   
-  # Test RecipClassif:Score
-  sceval <- Run.Dissimilarity(
+  # Test recip_classif:Score
+  sceval <- run_dissimilarity(
     sceval,
-    method = "RecipClassif:Score",
-    ReciprocalClassifier = "SingleR",
+    method = "recip_classif:Score",
+    reciprocal_classifier = "SingleR",
     reduction = FALSE,
     ncores = 2,
     verbose = FALSE
   )
   
   expect_true("WasserStein" %in% names(sceval@dissimilarity))
-  expect_true("RecipClassif:Score" %in% names(sceval@dissimilarity))
+  expect_true("recip_classif:Score" %in% names(sceval@dissimilarity))
 })
 
 
-test_that("Run.Dissimilarity ncores parameter accepted but not used for Pseudobulk methods", {
+test_that("run_dissimilarity ncores parameter accepted but not used for Pseudobulk methods", {
   sceval <- create_processed_scTypeEval()
   
   # Pseudobulk methods don't use parallelization, but ncores parameter should be accepted
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "Pseudobulk:Euclidean",
     reduction = FALSE,
@@ -382,7 +382,7 @@ test_that("Run.Dissimilarity ncores parameter accepted but not used for Pseudobu
   
   expect_true("Pseudobulk:Euclidean" %in% names(sceval@dissimilarity))
   
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = "Pseudobulk:Cosine",
     reduction = FALSE,

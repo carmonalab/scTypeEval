@@ -20,7 +20,7 @@ downsample_factor_level <- function(df, factor_col, level, threshold, seed = 22)
 
 
 
-rand.shuffling_group <- function(vector,
+rand_shuffling_group <- function(vector,
                                  group,
                                  rate = 0.1, # proportion of labels to shuffle within each group
                                  seed = 22) {
@@ -45,7 +45,7 @@ rand.shuffling_group <- function(vector,
    return(nvector)
 }
 
-rand.Split_group <- function(vector,
+rand_split_group <- function(vector,
                              group,
                              rate = 0.5, # proportion of labels to shuffle within each group
                              seed = 22,
@@ -132,35 +132,35 @@ geo_mean_se <- function(x) {
 wrapper_dissimilarity <- function(scTypeEval,
                                   ident,
                                   sample,
-                                  gene.list,
+                                  gene_list,
                                   reduction = TRUE,
                                   ndim = 30,
-                                  normalization.method = "Log1p",
-                                  dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                                  normalization_method = "Log1p",
+                                  dissimilarity_method = c("WasserStein", "Pseudobulk:Euclidean",
                                                            "Pseudobulk:Cosine", "Pseudobulk:Pearson",
-                                                           "RecipClassif:Match", "RecipClassif:Score"),
-                                  min.samples = 5,
-                                  min.cells = 10,
+                                                           "recip_classif:Match", "recip_classif:Score"),
+                                  min_samples = 5,
+                                  min_cells = 10,
                                   bparam = BiocParallel::SerialParam(),
                                   verbose = TRUE){
    
-   scTypeEval <- Run.ProcessingData(scTypeEval,
+   scTypeEval <- run_processing_data(scTypeEval,
                                     ident = ident,
                                     sample = sample,
-                                    normalization.method = normalization.method,
-                                    min.samples = min.samples,
-                                    min.cells = min.cells,
+                                    normalization_method = normalization_method,
+                                    min_samples = min_samples,
+                                    min_cells = min_cells,
                                     verbose = verbose)
-   scTypeEval <- add.GeneList(scTypeEval, gene.list)
+   scTypeEval <- add_gene_list(scTypeEval, gene_list)
    
    if(reduction){
-      scTypeEval <- Run.PCA(scTypeEval,
+      scTypeEval <- run_pca(scTypeEval,
                             ndim = ndim)
    }
    
-   for(m in dissimilarity.method){
+   for(m in dissimilarity_method){
       if(verbose){message(">.  Running ", m, "\n")}
-      scTypeEval <- Run.Dissimilarity(scTypeEval,
+      scTypeEval <- run_dissimilarity(scTypeEval,
                                       reduction = reduction,
                                       method = m,
                                       bparam = bparam,
@@ -172,38 +172,38 @@ wrapper_dissimilarity <- function(scTypeEval,
 }
 
 wrapper_plots <- function(scTypeEval,
-                          reduction.slot = "all", 
-                          dissimilarity.slot = "all",
+                          reduction_slot = "all", 
+                          dissimilarity_slot = "all",
                           reduction = TRUE,
                           label = TRUE,
                           dims = c(1,2),
-                          show.legend = FALSE,
-                          dir.path,
+                          show_legend = FALSE,
+                          dir_path,
                           height =15,
                           width = 18,
                           ...){
    if(reduction){
-      pca <- plot.PCA(scTypeEval,
-                      reduction.slot = reduction.slot,
+      pca <- plot_pca(scTypeEval,
+                      reduction_slot = reduction_slot,
                       label = label,
                       dims = dims,
-                      show.legend = show.legend)
+                      show_legend = show_legend)
    } else {
       pca <- c()
    }
    
-   mds <- plot.MDS(scTypeEval,
-                   dissimilarity.slot = dissimilarity.slot,
+   mds <- plot_mds(scTypeEval,
+                   dissimilarity_slot = dissimilarity_slot,
                    label = label,
                    dims = dims,
-                   show.legend = show.legend)
+                   show_legend = show_legend)
    
-   ph <- plot.Heatmap(scTypeEval,
-                      dissimilarity.slot = dissimilarity.slot,
+   ph <- plot_heatmap(scTypeEval,
+                      dissimilarity_slot = dissimilarity_slot,
                       ...)
    
    # Export as PDF
-   dir <- paste0(dir.path, ".pdf")
+   dir <- paste0(dir_path, ".pdf")
    # List of plots to print
    plot_list <- c(pca, mds, ph)
    pdf(dir, width = width, height = height)
@@ -224,42 +224,42 @@ wrapper_plots <- function(scTypeEval,
 
 
 # wrapper to evaluate the missclassifiction rate 
-wr.missclasify <- function(count_matrix,
+wr_missclasify <- function(count_matrix,
                            metadata,
                            ident,
                            sample,
                            rates = c(1, 0.9, 0.75, 0.5, 0.25, 0), # proportion of cell labels kept
                            replicates = 3,
-                           gene.list = NULL,
+                           gene_list = NULL,
                            reduction = TRUE,
                            ndim = 30,
-                           black.list = NULL,
+                           black_list = NULL,
                            dir = NULL,
-                           normalization.method = "Log1p",
-                           dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                           normalization_method = "Log1p",
+                           dissimilarity_method = c("WasserStein", "Pseudobulk:Euclidean",
                                                     "Pseudobulk:Cosine", "Pseudobulk:Pearson",
-                                                    "RecipClassif:Match", "RecipClassif:Score"),
-                           IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                             "ward.PropMatch", "Orbital.medoid",
-                                             "Average.similarity", "2label.silhouette"),
-                           min.samples = 5,
-                           min.cells = 10,
+                                                    "recip_classif:Match", "recip_classif:Score"),
+                           int_val_metric = c("silhouette", "NeighborhoodPurity",
+                                             "ward_PropMatch", "Orbital_medoid",
+                                             "Average_similarity", "2label_silhouette"),
+                           min_samples = 5,
+                           min_cells = 10,
                            ncores = 1,
                            bparam = NULL,
                            progressbar = FALSE,
                            seed = 22,
-                           KNNGraph_k = 5,
-                           hclust.method = "ward.D2",
-                           save.plots = TRUE,
+                           knn_graph_k = 5,
+                           hclust_method = "ward.D2",
+                           save_plots = TRUE,
                            verbose = TRUE){
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
       dir.create(dir, showWarnings = FALSE)
       
-      if(save.plots){
-         pca.dir <- file.path(dir, "Plots_Missclassify")
-         dir.create(pca.dir, showWarnings = FALSE)
+      if(save_plots){
+         pca_dir <- file.path(dir, "Plots_Missclassify")
+         dir.create(pca_dir, showWarnings = FALSE)
       }
    }
    
@@ -275,7 +275,7 @@ wr.missclasify <- function(count_matrix,
    for(s in names(sds)){
       for(r in rates){
          ra <- 1-r # proportion of cells to shuffle
-         new_vector <- rand.shuffling_group(vector = original_vector,
+         new_vector <- rand_shuffling_group(vector = original_vector,
                                             group = metadata[[sample]],
                                             rate = ra,
                                             seed = sds[[s]])
@@ -287,23 +287,23 @@ wr.missclasify <- function(count_matrix,
    }
    
    ## Create sc object
-   sc <- create.scTypeEval(matrix = count_matrix,
+   sc <- create_scTypeEval(matrix = count_matrix,
                            metadata = metadata,
-                           active.ident = ident,
-                           black.list = black.list)
+                           active_ident = ident,
+                           black_list = black_list)
    # get the gene list, the same for every run
-   if(is.null(gene.list)){
-      sc.gl <- Run.ProcessingData(sc,
+   if(is.null(gene_list)){
+      sc_gl <- run_processing_data(sc,
                                   sample = sample,
-                                  normalization.method = normalization.method,
-                                  min.samples = min.samples,
-                                  min.cells = min.cells,
+                                  normalization_method = normalization_method,
+                                  min_samples = min_samples,
+                                  min_cells = min_cells,
                                   verbose = verbose)
-      sc.gl <- Run.HVG(sc.gl,
+      sc_gl <- run_hvg(sc_gl,
                        ncores = ncores)
-      gl <- sc.gl@gene.lists
+      gl <- sc_gl@gene_lists
    } else {
-      gl <- gene.list
+      gl <- gene_list
    }
    
    param <- set_parallel_params(ncores = ncores,
@@ -311,31 +311,31 @@ wr.missclasify <- function(count_matrix,
                                 progressbar = progressbar)
    
    if(verbose){message("Running loop of annotations ")}
-   df.res <- lapply(annotations,
+   df_res <- lapply(annotations,
                     function(ann){
                        tryCatch(
                           {
-                             sc.tmp <- wrapper_dissimilarity(sc,
+                             sc_tmp <- wrapper_dissimilarity(sc,
                                                              ident = ann,
                                                              sample = sample,
-                                                             gene.list = gl,
+                                                             gene_list = gl,
                                                              reduction = reduction,
                                                              ndim = ndim,
-                                                             normalization.method = normalization.method,
-                                                             dissimilarity.method = dissimilarity.method,
-                                                             min.samples = min.samples,
-                                                             min.cells = min.cells,
+                                                             normalization_method = normalization_method,
+                                                             dissimilarity_method = dissimilarity_method,
+                                                             min_samples = min_samples,
+                                                             min_cells = min_cells,
                                                              bparam = param,
                                                              verbose = verbose
                              )
                              # data.frame with consistency outcome
-                             res <- get.Consistency(sc.tmp)
+                             res <- get_consistency(sc_tmp)
                              
                              # accommodate extra data
                              res <- res |>
                                 dplyr::mutate(rate = as.numeric(as.character(strsplit(ann, "_")[[1]][3])),
                                               rep = strsplit(ann, "_")[[1]][2],
-                                              original.ident = !!ident,
+                                              original_ident = !!ident,
                                               task = "Missclassification"
                                 )
                              
@@ -343,11 +343,11 @@ wr.missclasify <- function(count_matrix,
                              # only produce for one replicate of the seeds
                              if(stringr::str_split(ann, "_")[[1]][2] == 1){
                                 # save pdf if indicated
-                                if(save.plots){
+                                if(save_plots){
                                    if(verbose){message("\nProducing Plots for ", ann, "\n")}
-                                   fp <- file.path(pca.dir, ann)
-                                   wrapper_plots(sc.tmp,
-                                                 dir.path = fp,
+                                   fp <- file.path(pca_dir, ann)
+                                   wrapper_plots(sc_tmp,
+                                                 dir_path = fp,
                                                  reduction = reduction)
                                 }
                              }
@@ -362,54 +362,54 @@ wr.missclasify <- function(count_matrix,
                     })
    
    # concatenate all results
-   df.res <- do.call(rbind, df.res)
+   df_res <- do.call(rbind, df_res)
    
    if(!is.null(dir)){
-      saveRDS(df.res,
+      saveRDS(df_res,
               file.path(dir,
                         paste0("Missclassification_", ident, ".rds")))
    }
-   return(df.res)
+   return(df_res)
    
 }
 
 # wrapper to evaluate the number of samples
-wr.NSamples <- function(count_matrix,
+wr_nsamples <- function(count_matrix,
                         metadata,
                         ident,
                         sample,
                         rates = c(1, 0.9, 0.7, 0.5), # proportion of cell labels kept
                         replicates = 3,
-                        gene.list = NULL,
+                        gene_list = NULL,
                         reduction = TRUE,
                         ndim = 30,
-                        black.list = NULL,
+                        black_list = NULL,
                         dir = NULL,
-                        normalization.method = "Log1p",
-                        dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                        normalization_method = "Log1p",
+                        dissimilarity_method = c("WasserStein", "Pseudobulk:Euclidean",
                                                  "Pseudobulk:Cosine", "Pseudobulk:Pearson",
-                                                 "RecipClassif:Match", "RecipClassif:Score"),
-                        IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                          "ward.PropMatch", "Orbital.medoid",
-                                          "Average.similarity", "2label.silhouette"),
-                        min.samples = 5,
-                        min.cells = 10,
+                                                 "recip_classif:Match", "recip_classif:Score"),
+                        int_val_metric = c("silhouette", "NeighborhoodPurity",
+                                          "ward_PropMatch", "Orbital_medoid",
+                                          "Average_similarity", "2label_silhouette"),
+                        min_samples = 5,
+                        min_cells = 10,
                         ncores = 1,
                         bparam = NULL,
                         progressbar = FALSE,
                         seed = 22,
-                        KNNGraph_k = 5,
-                        hclust.method = "ward.D2",
-                        save.plots = TRUE,
+                        knn_graph_k = 5,
+                        hclust_method = "ward.D2",
+                        save_plots = TRUE,
                         verbose = TRUE){
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
       dir.create(dir, showWarnings = FALSE)
       
-      if(save.plots){
-         pca.dir <- file.path(dir, "Plots_Nsamples")
-         dir.create(pca.dir, showWarnings = FALSE)
+      if(save_plots){
+         pca_dir <- file.path(dir, "Plots_Nsamples")
+         dir.create(pca_dir, showWarnings = FALSE)
       }
    }
    
@@ -435,62 +435,62 @@ wr.NSamples <- function(count_matrix,
    
    
    # get the gene list, the same for every run
-   if(is.null(gene.list)){
+   if(is.null(gene_list)){
       ## Create sc object
-      sc <- create.scTypeEval(matrix = count_matrix,
+      sc <- create_scTypeEval(matrix = count_matrix,
                               metadata = metadata,
-                              active.ident = ident,
-                              black.list = black.list)
-      sc.gl <- Run.ProcessingData(sc,
+                              active_ident = ident,
+                              black_list = black_list)
+      sc_gl <- run_processing_data(sc,
                                   sample = sample,
-                                  normalization.method = normalization.method,
-                                  min.samples = min.samples,
-                                  min.cells = min.cells,
+                                  normalization_method = normalization_method,
+                                  min_samples = min_samples,
+                                  min_cells = min_cells,
                                   verbose = verbose)
-      sc.gl <- Run.HVG(sc.gl,
+      sc_gl <- run_hvg(sc_gl,
                        ncores = ncores)
-      gl <- sc.gl@gene.lists
+                                         dplyr::mutate(rate = as.numeric(as.character(strsplit(ann, "_")[[1]][3])),
    } else {
-      gl <- gene.list
+      gl <- gene_list
    }
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
    if(verbose){message("Running loop of annotations ")}
-   df.res <- lapply(names(nss),
+   df_res <- lapply(names(nss),
                     function(ns){
                        tryCatch(
                           {
                              ## run scTypeEval
                              # create scTypeEval object with the number of samples
                              md <- metadata[metadata[[sample]] %in% nss[[ns]],]
-                             sc.tmp <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
+                             sc_tmp <- create_scTypeEval(matrix = count_matrix[,rownames(md)],
                                                          metadata = md,
-                                                         gene.lists = gl,
-                                                         black.list = black.list)
+                                                         gene_lists = gl,
+                                                         black_list = black_list)
                              
-                             sc.tmp <- wrapper_dissimilarity(sc.tmp,
+                             sc_tmp <- wrapper_dissimilarity(sc_tmp,
                                                              ident = ident,
                                                              sample = sample,
-                                                             gene.list = gl,
+                                                             gene_list = gl,
                                                              reduction = reduction,
                                                              ndim = ndim,
-                                                             normalization.method = normalization.method,
-                                                             dissimilarity.method = dissimilarity.method,
-                                                             min.samples = min.samples,
-                                                             min.cells = min.cells,
+                                                             normalization_method = normalization_method,
+            df_res <- do.call(rbind, df_res)
+                                                             min_samples = min_samples,
+                                                             min_cells = min_cells,
                                                              bparam = param,
                                                              verbose = verbose
                              )
                              # data.frame with consistency outcome
-                             res <- get.Consistency(sc.tmp)
+                             res <- get_consistency(sc_tmp)
                              
                              # accommodate extra data
                              res <- res |>
                                 dplyr::mutate(rate = as.numeric(as.character(strsplit(ns, "_")[[1]][3])),
                                               rep = strsplit(ns, "_")[[1]][2],
-                                              original.ident = !!ident,
+                                              original_ident = !!ident,
                                               task = "NSamples"
                                 )
                              
@@ -498,11 +498,11 @@ wr.NSamples <- function(count_matrix,
                              # only produce for one replicate of the seeds
                              if(stringr::str_split(ns, "_")[[1]][2] == 1){
                                 # save pdf if indicated
-                                if(save.plots){
+                                if(save_plots){
                                    if(verbose){message("\nProducing Plots for ", ns, "\n")}
-                                   fp <- file.path(pca.dir, ns)
-                                   wrapper_plots(sc.tmp,
-                                                 dir.path = fp,
+                                   fp <- file.path(pca_dir, ns)
+                                   wrapper_plots(sc_tmp,
+                                                 dir_path = fp,
                                                  reduction = reduction)
                                 }
                              }
@@ -516,54 +516,54 @@ wr.NSamples <- function(count_matrix,
                     })
    
    # concatenate all results
-   df.res <- do.call(rbind, df.res)
+   df_res <- do.call(rbind, df_res)
    
    if(!is.null(dir)){
-      saveRDS(df.res,
+      saveRDS(df_res,
               file.path(dir,
                         paste0("NSamples_", ident, ".rds")))
    }
    
-   return(df.res)
+   return(df_res)
    
 }
 
 # wrapper to evaluate the consistency metrics when excluding some cell types
-wr.Nct <- function(count_matrix,
+wr_nct <- function(count_matrix,
                    metadata,
                    ident,
                    sample,
-                   gene.list = NULL,
+                   gene_list = NULL,
                    reduction = TRUE,
                    ndim = 30,
-                   black.list = NULL,
+                   black_list = NULL,
                    dir = NULL,
-                   normalization.method = "Log1p",
-                   dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                   normalization_method = "Log1p",
+                   dissimilarity_method = c("WasserStein", "Pseudobulk:Euclidean",
                                             "Pseudobulk:Cosine", "Pseudobulk:Pearson",
-                                            "RecipClassif:Match", "RecipClassif:Score"),
-                   IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                     "ward.PropMatch", "Orbital.medoid",
-                                     "Average.similarity", "2label.silhouette"),
-                   min.samples = 5,
-                   min.cells = 10,
+                                            "recip_classif:Match", "recip_classif:Score"),
+                   int_val_metric = c("silhouette", "NeighborhoodPurity",
+                                     "ward_PropMatch", "Orbital_medoid",
+                                     "Average_similarity", "2label_silhouette"),
+                   min_samples = 5,
+                   min_cells = 10,
                    ncores = 1,
                    bparam = NULL,
                    progressbar = FALSE,
                    seed = 22,
-                   KNNGraph_k = 5,
-                   hclust.method = "ward.D2",
-                   save.plots = TRUE,
+                   knn_graph_k = 5,
+                   hclust_method = "ward.D2",
+                   save_plots = TRUE,
                    verbose = TRUE,
-                   down.sample.comb = 30){
+                   down_sample_comb = 30){
    
    if(!is.null(dir)){
       if(verbose){message("Results will be stored at ", dir)}
       dir.create(dir, showWarnings = FALSE)
       
-      if(save.plots){
-         pca.dir <- file.path(dir, "Plots_Nct")
-         dir.create(pca.dir, showWarnings = FALSE)
+      if(save_plots){
+         pca_dir <- file.path(dir, "Plots_Nct")
+         dir.create(pca_dir, showWarnings = FALSE)
       }
    }
    
@@ -575,77 +575,77 @@ wr.Nct <- function(count_matrix,
    
    # Generate combinations of lengths 2 to n-1
    cts <- sample_variable_length_combinations(allcts,
-                                              num_samples = down.sample.comb,
+                                              num_samples = down_sample_comb,
                                               seed = seed)
    # add all cell types
    allelements <- paste(allcts, collapse = "-")
    cts[[allelements]] <- allcts
    
    # get the gene list, the same for every run
-   if(is.null(gene.list)){
+   if(is.null(gene_list)){
       ## Create sc object
-      sc <- create.scTypeEval(matrix = count_matrix,
+      sc <- create_scTypeEval(matrix = count_matrix,
                               metadata = metadata,
-                              active.ident = ident,
-                              black.list = black.list)
-      sc.gl <- Run.ProcessingData(sc,
+                              active_ident = ident,
+                              black_list = black_list)
+      sc_gl <- run_processing_data(sc,
                                   sample = sample,
-                                  normalization.method = normalization.method,
-                                  min.samples = min.samples,
-                                  min.cells = min.cells,
+                                  normalization_method = normalization_method,
+                                  min_samples = min_samples,
+                                  min_cells = min_cells,
                                   verbose = verbose)
-      sc.gl <- Run.HVG(sc.gl,
+      sc_gl <- run_hvg(sc_gl,
                        ncores = ncores)
-      gl <- sc.gl@gene.lists
+      gl <- sc_gl@gene_lists
    } else {
-      gl <- gene.list
+      gl <- gene_list
    }
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
-   df.res <- lapply(names(cts),
+   df_res <- lapply(names(cts),
                     function(ns){
                        tryCatch(
                           {
                              # create scTypeEval object with the number of samples
                              md <- metadata[metadata[[ident]] %in% cts[[ns]],]
-                             sc.tmp <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
+                             sc_tmp <- create_scTypeEval(matrix = count_matrix[,rownames(md)],
                                                          metadata = md,
-                                                         gene.lists = gl,
-                                                         black.list = black.list)
-                             sc.tmp <- wrapper_dissimilarity(sc.tmp,
+                                                         gene_lists = gl,
+                                                         black_list = black_list)
+                             sc_tmp <- wrapper_dissimilarity(sc_tmp,
                                                              ident = ident,
                                                              sample = sample,
-                                                             gene.list = gl,
+                                                             gene_list = gl,
                                                              reduction = reduction,
                                                              ndim = ndim,
-                                                             normalization.method = normalization.method,
-                                                             dissimilarity.method = dissimilarity.method,
-                                                             min.samples = min.samples,
-                                                             min.cells = min.cells,
+                                                             normalization_method = normalization_method,
+                                                             dissimilarity_method = dissimilarity_method,
+                                                             min_samples = min_samples,
+                                                             min_cells = min_cells,
                                                              bparam = param,
                                                              verbose = verbose
                              )
                              # data.frame with consistency outcome
-                             res <- get.Consistency(sc.tmp)
+                             res <- get_consistency(sc_tmp)
                              
                              # accommodate extra data
                              res <- res |>
                                 dplyr::mutate(rate = ns,
                                               rep = NA,
-                                              original.ident = !!ident,
+                                              original_ident = !!ident,
                                               task = "Nct"
                                 )
                              
                              # render plots
                              # save pdf if indicated
-                             if(save.plots){
+                             if(save_plots){
                                 if(verbose){message("\nProducing Plots for ", ns, "\n")}
-                                fp <- file.path(pca.dir, ns)
-                                wrapper_plots(sc.tmp,
-                                              dir.path = fp,
+                                fp <- file.path(pca_dir, ns)
+                                wrapper_plots(sc_tmp,
+                                              dir_path = fp,
                                               reduction = reduction)
                              }
                              
@@ -659,50 +659,50 @@ wr.Nct <- function(count_matrix,
                     })
    
    # concatenate all results
-   df.res <- do.call(rbind, df.res) |>
-      # convert to factor to then compute the fit.constant
+   df_res <- do.call(rbind, df_res) |>
+      # convert to factor to then compute fit_constant
       dplyr::mutate(rate = factor(rate,
                                   levels = names(cts))
       )
    
    if(!is.null(dir)){
-      saveRDS(df.res,
+      saveRDS(df_res,
               file.path(dir,
                         paste0("Nct_", ident, ".rds")))
    }
    
-   return(df.res)
+   return(df_res)
 }
 
 # wrapper to evaluate the number of cells in a cell type
-wr.NCell <- function(count_matrix,
+wr_ncell <- function(count_matrix,
                      metadata,
                      ident,
                      sample,
                      rates = c(1, 0.75, 0.5, 0.25), # proportion of total samples kept
                      ctype = NULL, # which cell type lower the proportion
                      replicates = 3,
-                     gene.list = NULL,
+                     gene_list = NULL,
                      reduction = TRUE,
                      ndim = 30,
-                     black.list = NULL,
+                     black_list = NULL,
                      dir = NULL,
-                     normalization.method = "Log1p",
-                     dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                     normalization_method = "Log1p",
+                     dissimilarity_method = c("WasserStein", "Pseudobulk:Euclidean",
                                               "Pseudobulk:Cosine", "Pseudobulk:Pearson",
-                                              "RecipClassif:Match", "RecipClassif:Score"),
-                     IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                       "ward.PropMatch", "Orbital.medoid",
-                                       "Average.similarity", "2label.silhouette"),
-                     min.samples = 5,
-                     min.cells = 10,
+                                              "recip_classif:Match", "recip_classif:Score"),
+                     int_val_metric = c("silhouette", "NeighborhoodPurity",
+                                       "ward_PropMatch", "Orbital_medoid",
+                                       "Average_similarity", "2label_silhouette"),
+                     min_samples = 5,
+                     min_cells = 10,
                      ncores = 1,
                      bparam = NULL,
                      progressbar = FALSE,
                      seed = 22,
-                     KNNGraph_k = 5,
-                     hclust.method = "ward.D2",
-                     save.plots = TRUE,
+                     knn_graph_k = 5,
+                     hclust_method = "ward.D2",
+                     save_plots = TRUE,
                      verbose = TRUE
 ){
    
@@ -710,9 +710,9 @@ wr.NCell <- function(count_matrix,
       if(verbose){message("\nResults will be stored at ", dir)}
       dir.create(dir, showWarnings = FALSE)
       
-      if(save.plots){
-         pca.dir <- file.path(dir, "Plots_NCell")
-         dir.create(pca.dir, showWarnings = FALSE)
+      if(save_plots){
+         pca_dir <- file.path(dir, "Plots_NCell")
+         dir.create(pca_dir, showWarnings = FALSE)
       }
    }
    
@@ -736,23 +736,23 @@ wr.NCell <- function(count_matrix,
    
    
    # get the gene list, the same for every run
-   if(is.null(gene.list)){
+   if(is.null(gene_list)){
       ## Create sc object
-      sc <- create.scTypeEval(matrix = count_matrix,
+      sc <- create_scTypeEval(matrix = count_matrix,
                               metadata = metadata,
-                              active.ident = ident,
-                              black.list = black.list)
-      sc.gl <- Run.ProcessingData(sc,
+                              active_ident = ident,
+                              black_list = black_list)
+      sc_gl <- run_processing_data(sc,
                                   sample = sample,
-                                  normalization.method = normalization.method,
-                                  min.samples = min.samples,
-                                  min.cells = min.cells,
+                                  normalization_method = normalization_method,
+                                  min_samples = min_samples,
+                                  min_cells = min_cells,
                                   verbose = verbose)
-      sc.gl <- Run.HVG(sc.gl,
+      sc_gl <- run_hvg(sc_gl,
                        ncores = ncores)
-      gl <- sc.gl@gene.lists
+      gl <- sc_gl@gene_lists
    } else {
-      gl <- gene.list
+      gl <- gene_list
    }
    
    param <- set_parallel_params(ncores = ncores,
@@ -761,7 +761,7 @@ wr.NCell <- function(count_matrix,
    
    combi <- expand.grid(names(sds), rates)
    
-   df.res <- lapply(1:nrow(combi),
+   df_res <- lapply(1:nrow(combi),
                     function(i){
                        tryCatch(
                           {
@@ -778,32 +778,32 @@ wr.NCell <- function(count_matrix,
                                                            threshold = th,
                                                            seed = sds[[s]])
                              #create scTypeEval object
-                             sc.tmp <- create.scTypeEval(matrix = count_matrix[,rownames(md)],
+                             sc_tmp <- create_scTypeEval(matrix = count_matrix[,rownames(md)],
                                                          metadata = md,
-                                                         gene.lists = gl,
-                                                         black.list = black.list)
+                                                         gene_lists = gl,
+                                                         black_list = black_list)
                              
-                             sc.tmp <- wrapper_dissimilarity(sc.tmp,
+                             sc_tmp <- wrapper_dissimilarity(sc_tmp,
                                                              ident = ident,
                                                              sample = sample,
-                                                             gene.list = gl,
+                                                             gene_list = gl,
                                                              reduction = reduction,
                                                              ndim = ndim,
-                                                             normalization.method = normalization.method,
-                                                             dissimilarity.method = dissimilarity.method,
-                                                             min.samples = min.samples,
-                                                             min.cells = min.cells,
+                                                             normalization_method = normalization_method,
+                                                             dissimilarity_method = dissimilarity_method,
+                                                             min_samples = min_samples,
+                                                             min_cells = min_cells,
                                                              bparam = param,
                                                              verbose = verbose
                              )
                              # data.frame with consistency outcome
-                             res <- get.Consistency(sc.tmp)
+                             res <- get_consistency(sc_tmp)
                              
                              # accommodate extra data
                              res <- res |>
                                 dplyr::mutate(rate = as.numeric(as.character(ns)),
                                               rep = s,
-                                              original.ident = !!ident,
+                                              original_ident = !!ident,
                                               task = "NCell"
                                 )
                              
@@ -812,11 +812,11 @@ wr.NCell <- function(count_matrix,
                              if(s == 1){
                                 # save pdf if indicated
                                 # save pdf if indicated
-                                if(save.plots){
+                                if(save_plots){
                                    if(verbose){message("\nProducing Plots for ", ns, "\n")}
-                                   fp <- file.path(pca.dir, ns)
-                                   wrapper_plots(sc.tmp,
-                                                 dir.path = fp,
+                                   fp <- file.path(pca_dir, ns)
+                                   wrapper_plots(sc_tmp,
+                                                 dir_path = fp,
                                                  reduction = reduction)
                                 }
                              }
@@ -829,91 +829,91 @@ wr.NCell <- function(count_matrix,
                     })
    
    # concatenate all results
-   df.res <- do.call(rbind, df.res)
+   df_res <- do.call(rbind, df_res)
    ctype_name <- purge_label(ctype)
    
    if(!is.null(dir)){
-      saveRDS(df.res,
+      saveRDS(df_res,
               file.path(dir,
                         paste0("NCell_", ctype_name, "_", ident, ".rds")))
    }
    
    
-   return(df.res)
+   return(df_res)
    
 }
 
 
 
 # wrapper to hirarchally merge cell types
-wr.mergeCT <- function(count_matrix,
+wr_merge_ct <- function(count_matrix,
                        metadata,
                        ident,
                        sample,
-                       distance.method = "euclidean",
-                       gene.list = NULL,
+                       distance_method = "euclidean",
+                       gene_list = NULL,
                        reduction = TRUE,
                        ndim = 30,
-                       black.list = NULL,
+                       black_list = NULL,
                        dir = NULL,
-                       normalization.method = "Log1p",
-                       dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                       normalization_method = "Log1p",
+                       dissimilarity_method = c("WasserStein", "Pseudobulk:Euclidean",
                                                 "Pseudobulk:Cosine", "Pseudobulk:Pearson",
-                                                "RecipClassif:Match", "RecipClassif:Score"),
-                       IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                         "ward.PropMatch", "Orbital.medoid",
-                                         "Average.similarity", "2label.silhouette"),
-                       min.samples = 5,
-                       min.cells = 10,
+                                                "recip_classif:Match", "recip_classif:Score"),
+                       int_val_metric = c("silhouette", "NeighborhoodPurity",
+                                         "ward_PropMatch", "Orbital_medoid",
+                                         "Average_similarity", "2label_silhouette"),
+                       min_samples = 5,
+                       min_cells = 10,
                        ncores = 1,
                        bparam = NULL,
                        progressbar = FALSE,
-                       KNNGraph_k = 5,
-                       hclust.method = "ward.D2",
-                       save.plots = TRUE,
+                       knn_graph_k = 5,
+                       hclust_method = "ward.D2",
+                       save_plots = TRUE,
                        verbose = TRUE){
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
       dir.create(dir, showWarnings = FALSE)
       
-      if(save.plots){
-         pca.dir <- file.path(dir, "Plots_mergeCT")
-         dir.create(pca.dir, showWarnings = FALSE)
+      if(save_plots){
+         pca_dir <- file.path(dir, "Plots_mergeCT")
+         dir.create(pca_dir, showWarnings = FALSE)
       }
    }
    
    ## Create sc object
-   sc <- create.scTypeEval(matrix = count_matrix,
+   sc <- create_scTypeEval(matrix = count_matrix,
                            metadata = metadata,
-                           active.ident = ident,
-                           black.list = black.list)
+                           active_ident = ident,
+                           black_list = black_list)
    
-   sc <- Run.ProcessingData(sc,
+   sc <- run_processing_data(sc,
                             sample = sample,
-                            normalization.method = normalization.method,
-                            min.samples = min.samples,
-                            min.cells = min.cells,
+                            normalization_method = normalization_method,
+                            min_samples = min_samples,
+                            min_cells = min_cells,
                             verbose = verbose)
-   if(is.null(gene.list)){
+   if(is.null(gene_list)){
       
-      sc <- Run.HVG(sc,
+      sc <- run_hvg(sc,
                     ncores = ncores)
-      gl <- sc@gene.lists
+      gl <- sc@gene_lists
    } else {
-      gl <- gene.list
+      gl <- gene_list
    }
    
-   gene.list <- .check_genelist(sc, gene.list, verbose = verbose)
-   black.list <- .check_blacklist(sc, black.list, verbose = verbose)
-   mat_ident <- .general_filtering(sc@data[["single-cell"]],
-                                   black.list = black.list,
-                                   gene.list = gene.list,
+   gene_list <- check_genelist(sc, gene_list, verbose = verbose)
+   black_list <- check_blacklist(sc, black_list, verbose = verbose)
+   mat_ident <- general_filtering(sc@data[["single-cell"]],
+                                   black_list = black_list,
+                                   gene_list = gene_list,
                                    verbose = verbose)
    mat <- mat_ident@matrix
    
    idents <- as.character(mat_ident@ident)
-   # keep only celltypes fulfulling min.samples and min.cells conditions
+   # keep only celltypes fulfulling min_samples and min_cells conditions
    metadata <- metadata[colnames(mat),]
    
    original_vector <- factor(purge_label(metadata[[ident]]))
@@ -923,10 +923,10 @@ wr.mergeCT <- function(count_matrix,
    annotations <- new_name
    
    while(length(unique(idents))>2){
-      centroids <- compute_centroids(norm.mat = mat,
+      centroids <- compute_centroids(norm_mat = mat,
                                      ident = idents)
-      dist <- get.distance(norm.mat = centroids,
-                           distance.method = distance.method,
+      dist <- get_distance(norm_mat = centroids,
+                           distance_method = distance_method,
                            verbose = FALSE)
       dist_mat <- as.matrix(dist)
       diag(dist_mat) <- Inf  # Ignore self-distance
@@ -945,51 +945,51 @@ wr.mergeCT <- function(count_matrix,
    }
    
    ## ReCreate sc object
-   sc <- create.scTypeEval(matrix = count_matrix[,rownames(metadata)],
+   sc <- create_scTypeEval(matrix = count_matrix[,rownames(metadata)],
                            metadata = metadata,
-                           gene.lists = gl,
-                           black.list = black.list)
+                           gene_lists = gl,
+                           black_list = black_list)
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
                                 progressbar = progressbar)
    
-   df.res <- lapply(annotations,
+   df_res <- lapply(annotations,
                     function(ann){
                        tryCatch(
                           {
-                             sc.tmp <- wrapper_dissimilarity(sc,
+                             sc_tmp <- wrapper_dissimilarity(sc,
                                                              ident = ann,
                                                              sample = sample,
-                                                             gene.list = gl,
+                                                             gene_list = gl,
                                                              reduction = reduction,
                                                              ndim = ndim,
-                                                             normalization.method = normalization.method,
-                                                             dissimilarity.method = dissimilarity.method,
-                                                             min.samples = min.samples,
-                                                             min.cells = min.cells,
+                                                             normalization_method = normalization_method,
+                                                             dissimilarity_method = dissimilarity_method,
+                                                             min_samples = min_samples,
+                                                             min_cells = min_cells,
                                                              bparam = param,
                                                              verbose = verbose
                              )
                              # data.frame with consistency outcome
-                             res <- get.Consistency(sc.tmp)
+                             res <- get_consistency(sc_tmp)
                              
                              # accommodate extra data
                              res <- res |>
                                 dplyr::mutate(
                                    rate = as.numeric(as.character(strsplit(ann, "_")[[1]][2])),
                                    rep = NA,
-                                   original.ident = !!ident,
+                                   original_ident = !!ident,
                                    task = "mergeCT"
                                 )
                              
                              # render PCAs
                              # save pdf if indicated
-                             if(save.plots){
+                             if(save_plots){
                                 if(verbose){message("\nProducing Plots for ", ann, "\n")}
-                                fp <- file.path(pca.dir, ann)
-                                wrapper_plots(sc.tmp,
-                                              dir.path = fp,
+                                fp <- file.path(pca_dir, ann)
+                                wrapper_plots(sc_tmp,
+                                              dir_path = fp,
                                               reduction = reduction)
                                 
                              }
@@ -1002,56 +1002,56 @@ wr.mergeCT <- function(count_matrix,
                     })
    
    # concatenate all results
-   df.res <- do.call(rbind, df.res)
+   df_res <- do.call(rbind, df_res)
    
    if(!is.null(dir)){
-      saveRDS(df.res,
+      saveRDS(df_res,
               file.path(dir,
                         paste0("mergeCT_", ident, ".rds")))
    }
    
-   return(df.res)
+   return(df_res)
    
 }
 
 # wrapper to split a cell type into 2 different, but highly similar transcriptomically
-wr.splitCellType <- function(count_matrix,
+wr_split_cell_type <- function(count_matrix,
                              metadata,
                              ident,
                              sample,
                              rates = c(1, 0.5),
                              ctype = NULL, # which cell type to split
                              replicates = 3,
-                             gene.list = NULL,
+                             gene_list = NULL,
                              reduction = TRUE,
                              ndim = 30,
-                             black.list = NULL,
+                             black_list = NULL,
                              dir = NULL,
-                             normalization.method = "Log1p",
-                             dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                             normalization_method = "Log1p",
+                             dissimilarity_method = c("WasserStein", "Pseudobulk:Euclidean",
                                                       "Pseudobulk:Cosine", "Pseudobulk:Pearson",
-                                                      "RecipClassif:Match", "RecipClassif:Score"),
-                             IntVal.metric = c("silhouette", "NeighborhoodPurity",
-                                               "ward.PropMatch", "Orbital.medoid",
-                                               "Average.similarity", "2label.silhouette"),
-                             min.samples = 5,
-                             min.cells = 10,
+                                                      "recip_classif:Match", "recip_classif:Score"),
+                             int_val_metric = c("silhouette", "NeighborhoodPurity",
+                                               "ward_PropMatch", "Orbital_medoid",
+                                               "Average_similarity", "2label_silhouette"),
+                             min_samples = 5,
+                             min_cells = 10,
                              ncores = 1,
                              bparam = NULL,
                              progressbar = FALSE,
                              seed = 22,
-                             KNNGraph_k = 5,
-                             hclust.method = "ward.D2",
-                             save.plots = TRUE,
+                             knn_graph_k = 5,
+                             hclust_method = "ward.D2",
+                             save_plots = TRUE,
                              verbose = TRUE){
    
    if(!is.null(dir)){
       if(verbose){message("\nResults will be stored at ", dir)}
       dir.create(dir, showWarnings = FALSE)
       
-      if(save.plots){
-         pca.dir <- file.path(dir, "Plots_SplitCellType")
-         dir.create(pca.dir, showWarnings = FALSE)
+      if(save_plots){
+         pca_dir <- file.path(dir, "Plots_SplitCellType")
+         dir.create(pca_dir, showWarnings = FALSE)
       }
    }
    
@@ -1075,7 +1075,7 @@ wr.splitCellType <- function(count_matrix,
    for(s in names(sds)){
       for(r in rates){
          ra <- 1-r # proportion of cells to shuffle
-         new_vector <- rand.Split_group(vector = original_vector,
+         new_vector <- rand_split_group(vector = original_vector,
                                         group = metadata[[sample]],
                                         rate = ra,
                                         seed = sds[[s]],
@@ -1088,23 +1088,23 @@ wr.splitCellType <- function(count_matrix,
    }
    
    ## Create sc object
-   sc <- create.scTypeEval(matrix = count_matrix,
+   sc <- create_scTypeEval(matrix = count_matrix,
                            metadata = metadata,
-                           active.ident = ident,
-                           black.list = black.list)
+                           active_ident = ident,
+                           black_list = black_list)
    # get the gene list, the same for every run
-   if(is.null(gene.list)){
-      sc.gl <- Run.ProcessingData(sc,
+   if(is.null(gene_list)){
+      sc_gl <- run_processing_data(sc,
                                   sample = sample,
-                                  normalization.method = normalization.method,
-                                  min.samples = min.samples,
-                                  min.cells = min.cells,
+                                  normalization_method = normalization_method,
+                                  min_samples = min_samples,
+                                  min_cells = min_cells,
                                   verbose = verbose)
-      sc.gl <- Run.HVG(sc.gl,
+      sc_gl <- run_hvg(sc_gl,
                        ncores = ncores)
-      gl <- sc.gl@gene.lists
+      gl <- sc_gl@gene_lists
    } else {
-      gl <- gene.list
+      gl <- gene_list
    }
    
    param <- set_parallel_params(ncores = ncores,
@@ -1112,31 +1112,31 @@ wr.splitCellType <- function(count_matrix,
                                 progressbar = progressbar)
    
    if(verbose){message("Running loop of annotations ")}
-   df.res <- lapply(annotations,
+   df_res <- lapply(annotations,
                     function(ann){
                        tryCatch(
                           {
-                             sc.tmp <- wrapper_dissimilarity(sc,
+                             sc_tmp <- wrapper_dissimilarity(sc,
                                                              ident = ann,
                                                              sample = sample,
-                                                             gene.list = gl,
+                                                             gene_list = gl,
                                                              reduction = reduction,
                                                              ndim = ndim,
-                                                             normalization.method = normalization.method,
-                                                             dissimilarity.method = dissimilarity.method,
-                                                             min.samples = min.samples,
-                                                             min.cells = min.cells,
+                                                             normalization_method = normalization_method,
+                                                             dissimilarity_method = dissimilarity_method,
+                                                             min_samples = min_samples,
+                                                             min_cells = min_cells,
                                                              bparam = param,
                                                              verbose = verbose
                              )
                              # data.frame with consistency outcome
-                             res <- get.Consistency(sc.tmp)
+                             res <- get_consistency(sc_tmp)
                              
                              # accommodate extra data
                              res <- res |>
                                 dplyr::mutate(rate = as.numeric(as.character(strsplit(ann, "_")[[1]][3])),
                                               rep = strsplit(ann, "_")[[1]][2],
-                                              original.ident = !!ident,
+                                              original_ident = !!ident,
                                               task = "SplitCelltype"
                                 )
                              
@@ -1144,11 +1144,11 @@ wr.splitCellType <- function(count_matrix,
                              # only produce for one replicate of the seeds
                              if(stringr::str_split(ann, "_")[[1]][2] == 1){
                                 # save pdf if indicated
-                                if(save.plots){
+                                if(save_plots){
                                    if(verbose){message("\nProducing Plots for ", ann, "\n")}
-                                   fp <- file.path(pca.dir, ann)
-                                   wrapper_plots(sc.tmp,
-                                                 dir.path = fp,
+                                   fp <- file.path(pca_dir, ann)
+                                   wrapper_plots(sc_tmp,
+                                                 dir_path = fp,
                                                  reduction = reduction)
                                 }
                              }
@@ -1163,23 +1163,23 @@ wr.splitCellType <- function(count_matrix,
                     })
    
    # concatenate all results
-   df.res <- do.call(rbind, df.res)
+   df_res <- do.call(rbind, df_res)
    ctype_name <- purge_label(ctype)
    
    if(!is.null(dir)){
-      saveRDS(df.res,
+      saveRDS(df_res,
               file.path(dir,
                         paste0("SplitCelltype_", ctype_name, "_", ident, ".rds")))
    }
    
-   return(df.res)
+   return(df_res)
 }
 
 
-wr.assayPlot <- function(df,
+wr_assay_plot <- function(df,
                          type = c("Monotonic", "ReferenceLine", "Constant", "drop"),
                          group = c("celltype", "ident"),
-                         return.df = FALSE,
+                         return_df = FALSE,
                          verbose = TRUE,
                          xlabel = "rate",
                          title = "",
@@ -1189,15 +1189,15 @@ wr.assayPlot <- function(df,
    
    if(group == "celltype"){
       rsq <- df |> 
-         dplyr::group_by(dissimilarity_method, consistency.metric, celltype, rate) |>
+         dplyr::group_by(dissimilarity_method, consistency_metric, celltype, rate) |>
          dplyr::summarize(measure = mean(measure)) |>
-         dplyr::group_by(dissimilarity_method, consistency.metric, celltype) |>
+         dplyr::group_by(dissimilarity_method, consistency_metric, celltype) |>
          dplyr::arrange(rate, .by_group = TRUE)
    } else if (group == "ident"){
       rsq <- df |> 
-         dplyr::group_by(dissimilarity_method, consistency.metric, rate) |>
+         dplyr::group_by(dissimilarity_method, consistency_metric, rate) |>
          dplyr::summarize(measure = mean(measure)) |>
-         dplyr::group_by(dissimilarity_method, consistency.metric) |>
+         dplyr::group_by(dissimilarity_method, consistency_metric) |>
          dplyr::arrange(rate, .by_group = TRUE)
    } else {
       stop("Not supported grouping, it has to be either celltype or ident")
@@ -1212,43 +1212,43 @@ wr.assayPlot <- function(df,
           "monotonic" = {
              rsq <- rsq |>
                 dplyr::summarize(score_celltype = round(monotonicity_score(measure), 2))
-             type.verb <- "Monotonic, expecting increasing score with rate.\n"
+             type_verb <- "Monotonic, expecting increasing score with rate.\n"
           },
           "referenceline" = {      
              rsq <- rsq <- rsq |>
-                dplyr::summarize(score_celltype = round(fit.ReferenceLine(x = rate, y = measure)$r.squared, 2),
-                                 pval = round(fit.ReferenceLine(x = rate, y = measure)$p.value, 2),
-                                 p.val_fill = ifelse(pval < 0.05, "sig", "ns")
+                dplyr::summarize(score_celltype = round(fit_reference_line(x = rate, y = measure)$r_squared, 2),
+                                 pval = round(fit_reference_line(x = rate, y = measure)$p_value, 2),
+                                 p_val_fill = ifelse(pval < 0.05, "sig", "ns")
                 )
-             type.verb <- "fit.ReferenceLine, expecting a perfect curve of intercept = 0 and slope = 1\n"},
+             type_verb <- "fit_reference_line, expecting a perfect curve of intercept = 0 and slope = 1\n"},
           "constant" = {
              rsq <- rsq <- rsq |>
-                dplyr::summarize(score_celltype = round(fit.Constant(x = as.numeric(rate), y = measure)$`1-rss`, 2),
-                                 pval = round(fit.Constant(x = as.numeric(rate), y = measure)$p.value, 2),
-                                 p.val_fill = ifelse(pval < 0.05, "sig", "ns")
+                dplyr::summarize(score_celltype = round(fit_constant(x = as.numeric(rate), y = measure)$one_minus_rss, 2),
+                                 pval = round(fit_constant(x = as.numeric(rate), y = measure)$p_value, 2),
+                                 p_val_fill = ifelse(pval < 0.05, "sig", "ns")
                 )
-             type.verb <- "fit.Constant, expecting a flat curve with slope = 0\n"},
+             type_verb <- "fit_constant, expecting a flat curve with slope = 0\n"},
           "drop" = {
              rsq <- rsq <- rsq |>
                 dplyr::summarize(score_celltype = round(consistency_drop(x = measure, y = rate), 2))
-             type.verb <- "fit Consistency drop, expecting a drop in consistency in smaller rates.\n"
+             type_verb <- "fit Consistency drop, expecting a drop in consistency in smaller rates.\n"
           },
           stop(type, " is not a supported scoring metric.")
    )
    
    rsq <- 
       rsq |>
-      dplyr::group_by(dissimilarity_method, consistency.metric) |>
+      dplyr::group_by(dissimilarity_method, consistency_metric) |>
       dplyr::mutate(score_mean = round(mean(score_celltype, na.rm = TRUE), 2))
    
    
-   if(verbose){message("\nEvaluating metric using ", type.verb)}
+   if(verbose){message("\nEvaluating metric using ", type_verb)}
    
-   if(!return.df){
+   if(!return_df){
       dts <- unique(df[["dissimilarity_method"]])
       pls <- list()
       
-      range.x <- c(min(as.numeric(df[["rate"]])),
+      range_x <- c(min(as.numeric(df[["rate"]])),
                    max(as.numeric(df[["rate"]]))
       )
       
@@ -1258,7 +1258,7 @@ wr.assayPlot <- function(df,
          rsqtmp <- rsq |>
             dplyr::filter(dissimilarity_method == d)
          
-         ncol <- length(unique(dftmp[["consistency.metric"]]))
+         ncol <- length(unique(dftmp[["consistency_metric"]]))
          
          plc <- dftmp |>
             ggplot2::ggplot(ggplot2::aes(rate, measure)) +
@@ -1267,20 +1267,20 @@ wr.assayPlot <- function(df,
                                 alpha = 0.4) +
             ggplot2::geom_line(ggplot2::aes(color = celltype),
                                alpha = 0.4) +
-            ggplot2::stat_summary(ggplot2::aes(group = consistency.metric),
+            ggplot2::stat_summary(ggplot2::aes(group = consistency_metric),
                                   geom = "line",
                                   fun = function(y){mean(y, na.rm = TRUE)}) +
-            ggplot2::stat_summary(ggplot2::aes(group = consistency.metric),
+            ggplot2::stat_summary(ggplot2::aes(group = consistency_metric),
                                   geom = "point",
                                   fun = function(y){mean(y, na.rm = TRUE)}) +
             ggplot2::geom_label(data = rsqtmp,
-                                ggplot2::aes(x = mean(range.x), y = 1.2,
+                                ggplot2::aes(x = mean(range_x), y = 1.2,
                                              label = as.character(score_mean)),
                                 alpha = 0.4,
-                                show.legend = FALSE) +
+                                show_legend = FALSE) +
             ggplot2::geom_hline(yintercept = 1,
                                 linetype = "dotted") +
-            ggplot2::facet_wrap(~consistency.metric,
+            ggplot2::facet_wrap(~consistency_metric,
                                 ncol =  ncol,
                                 drop = FALSE) +
             ggplot2::labs(x = xlabel,

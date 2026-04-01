@@ -3,31 +3,31 @@
 # This file tests functions that support parallel processing through
 # ncores and bparam parameters
 
-# Tests for Run.HVG parallelization ----------------------------------------
+# Tests for run_hvg parallelization ----------------------------------------
 
-test_that("Run.HVG works with ncores = 1", {
+test_that("run_hvg works with ncores = 1", {
   sceval <- create_test_scTypeEval()
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
     verbose = FALSE
   )
   
-  result <- Run.HVG(
+  result <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ncores = 1,
     verbose = FALSE
   )
   
   expect_s4_class(result, "scTypeEval")
-  expect_true(length(result@gene.lists) > 0)
+  expect_true(length(result@gene_lists) > 0)
 })
 
-test_that("Run.HVG basic respects ncores parameter", {
+test_that("run_hvg basic respects ncores parameter", {
   sceval <- create_test_scTypeEval()
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
@@ -35,29 +35,29 @@ test_that("Run.HVG basic respects ncores parameter", {
   )
   
   # Test with ncores = 1
-  result_serial <- Run.HVG(
+  result_serial <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ncores = 1,
     verbose = FALSE
   )
   
   # Test with ncores = 2 (if available)
-  result_parallel <- Run.HVG(
+  result_parallel <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ncores = 2,
     verbose = FALSE
   )
   
   # Results should have same gene lists
-  expect_equal(length(result_serial@gene.lists), length(result_parallel@gene.lists))
+  expect_equal(length(result_serial@gene_lists), length(result_parallel@gene_lists))
 })
 
-test_that("Run.HVG scran respects ncores parameter", {
+test_that("run_hvg scran respects ncores parameter", {
   skip_if_not_installed("bluster")
   sceval <- create_test_scTypeEval()
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
@@ -65,30 +65,30 @@ test_that("Run.HVG scran respects ncores parameter", {
   )
   
   # Test with ncores = 1
-  result_serial <- Run.HVG(
+  result_serial <- run_hvg(
     sceval,
-    var.method = "scran",
+    var_method = "scran",
     ncores = 1,
     verbose = FALSE
   )
   
   # Test with ncores = 2 (if available)
-  result_parallel <- Run.HVG(
+  result_parallel <- run_hvg(
     sceval,
-    var.method = "scran",
+    var_method = "scran",
     ncores = 2,
     verbose = FALSE
   )
   
   # Results should have same gene lists
-  expect_equal(length(result_serial@gene.lists), length(result_parallel@gene.lists))
+  expect_equal(length(result_serial@gene_lists), length(result_parallel@gene_lists))
 })
 
-test_that("Run.HVG works with bparam parameter", {
+test_that("run_hvg works with bparam parameter", {
   skip_if_not_installed("BiocParallel")
   
   sceval <- create_test_scTypeEval()
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
@@ -98,20 +98,20 @@ test_that("Run.HVG works with bparam parameter", {
   # Create a serial param
   bparam <- BiocParallel::SerialParam()
   
-  result <- Run.HVG(
+  result <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     bparam = bparam,
     verbose = FALSE
   )
   
   expect_s4_class(result, "scTypeEval")
-  expect_true(length(result@gene.lists) > 0)
+  expect_true(length(result@gene_lists) > 0)
 })
 
-test_that("Run.HVG progressbar parameter doesn't break execution", {
+test_that("run_hvg progressbar parameter doesn't break execution", {
   sceval <- create_test_scTypeEval()
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
@@ -119,9 +119,9 @@ test_that("Run.HVG progressbar parameter doesn't break execution", {
   )
   
   # Should not error with progressbar = TRUE
-  result <- Run.HVG(
+  result <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ncores = 1,
     progressbar = TRUE,
     verbose = FALSE
@@ -130,14 +130,14 @@ test_that("Run.HVG progressbar parameter doesn't break execution", {
   expect_s4_class(result, "scTypeEval")
 })
 
-# Tests for Run.Dissimilarity parallelization (parallelized methods only) --
+# Tests for run_dissimilarity parallelization (parallelized methods only) --
 
 # Tests for Wasserstein dissimilarity parallelization ----------------------
 
-test_that("Run.Dissimilarity WasserStein works with ncores = 1", {
+test_that("run_dissimilarity WasserStein works with ncores = 1", {
   sceval <- create_processed_scTypeEval()
   
-  result <- Run.Dissimilarity(
+  result <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     ncores = 1,
@@ -149,11 +149,11 @@ test_that("Run.Dissimilarity WasserStein works with ncores = 1", {
   expect_true("WasserStein" %in% names(result@dissimilarity))
 })
 
-test_that("Run.Dissimilarity WasserStein respects ncores parameter", {
+test_that("run_dissimilarity WasserStein respects ncores parameter", {
   sceval <- create_processed_scTypeEval()
   
   # Test with ncores = 1
-  result_serial <- Run.Dissimilarity(
+  result_serial <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     ncores = 1,
@@ -162,7 +162,7 @@ test_that("Run.Dissimilarity WasserStein respects ncores parameter", {
   )
   
   # Test with ncores = 2
-  result_parallel <- Run.Dissimilarity(
+  result_parallel <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     ncores = 2,
@@ -183,7 +183,7 @@ test_that("Run.Dissimilarity WasserStein respects ncores parameter", {
   )
 })
 
-test_that("Run.Dissimilarity WasserStein works with bparam parameter", {
+test_that("run_dissimilarity WasserStein works with bparam parameter", {
   skip_if_not_installed("BiocParallel")
   
   sceval <- create_processed_scTypeEval()
@@ -191,7 +191,7 @@ test_that("Run.Dissimilarity WasserStein works with bparam parameter", {
   # Create a serial param
   bparam <- BiocParallel::SerialParam()
   
-  result <- Run.Dissimilarity(
+  result <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     bparam = bparam,
@@ -203,10 +203,10 @@ test_that("Run.Dissimilarity WasserStein works with bparam parameter", {
   expect_true("WasserStein" %in% names(result@dissimilarity))
 })
 
-test_that("Run.Dissimilarity WasserStein progressbar parameter works", {
+test_that("run_dissimilarity WasserStein progressbar parameter works", {
   sceval <- create_processed_scTypeEval()
   
-  result <- Run.Dissimilarity(
+  result <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     ncores = 1,
@@ -223,7 +223,7 @@ test_that("Sequential and parallel WasserStein results are consistent", {
   sceval <- create_processed_scTypeEval()
   
   # Get sequential result
-  result_seq <- Run.Dissimilarity(
+  result_seq <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     ncores = 1,
@@ -232,7 +232,7 @@ test_that("Sequential and parallel WasserStein results are consistent", {
   )
   
   # Get parallel result
-  result_par <- Run.Dissimilarity(
+  result_par <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     ncores = 2,
@@ -251,10 +251,10 @@ test_that("Sequential and parallel WasserStein results are consistent", {
   )
 })
 
-test_that("Run.Dissimilarity WasserStein works with multiple cores in large dataset", {
+test_that("run_dissimilarity WasserStein works with multiple cores in large dataset", {
   sceval <- create_processed_scTypeEval(small = FALSE)
   
-  result <- Run.Dissimilarity(
+  result <- run_dissimilarity(
     sceval,
     method = "WasserStein",
     ncores = 2,
@@ -266,45 +266,45 @@ test_that("Run.Dissimilarity WasserStein works with multiple cores in large data
   expect_true("WasserStein" %in% names(result@dissimilarity))
 })
 
-# Tests for Run.GeneMarkers parallelization --------------------------------
+# Tests for run_gene_markers parallelization --------------------------------
 
-test_that("Run.GeneMarkers works with ncores = 1", {
+test_that("run_gene_markers works with ncores = 1", {
   sceval <- create_processed_scTypeEval()
   
-  result <- Run.GeneMarkers(
+  result <- run_gene_markers(
     sceval,
     ncores = 1,
     verbose = FALSE
   )
   
   expect_s4_class(result, "scTypeEval")
-  expect_true(length(result@gene.lists) > 0)
+  expect_true(length(result@gene_lists) > 0)
 })
 
-test_that("Run.GeneMarkers respects ncores parameter", {
+test_that("run_gene_markers respects ncores parameter", {
   sceval <- create_processed_scTypeEval()
   
   # Test with ncores = 1
-  result_serial <- Run.GeneMarkers(
+  result_serial <- run_gene_markers(
     sceval,
     ncores = 1,
     verbose = FALSE
   )
   
   # Test with ncores = 2
-  result_parallel <- Run.GeneMarkers(
+  result_parallel <- run_gene_markers(
     sceval,
     ncores = 2,
     verbose = FALSE
   )
   
   # Both should have gene markers
-  expect_true(length(result_serial@gene.lists) > 0)
-  expect_true(length(result_parallel@gene.lists) > 0)
-  expect_equal(result_serial@gene.lists, result_parallel@gene.lists)
+  expect_true(length(result_serial@gene_lists) > 0)
+  expect_true(length(result_parallel@gene_lists) > 0)
+  expect_equal(result_serial@gene_lists, result_parallel@gene_lists)
 })
 
-test_that("Run.GeneMarkers works with bparam parameter", {
+test_that("run_gene_markers works with bparam parameter", {
   skip_if_not_installed("BiocParallel")
   
   sceval <- create_processed_scTypeEval()
@@ -312,63 +312,63 @@ test_that("Run.GeneMarkers works with bparam parameter", {
   # Create a serial param
   bparam <- BiocParallel::SerialParam()
   
-  result <- Run.GeneMarkers(
+  result <- run_gene_markers(
     sceval,
     bparam = bparam,
     verbose = FALSE
   )
   
   expect_s4_class(result, "scTypeEval")
-  expect_true(length(result@gene.lists) > 0)
+  expect_true(length(result@gene_lists) > 0)
 })
 
-# Tests for RecipClassif parallelization -----------------------------------
+# Tests for recip_classif parallelization -----------------------------------
 
-test_that("RecipClassif works with ncores = 1", {
+test_that("recip_classif works with ncores = 1", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
-    method = "RecipClassif:Match",
+    method = "recip_classif:Match",
     ncores = 1,
     reduction = FALSE,
     verbose = FALSE
   )
   
   expect_s4_class(sceval, "scTypeEval")
-  expect_true("RecipClassif:Match" %in% names(sceval@dissimilarity))
+  expect_true("recip_classif:Match" %in% names(sceval@dissimilarity))
 })
 
-test_that("RecipClassif respects ncores parameter", {
+test_that("recip_classif respects ncores parameter", {
   sceval <- create_processed_scTypeEval()
   
   # Test with ncores = 1
-  result_serial <- Run.Dissimilarity(
+  result_serial <- run_dissimilarity(
     sceval,
-    method = "RecipClassif:Match",
+    method = "recip_classif:Match",
     ncores = 1,
     reduction = FALSE,
     verbose = FALSE
   )
   
   # Test with ncores = 2
-  result_parallel <- Run.Dissimilarity(
+  result_parallel <- run_dissimilarity(
     sceval,
-    method = "RecipClassif:Match",
+    method = "recip_classif:Match",
     ncores = 2,
     reduction = FALSE,
     verbose = FALSE
   )
   
   # Both should have identical results
-  expect_true("RecipClassif:Match" %in% names(result_serial@dissimilarity))
-  expect_true("RecipClassif:Match" %in% names(result_parallel@dissimilarity))
+  expect_true("recip_classif:Match" %in% names(result_serial@dissimilarity))
+  expect_true("recip_classif:Match" %in% names(result_parallel@dissimilarity))
   expect_equal(
-    as.matrix(result_serial@dissimilarity[["RecipClassif:Match"]]@dissimilarity),
-    as.matrix(result_parallel@dissimilarity[["RecipClassif:Match"]]@dissimilarity)
+    as.matrix(result_serial@dissimilarity[["recip_classif:Match"]]@dissimilarity),
+    as.matrix(result_parallel@dissimilarity[["recip_classif:Match"]]@dissimilarity)
   )
 })
 
-test_that("RecipClassif works with bparam parameter", {
+test_that("recip_classif works with bparam parameter", {
   skip_if_not_installed("BiocParallel")
   
   sceval <- create_processed_scTypeEval()
@@ -376,23 +376,23 @@ test_that("RecipClassif works with bparam parameter", {
   # Create a serial param
   bparam <- BiocParallel::SerialParam()
   
-  result <- Run.Dissimilarity(
+  result <- run_dissimilarity(
     sceval,
-    method = "RecipClassif:Match",
+    method = "recip_classif:Match",
     bparam = bparam,
     reduction = FALSE,
     verbose = FALSE
   )
   
   expect_s4_class(result, "scTypeEval")
-  expect_true("RecipClassif:Match" %in% names(result@dissimilarity))
+  expect_true("recip_classif:Match" %in% names(result@dissimilarity))
 })
 
 # Integration tests: Sequential vs Parallel consistency -------------------
 
 test_that("Sequential and parallel HVG results are consistent", {
   sceval <- create_test_scTypeEval()
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
@@ -400,41 +400,41 @@ test_that("Sequential and parallel HVG results are consistent", {
   )
   
   # Get sequential result
-  result_seq <- Run.HVG(
+  result_seq <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ncores = 1,
     verbose = FALSE
   )
   
   # Get parallel result (same seed for reproducibility)
-  result_par <- Run.HVG(
+  result_par <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ncores = 2,
     verbose = FALSE
   )
   
   # Should have same number of gene lists
-  expect_equal(result_seq@gene.lists, result_par@gene.lists)
+  expect_equal(result_seq@gene_lists, result_par@gene_lists)
 })
 
 test_that("Sequential and parallel Dissimilarity results are consistent", {
   sceval <- create_processed_scTypeEval()
   
   # Get sequential result
-  result_seq <- Run.Dissimilarity(
+  result_seq <- run_dissimilarity(
     sceval,
-    method = "RecipClassif:Match",
+    method = "recip_classif:Match",
     ncores = 1,
     reduction = FALSE,
     verbose = FALSE
   )
   
   # Get parallel result
-  result_par <- Run.Dissimilarity(
+  result_par <- run_dissimilarity(
     sceval,
-    method = "RecipClassif:Match",
+    method = "recip_classif:Match",
     ncores = 2,
     reduction = FALSE,
     verbose = FALSE
@@ -442,12 +442,12 @@ test_that("Sequential and parallel Dissimilarity results are consistent", {
   
   # Should have identical dist matrices
   expect_equal(
-    attr(result_seq@dissimilarity[["RecipClassif:Match"]]@dissimilarity, "Size"),
-    attr(result_par@dissimilarity[["RecipClassif:Match"]]@dissimilarity, "Size")
+    attr(result_seq@dissimilarity[["recip_classif:Match"]]@dissimilarity, "Size"),
+    attr(result_par@dissimilarity[["recip_classif:Match"]]@dissimilarity, "Size")
   )
   expect_equal(
-    as.matrix(result_seq@dissimilarity[["RecipClassif:Match"]]@dissimilarity),
-    as.matrix(result_par@dissimilarity[["RecipClassif:Match"]]@dissimilarity)
+    as.matrix(result_seq@dissimilarity[["recip_classif:Match"]]@dissimilarity),
+    as.matrix(result_par@dissimilarity[["recip_classif:Match"]]@dissimilarity)
   )
 })
 
@@ -455,17 +455,17 @@ test_that("Sequential and parallel Dissimilarity results are consistent", {
 
 test_that("Parallelization works with single sample", {
   sceval <- create_test_scTypeEval()
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
-    min.samples = 1,  # Allow single sample
+    min_samples = 1,  # Allow single sample
     verbose = FALSE
   )
   
-  result <- Run.HVG(
+  result <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ncores = 2,
     verbose = FALSE
   )
@@ -475,16 +475,16 @@ test_that("Parallelization works with single sample", {
 
 test_that("Progressbar works with parallelization", {
   sceval <- create_test_scTypeEval()
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
     ident = "celltype",
     sample = "sample",
     verbose = FALSE
   )
   
-  result <- Run.HVG(
+  result <- run_hvg(
     sceval,
-    var.method = "basic",
+    var_method = "basic",
     ncores = 2,
     progressbar = TRUE,
     verbose = FALSE

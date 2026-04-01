@@ -1,16 +1,16 @@
 mutual_method <-  c("Score", "Match")
 classifiers <- c("Spearman_correlation", "SingleR")
 
-get.DEG_logfc <- function(mat,
+get_deg_logfc <- function(mat,
                           ident,
-                          ngenes.celltype = NULL,
+                          ngenes_celltype = NULL,
                           min.logfc = 1,
                           pseudo_count = 1e-6) {
    
    clusters <- levels(ident)
    
-   if(is.null(ngenes.celltype)){
-      ngenes.celltype <- floor(500 * (2/3)^log2(length(clusters)))
+   if(is.null(ngenes_celltype)){
+      ngenes_celltype <- floor(500 * (2/3)^log2(length(clusters)))
    }
    
    # Initialize a list to store medians per cluster
@@ -44,14 +44,13 @@ get.DEG_logfc <- function(mat,
          m <- logfc_vec[,x]
          # keep only FC > min.logfc
          m <- m[m > min.logfc]
-         # filter lowly expressed genes
          # cols <- which(ident == x)
          # emat <- mat[, cols, drop = FALSE]
          # kg <- rownames(emat[Matrix::rowSums(emat) >= length(cols), ,drop = FALSE])
          # m <- m[names(m) %in% kg]
          # sort by FC
          m <- sort(m, decreasing = TRUE)
-         nge <- min(ngenes.celltype, length(m))
+         nge <- min(ngenes_celltype, length(m))
          names(m[1:nge])
       }) |>
          unlist() |>
@@ -77,7 +76,7 @@ spear_classify <- function(test_mat,
    ref <- ref[common_genes, , drop = FALSE]
    
    # Step 1: get DEG markers based only on median log2FC
-   markers <- get.DEG_logfc(ref,
+   markers <- get_deg_logfc(ref,
                             ident = ref.ident)
    
    # Step 2: group reference by identity
@@ -125,7 +124,7 @@ spear_classify <- function(test_mat,
 
 
 # code to perform a best-hit classifier based on singleR
-singleR.helper <- function(test,
+singler_helper <- function(test,
                            ref,
                            ref.ident,
                            bparam = BiocParallel::SerialParam()){
@@ -148,8 +147,8 @@ singleR.helper <- function(test,
    return(pred)
 }
 
-score.tidy <- function(predi,
-                       .true){
+score_tidy <- function(predi,
+                       true_map){
    pred <- predi |>
       dplyr::select(dplyr::starts_with("score")) |>  
       tibble::rownames_to_column("true") |>
@@ -157,18 +156,18 @@ score.tidy <- function(predi,
                           names_to = "celltype",
                           values_to = "score") |>
       dplyr::mutate(celltype = gsub("scores[.]", "", celltype),
-                    celltype = names(.true)[match(celltype, .true)]) 
+                    celltype = names(true_map)[match(celltype, true_map)]) 
    
    return(pred)
 }
 
-.score <- function(pred1, true1,
-                   pred2, true2){
-   
-   pred1 <- score.tidy(pred1, true2)
-   pred2 <- score.tidy(pred2, true1)
+score_pairs <- function(pred1, true1,
+                        pred2, true2){
+
+   pred1 <- score_tidy(pred1, true2)
+   pred2 <- score_tidy(pred2, true1)
    names(pred2)[1:2] <- c("celltype", "true")
-   
+
    pred <- dplyr::inner_join(pred1, pred2,
                              by = c("true", "celltype")) |>
       dplyr::mutate(
@@ -176,11 +175,11 @@ score.tidy <- function(predi,
          score = 1 - score0
       ) |>
       dplyr::select(i = true, j = celltype, score)
-   
+
    return(pred)
 }
 
-match.tidy <- function(predi, true1, true2){
+match_tidy <- function(predi, true1, true2){
    # get cell types contained in both samples
    common_celltypes <- intersect(true1, true2)
    
@@ -198,11 +197,11 @@ match.tidy <- function(predi, true1, true2){
 }
 
 
-.match <- function(pred1, pred2,
+match_pairs <- function(pred1, pred2,
                    true1, true2){
    
-   pred1 <- match.tidy(pred1, true1 = true1, true2 = true2)
-   pred2 <- match.tidy(pred2, true1 = true2, true2 = true1)
+   pred1 <- match_tidy(pred1, true1 = true1, true2 = true2)
+   pred2 <- match_tidy(pred2, true1 = true2, true2 = true1)
    names(pred2)[1:2] <- c("label", "true")
    
    pred <- dplyr::inner_join(pred1, pred2, by = c("true", "label")) |>
@@ -216,7 +215,7 @@ match.tidy <- function(predi, true1, true2){
 
 
 
-RecipClassif <- function(mat,
+recip_classif <- function(mat,
                               ident,
                               sample,
                               group,
@@ -241,7 +240,7 @@ RecipClassif <- function(mat,
    # set classifier
    classifier <- switch(classifier,
                         "Spearman_correlation" = spear_classify,
-                        "SingleR" = singleR.helper,
+                        "SingleR" = singler_helper,
                         stop(classifier, " classifier not supported")
    )
    
@@ -278,11 +277,11 @@ RecipClassif <- function(mat,
                                        # Evaluate metrics
                                        meth <- tolower(method)
                                        results <- switch(meth,
-                                                         "score" = .score(pred1 = pred1,
+                                                         "score" = score_pairs(pred1 = pred1,
                                                                           pred2 = pred2,
                                                                           true1 = true1,
                                                                           true2 = true2),
-                                                         "match" = .match(pred1 = pred1,
+                                                         "match" = match_pairs(pred1 = pred1,
                                                                           pred2 = pred2,
                                                                           true1 = true1,
                                                                           true2 = true2),

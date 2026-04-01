@@ -1,60 +1,60 @@
-test_that("set.activeIdent sets active identity", {
+test_that("set_active_ident sets active identity", {
   sceval <- create_test_scTypeEval()
   
-  sceval <- set.activeIdent(sceval, ident = "celltype")
+  sceval <- set_active_ident(sceval, ident = "celltype")
   
-  expect_equal(sceval@active.ident, "celltype")
+  expect_equal(sceval@active_ident, "celltype")
 })
 
 
-test_that("set.activeIdent validates ident exists in metadata", {
+test_that("set_active_ident validates ident exists in metadata", {
   sceval <- create_test_scTypeEval()
   
   expect_error(
-    set.activeIdent(sceval, ident = "nonexistent_column"),
+    set_active_ident(sceval, ident = "nonexistent_column"),
     "provide a ident"
   )
 })
 
 
-test_that("set.activeIdent requires ident parameter", {
+test_that("set_active_ident requires ident parameter", {
   sceval <- create_test_scTypeEval()
   
   expect_error(
-    set.activeIdent(sceval, ident = NULL),
+    set_active_ident(sceval, ident = NULL),
     "Specificy a cell type annotation"
   )
 })
 
 
-test_that("add.GeneList adds a custom gene list", {
+test_that("add_gene_list adds a custom gene list", {
   sceval <- create_test_scTypeEval()
   
   all_genes <- rownames(sceval@counts)
   custom_genes <- all_genes[1:50]
   
-  sceval <- add.GeneList(
+  sceval <- add_gene_list(
     sceval,
-    gene.list = list("custom_markers" = custom_genes)
+    gene_list = list("custom_markers" = custom_genes)
   )
   
-  expect_true("custom_markers" %in% names(sceval@gene.lists))
-  expect_equal(length(sceval@gene.lists$custom_markers), 50)
+  expect_true("custom_markers" %in% names(sceval@gene_lists))
+  expect_equal(length(sceval@gene_lists$custom_markers), 50)
 })
 
 
-test_that("add.GeneList handles multiple gene lists", {
+test_that("add_gene_list handles multiple gene lists", {
   sceval <- create_test_scTypeEval()
   
   all_genes <- rownames(sceval@counts)
   
-  sceval <- add.GeneList(sceval, gene.list = list("list1" = all_genes[1:30]))
-  sceval <- add.GeneList(sceval, gene.list = list("list2" = all_genes[31:60]))
-  expect_true(all(c("list1", "list2") %in% names(sceval@gene.lists)))
+  sceval <- add_gene_list(sceval, gene_list = list("list1" = all_genes[1:30]))
+  sceval <- add_gene_list(sceval, gene_list = list("list2" = all_genes[31:60]))
+  expect_true(all(c("list1", "list2") %in% names(sceval@gene_lists)))
 })
 
 
-test_that("Add.ProcessedData adds single-cell data", {
+test_that("add_processed_data adds single-cell data", {
   sceval <- create_test_scTypeEval()
   test_data <- generate_small_test_data()
   
@@ -63,14 +63,14 @@ test_that("Add.ProcessedData adds single-cell data", {
   test_ident <- test_data$metadata$celltype[1:ncol(test_counts)]
   test_sample <- test_data$metadata$sample[1:ncol(test_counts)]
   
-  # Bug fixed: == changed to != in Add.ProcessedData
+  # Bug fixed: == changed to != in add_processed_data
   # Now correctly-sized data should succeed
-  result <- Add.ProcessedData(
+  result <- add_processed_data(
     sceval,
     data = test_counts,
     aggregation = "single-cell",
     ident = test_ident,
-    ident.name = "celltype",
+    ident_name = "celltype",
     sample = test_sample,
     filter = FALSE,
     verbose = FALSE
@@ -80,7 +80,7 @@ test_that("Add.ProcessedData adds single-cell data", {
 })
 
 
-test_that("Add.ProcessedData adds pseudobulk data", {
+test_that("add_processed_data adds pseudobulk data", {
   # Create pseudobulk aggregated data
   test_data <- generate_small_test_data()
   
@@ -90,9 +90,9 @@ test_that("Add.ProcessedData adds pseudobulk data", {
   pb_sample <- test_data$metadata$sample[1:ncol(pb_data)]
   
   sceval <- create_test_scTypeEval()
-  # Bug fixed: == changed to != in Add.ProcessedData
+  # Bug fixed: == changed to != in add_processed_data
   # Now correctly-sized parameters should succeed
-  result <- Add.ProcessedData(
+  result <- add_processed_data(
     sceval,
     data = pb_data,
     aggregation = "pseudobulk",
@@ -106,14 +106,14 @@ test_that("Add.ProcessedData adds pseudobulk data", {
 })
 
 
-test_that("Add.ProcessedData validates ident length", {
+test_that("add_processed_data validates ident length", {
   sceval <- create_test_scTypeEval()
   test_data <- generate_small_test_data()
   
   wrong_ident <- rep("CellA", 10)
   
   expect_error(
-    Add.ProcessedData(
+    add_processed_data(
       sceval,
       data = test_data$counts,
       aggregation = "single-cell",
@@ -125,14 +125,14 @@ test_that("Add.ProcessedData validates ident length", {
 })
 
 
-test_that("Add.ProcessedData validates sample length", {
+test_that("add_processed_data validates sample length", {
   sceval <- create_test_scTypeEval()
   test_data <- generate_small_test_data()
   
   wrong_sample <- rep("Sample1", 10)
   
   expect_error(
-    Add.ProcessedData(
+    add_processed_data(
       sceval,
       data = test_data$counts,
       aggregation = "single-cell",
@@ -144,21 +144,21 @@ test_that("Add.ProcessedData validates sample length", {
 })
 
 
-test_that("Add.ProcessedData handles filter parameter", {
+test_that("add_processed_data handles filter parameter", {
   sceval <- create_test_scTypeEval()
   test_data <- generate_small_test_data()
   
-  # Bug fixed: == changed to != in Add.ProcessedData
+  # Bug fixed: == changed to != in add_processed_data
   # Now correctly-sized parameters with filter should succeed
-  result <- Add.ProcessedData(
+  result <- add_processed_data(
     sceval,
     data = test_data$counts,
     aggregation = "single-cell",
     ident = test_data$metadata$celltype,
     sample = test_data$metadata$sample,
     filter = TRUE,
-    min.samples = 2,
-    min.cells = 5,
+    min_samples = 2,
+    min_cells = 5,
     verbose = FALSE
   )
   
@@ -166,7 +166,7 @@ test_that("Add.ProcessedData handles filter parameter", {
 })
 
 
-test_that("add.DimReduction adds custom dimensional reduction", {
+test_that("add_dim_reduction adds custom dimensional reduction", {
   sceval <- create_processed_scTypeEval()
   
   # Create mock embeddings
@@ -176,7 +176,7 @@ test_that("add.DimReduction adds custom dimensional reduction", {
   ident <- sceval@data[["single-cell"]]@ident[[1]]
   sample <- sceval@data[["single-cell"]]@sample
   
-  sceval <- add.DimReduction(
+  sceval <- add_dim_reduction(
     sceval,
     embeddings = embeddings,
     aggregation = "single-cell",
@@ -191,7 +191,7 @@ test_that("add.DimReduction adds custom dimensional reduction", {
 })
 
 
-test_that("add.DimReduction validates embeddings dimensions", {
+test_that("add_dim_reduction validates embeddings dimensions", {
   sceval <- create_processed_scTypeEval()
   
   # Create wrong-sized embeddings
@@ -201,7 +201,7 @@ test_that("add.DimReduction validates embeddings dimensions", {
   sample <- sceval@data[["single-cell"]]@sample
   
   expect_error(
-    add.DimReduction(
+    add_dim_reduction(
       sceval,
       embeddings = embeddings,
       aggregation = "single-cell",
@@ -214,7 +214,7 @@ test_that("add.DimReduction validates embeddings dimensions", {
 })
 
 
-test_that("add.DimReduction accepts feature.loadings parameter", {
+test_that("add_dim_reduction accepts feature_loadings parameter", {
   sceval <- create_processed_scTypeEval()
   
   n_cells <- ncol(sceval@data[["single-cell"]]@matrix)
@@ -225,22 +225,22 @@ test_that("add.DimReduction accepts feature.loadings parameter", {
   ident <- sceval@data[["single-cell"]]@ident[[1]]
   sample <- sceval@data[["single-cell"]]@sample
   
-  sceval <- add.DimReduction(
+  sceval <- add_dim_reduction(
     sceval,
     embeddings = embeddings,
     aggregation = "single-cell",
     ident = ident,
     sample = sample,
     key = "custom_pca",
-    feature.loadings = loadings,
+    feature_loadings = loadings,
     verbose = FALSE
   )
   
-  expect_true(nrow(sceval@reductions[["single-cell"]]@feature.loadings) > 0)
+  expect_true(nrow(sceval@reductions[["single-cell"]]@feature_loadings) > 0)
 })
 
 
-test_that("add.DimReduction handles gene.list parameter", {
+test_that("add_dim_reduction handles gene_list parameter", {
   sceval <- create_processed_scTypeEval() # already producing HVG
   
   n_cells <- ncol(sceval@data[["single-cell"]]@matrix)
@@ -249,22 +249,22 @@ test_that("add.DimReduction handles gene.list parameter", {
   ident <- sceval@data[["single-cell"]]@ident[[1]]
   sample <- sceval@data[["single-cell"]]@sample
   
-  sceval <- add.DimReduction(
+  sceval <- add_dim_reduction(
     sceval,
     embeddings = embeddings,
     aggregation = "single-cell",
     ident = ident,
     sample = sample,
     key = "custom",
-    gene.list = "HVG",
+    gene_list = "HVG",
     verbose = FALSE
   )
   
-  expect_equal(sceval@reductions[["single-cell"]]@gene.list, "HVG")
+  expect_equal(sceval@reductions[["single-cell"]]@gene_list, "HVG")
 })
 
 
-test_that("add.DimReduction handles black.list parameter", {
+test_that("add_dim_reduction handles black_list parameter", {
   sceval <- create_processed_scTypeEval()
   
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
@@ -276,18 +276,18 @@ test_that("add.DimReduction handles black.list parameter", {
   ident <- sceval@data[["single-cell"]]@ident[[1]]
   sample <- sceval@data[["single-cell"]]@sample
   
-  sceval <- add.DimReduction(
+  sceval <- add_dim_reduction(
     sceval,
     embeddings = embeddings,
     aggregation = "single-cell",
     ident = ident,
     sample = sample,
     key = "custom",
-    black.list = black_genes,
+    black_list = black_genes,
     verbose = FALSE
   )
   
-  expect_true(length(sceval@reductions[["single-cell"]]@black.list) > 0)
+  expect_true(length(sceval@reductions[["single-cell"]]@black_list) > 0)
 })
 
 
@@ -295,21 +295,21 @@ test_that("utility functions work together", {
   sceval <- create_test_scTypeEval()
   
   # Set active ident
-  sceval <- set.activeIdent(sceval, ident = "celltype")
+  sceval <- set_active_ident(sceval, ident = "celltype")
   
   # Add custom gene list (use correct format: list with named elements)
   all_genes <- rownames(sceval@counts)
-  sceval <- add.GeneList(sceval, gene.list = list("custom" = all_genes[1:50]))
+  sceval <- add_gene_list(sceval, gene_list = list("custom" = all_genes[1:50]))
   
   # Process data using active ident
-  sceval <- Run.ProcessingData(
+  sceval <- run_processing_data(
     sceval,
-    ident = NULL,  # Should use active.ident
+    ident = NULL,  # Should use active_ident
     sample = "sample",
     verbose = FALSE
   )
   
   expect_true("single-cell" %in% names(sceval@data))
-  expect_true("custom" %in% names(sceval@gene.lists))
-  expect_equal(sceval@active.ident, "celltype")
+  expect_true("custom" %in% names(sceval@gene_lists))
+  expect_equal(sceval@active_ident, "celltype")
 })

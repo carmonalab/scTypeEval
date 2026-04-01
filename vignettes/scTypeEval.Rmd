@@ -164,7 +164,7 @@ dim(count_matrix)
 
 ```{r create_object}
 # Create scTypeEval object from matrix and metadata
-sceval <- create.scTypeEval(
+sceval <- create_scTypeEval(
   matrix = count_matrix,
   metadata = metadata
 )
@@ -185,17 +185,17 @@ representations. This step:
 
 ```{r process_data}
 # Process data with filtering criteria
-sceval <- Run.ProcessingData(
+sceval <- run_processing_data(
   scTypeEval = sceval,
   ident = "celltype",          # Column defining cell type identities
   sample = "sample",           # Column defining sample IDs
-  min.samples = 3,             # Minimum samples required per cell type
-  min.cells = 10               # Minimum cells per sample-celltype combination
+  min_samples = 3,             # Minimum samples required per cell type
+  min_cells = 10               # Minimum cells per sample-celltype combination
 )
 
 ```
 
-The processed data is stored as `DataAssay` objects within the `scTypeEval`
+The processed data is stored as `data_assay` objects within the `scTypeEval`
 object, accessible for downstream analysis.
 
 ## Step 3: Extract Relevant Features
@@ -212,15 +212,15 @@ Identify biologically relevant features for evaluating consistency.
 
 ```{r hvg}
 # Identify HVGs using the basic method
-sceval <- Run.HVG(
+sceval <- run_hvg(
   scTypeEval = sceval,
-  var.method = "basic",        # Method for variance modeling
+  var_method = "basic",        # Method for variance modeling
   ngenes = 2000,               # Number of HVGs to retain
   sample = TRUE                # Perform sample-level blocking
 )
 
 # View stored gene lists
-gene_lists <- sceval@gene.lists
+gene_lists <- sceval@gene_lists
 names(gene_lists)
 if ("HVG" %in% names(gene_lists)) {
   length(gene_lists$HVG)
@@ -231,14 +231,14 @@ if ("HVG" %in% names(gene_lists)) {
 
 ```{r markers}
 # Identify marker genes per cell type
-sceval <- Run.GeneMarkers(
+sceval <- run_gene_markers(
   scTypeEval = sceval,
   method = "scran.findMarkers",  # Method for finding markers
-  ngenes.celltype = 50           # Maximum markers per cell type
+  ngenes_celltype = 50           # Maximum markers per cell type
 )
 
 # View marker genes
-gene_lists <- sceval@gene.lists
+gene_lists <- sceval@gene_lists
 if (!is.null(gene_lists$scran.findMarkers)) {
   head(gene_lists$scran.findMarkers, 20)
 }
@@ -246,15 +246,15 @@ if (!is.null(gene_lists$scran.findMarkers)) {
 
 ### Custom Gene Lists (Optional)
 
-You can also add custom gene lists using `add.GeneList()`:
+You can also add custom gene lists using `add_gene_list()`:
 
 ```{r custom_genes, eval=FALSE}
 # Example: Add a custom list of immune response genes
 custom_genes <- c("Gene_1", "Gene_50", "Gene_100", "Gene_150")
 
-sceval <- add.GeneList(
+sceval <- add_gene_list(
   scTypeEval = sceval,
-  gene.list = list("custom_genes" = custom_genes)
+  gene_list = list("custom_genes" = custom_genes)
 )
 ```
 
@@ -266,7 +266,7 @@ significantly speeds up the analysis while yielding similar results.
 
 ```{r pca}
 # Run PCA on processed data
-sceval <- Run.PCA(
+sceval <- run_pca(
   scTypeEval = sceval,
   ndim = 30                    # Number of principal components
 )
@@ -279,7 +279,7 @@ if (length(reductions) > 0) {
 ```
 
 Alternatively, pre-computed embeddings (PCA, UMAP, t-SNE) can be inserted using
-`add.DimReduction()`.
+`add_dim_reduction()`.
 
 ## Step 5: Compute Dissimilarity Matrices
 
@@ -292,14 +292,14 @@ Compute distances between pseudobulk gene expression profiles:
 
 ```{r dissim_pseudobulk}
 # Euclidean distance on pseudobulk profiles
-sceval <- Run.Dissimilarity(
+sceval <- run_dissimilarity(
   sceval,
   method = "Pseudobulk:Euclidean",
   reduction = FALSE              # Use processed expression data
 )
 
 # Cosine distance on PCA embeddings
-sceval <- Run.Dissimilarity(
+sceval <- run_dissimilarity(
   sceval,
   method = "Pseudobulk:Cosine",
   reduction = TRUE               # Use PCA space
@@ -312,7 +312,7 @@ Compute Wasserstein distances between single-cell distributions:
 
 ```{r dissim_wasserstein}
 # Wasserstein distance on PCA embeddings (faster)
-sceval <- Run.Dissimilarity(
+sceval <- run_dissimilarity(
   sceval,
   method = "WasserStein",
   reduction = TRUE
@@ -325,10 +325,10 @@ Match cells across samples using a classifier:
 
 ```{r dissim_reciprocal}
 # Reciprocal classification with SingleR
-sceval <- Run.Dissimilarity(
+sceval <- run_dissimilarity(
   sceval,
-  method = "RecipClassif:Match",
-  ReciprocalClassifier = "SingleR"
+  method = "recip_classif:Match",
+  reciprocal_classifier = "SingleR"
 )
 ```
 
@@ -348,20 +348,20 @@ Evaluate inter-sample consistency for each cell type using internal validation
 metrics. `scTypeEval` supports multiple consistency metrics:
 
 - **silhouette**: Standard cohesion/separation score
-- **2label.silhouette**: Silhouette comparing "own type" vs. all others
+- **2label_silhouette**: Silhouette comparing "own type" vs. all others
 - **NeighborhoodPurity**: Fraction of K-nearest neighbors with same label
-- **ward.PropMatch**: Proportion in dominant Ward cluster
-- **Orbital.medoid**: Fraction closer to own medoid than others
-- **Average.similarity**: Within-type similarity vs. between-type
+- **ward_PropMatch**: Proportion in dominant Ward cluster
+- **Orbital_medoid**: Fraction closer to own medoid than others
+- **Average_similarity**: Within-type similarity vs. between-type
 
 ### Compute Silhouette Scores
 
 ```{r consistency_silhouette}
 # Compute silhouette consistency on Euclidean dissimilarity
-consistency_sil <- get.Consistency(
+consistency_sil <- get_consistency(
   sceval,
-  dissimilarity.slot = "Pseudobulk:Euclidean",
-  Consistency.metric = "silhouette"
+  dissimilarity_slot = "Pseudobulk:Euclidean",
+  consistency_metric = "silhouette"
 )
 
 # View results
@@ -376,10 +376,10 @@ annotations).
 
 ```{r consistency_neighborhood}
 # Compute neighborhood purity on Wasserstein dissimilarity
-consistency_nbhd <- get.Consistency(
+consistency_nbhd <- get_consistency(
   sceval,
-  dissimilarity.slot = "WasserStein",
-  Consistency.metric = "NeighborhoodPurity"
+  dissimilarity_slot = "WasserStein",
+  consistency_metric = "NeighborhoodPurity"
 )
 
 # View results
@@ -390,13 +390,13 @@ print(consistency_nbhd)
 
 ```{r compare_metrics}
 # Compute multiple metrics for comparison
-metrics <- c("silhouette", "NeighborhoodPurity", "Average.similarity")
+metrics <- c("silhouette", "NeighborhoodPurity", "Average_similarity")
 
 consistency_all <- lapply(metrics, function(metric) {
-  get.Consistency(
+  get_consistency(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    Consistency.metric = metric
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = metric
   )
 })
 
@@ -414,11 +414,11 @@ ordered by similarity or consistency scores:
 
 ```{r plot_heatmap, fig.width=8, fig.height=7}
 # Plot dissimilarity heatmap with consistency-based ordering
-plot.Heatmap(
+plot_heatmap(
   sceval,
-  dissimilarity.slot = "Pseudobulk:Euclidean",
-  sort.consistency = "silhouette",      # Order by silhouette scores
-  sort.similarity = NULL                 # Or order by similarity
+  dissimilarity_slot = "Pseudobulk:Euclidean",
+  sort_consistency = "silhouette",      # Order by silhouette scores
+  sort_similarity = NULL                 # Or order by similarity
 )
 ```
 
@@ -438,7 +438,7 @@ similarity:
 methods <- c("Pseudobulk:Euclidean", "Pseudobulk:Cosine", "WasserStein")
 
 for (method in methods) {
-  sceval <- Run.Dissimilarity(
+  sceval <- run_dissimilarity(
     sceval,
     method = method,
     reduction = TRUE
@@ -447,10 +447,10 @@ for (method in methods) {
 
 # Compare consistency across methods
 comparison <- lapply(methods, function(method) {
-  get.Consistency(
+  get_consistency(
     sceval,
-    dissimilarity.slot = method,
-    Consistency.metric = "silhouette"
+    dissimilarity_slot = method,
+    consistency_metric = "silhouette"
   )
 })
 
@@ -466,19 +466,19 @@ SingleCellExperiment:
 ```{r real_data_example, eval=FALSE}
 # From Seurat object
 library(Seurat)
-sceval <- create.scTypeEval(seurat_object)
+sceval <- create_scTypeEval(seurat_object)
 
 # From SingleCellExperiment object
 library(SingleCellExperiment)
-sceval <- create.scTypeEval(sce_object)
+sceval <- create_scTypeEval(sce_object)
 
 # Continue with standard workflow
-sceval <- Run.ProcessingData(
+sceval <- run_processing_data(
   sceval,
   ident = "celltype",
   sample = "orig.ident",
-  min.samples = 5,
-  min.cells = 10
+  min_samples = 5,
+  min_cells = 10
 )
 # ... rest of analysis
 ```
@@ -489,18 +489,18 @@ Focus analysis on specific gene sets (e.g., immune genes, pathways):
 
 ```{r custom_analysis, eval=FALSE}
 # Add pathway-specific genes
-sceval <- add.GeneList(
+sceval <- add_gene_list(
   scTypeEval = sceval,
-  gene.list = list("TCR_signaling" = c("CD3D", "CD3E", "CD3G",
+  gene_list = list("TCR_signaling" = c("CD3D", "CD3E", "CD3G",
                                        "CD247", "LCK", "ZAP70")
                    )
 )
 
 # Run analysis focused on these genes
-sceval <- Run.Dissimilarity(
+sceval <- run_dissimilarity(
   sceval,
   method = "Pseudobulk:Euclidean",
-  gene.list = "TCR_signaling",  # Use specific gene list
+  gene_list = "TCR_signaling",  # Use specific gene list
   reduction = FALSE
 )
 ```

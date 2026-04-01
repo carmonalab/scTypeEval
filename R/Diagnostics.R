@@ -1,13 +1,13 @@
-nn.helper <- function(dist,
+nn_helper <- function(dist,
                       ident,
-                      KNNGraph_k,
+                      knn_graph_k,
                       normalize = FALSE
                       ){
-   # set KNNGraph_k
-   KNNGraph_k <- min(KNNGraph_k, max(table(ident)))
+   # set knn_graph_k
+   knn_graph_k <- min(knn_graph_k, max(table(ident)))
    # produce KNN
-   knn <- compute_KNN(dist,
-                      KNNGraph_k = KNNGraph_k)
+   knn <- compute_knn(dist,
+                      knn_graph_k = knn_graph_k)
    
    # Get unique cell types
    cell_types <- unique(ident)
@@ -25,7 +25,7 @@ nn.helper <- function(dist,
       neighbor_types <- ident[neighbors]
       type_counts <- table(factor(neighbor_types, levels = cell_types))
       
-      score <- type_counts / KNNGraph_k
+      score <- type_counts / knn_graph_k
       # Convert to proportions
       if(normalize){
          score <- minmax_norm(score,

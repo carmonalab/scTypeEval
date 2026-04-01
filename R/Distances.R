@@ -1,11 +1,11 @@
 
 distances <- c("euclidean", "cosine", "pearson")
 
-compute_fast_euclidean <- function(norm.mat) {
+compute_fast_euclidean <- function(norm_mat) {
    # Compute the dot product (squared sums)
-   diag_norm <- Matrix::rowSums(norm.mat^2)  # Diagonal terms (squared magnitudes)
+   diag_norm <- Matrix::rowSums(norm_mat^2)  # Diagonal terms (squared magnitudes)
    # Compute the squared distance matrix
-   dist_squared <- outer(diag_norm, diag_norm, "+") - 2 * Matrix::tcrossprod(norm.mat)
+   dist_squared <- outer(diag_norm, diag_norm, "+") - 2 * Matrix::tcrossprod(norm_mat)
    # Fix numerical precision issues: Negative values close to 0 are set to 0
    dist_squared[dist_squared < 0] <- 0
    # Return the distance matrix
@@ -13,12 +13,12 @@ compute_fast_euclidean <- function(norm.mat) {
    return(d)
 }
 
-compute_fast_euclidean_2obj <- function(A, B) {
+compute_fast_euclidean_2obj <- function(a, b) {
    # Squared L2 norms of rows
-   A_sq <- Matrix::rowSums(A^2)
-   B_sq <- Matrix::rowSums(B^2)
+   a_sq <- Matrix::rowSums(a^2)
+   b_sq <- Matrix::rowSums(b^2)
    # Squared Euclidean distances
-   dist_sq <- outer(A_sq, B_sq, "+") - 2 * Matrix::tcrossprod(A, B)
+   dist_sq <- outer(a_sq, b_sq, "+") - 2 * Matrix::tcrossprod(a, b)
    # Fix numerical issues
    dist_sq[dist_sq < 0] <- 0
    # Return distances
@@ -26,21 +26,21 @@ compute_fast_euclidean_2obj <- function(A, B) {
 }
 
 
-compute_cosine <- function(norm.mat) {
-   dot_product <- Matrix::tcrossprod(norm.mat)
-   magnitude <- sqrt(Matrix::rowSums(norm.mat^2))
+compute_cosine <- function(norm_mat) {
+   dot_product <- Matrix::tcrossprod(norm_mat)
+   magnitude <- sqrt(Matrix::rowSums(norm_mat^2))
    cosine_similarity <- dot_product / outer(magnitude, magnitude)
    as.dist(1 - cosine_similarity)
 }
 
-compute_pearson <- function(norm.mat) {
+compute_pearson <- function(norm_mat) {
    # Compute row means
-   row_means <- Matrix::rowMeans(norm.mat)
+   row_means <- Matrix::rowMeans(norm_mat)
    # Center the matrix (subtract row means)
-   norm.mat_centered <- norm.mat - row_means
-   norm.mat_centered <- Matrix::drop0(norm.mat_centered)  # Keep sparsity
+   norm_mat_centered <- norm_mat - row_means
+   norm_mat_centered <- Matrix::drop0(norm_mat_centered)  # Keep sparsity
    # Compute covariance matrix
-   cov_mat <- Matrix::tcrossprod(norm.mat_centered) / (ncol(norm.mat) - 1)
+   cov_mat <- Matrix::tcrossprod(norm_mat_centered) / (ncol(norm_mat) - 1)
    # Compute standard deviations
    std_dev <- sqrt(Matrix::diag(cov_mat))
    # Normalize to Pearson correlation matrix
@@ -51,25 +51,25 @@ compute_pearson <- function(norm.mat) {
 
 
 # Main function with dispatcher
-get.distance <- function(norm.mat = NULL,
+get_distance <- function(norm_mat = NULL,
                          transpose = TRUE,
-                         distance.method = "euclidean",
+                         distance_method = "euclidean",
                          verbose = TRUE) {
    # Handle transposition
    if (transpose) {
-      norm.mat <- Matrix::t(norm.mat)
+      norm_mat <- Matrix::t(norm_mat)
    }
    
-   distance.method <- tolower(distance.method)
+   distance_method <- tolower(distance_method)
    
-   if(verbose){message("   Running distance for " , distance.method, "... \n")}
+   if(verbose){message("   Running distance for " , distance_method, "... \n")}
    # Dispatcher to call the appropriate function
    dist <- switch(
-      distance.method,
-      "euclidean" = compute_fast_euclidean(norm.mat),
-      "cosine" = compute_cosine(norm.mat),
-      "pearson" = compute_pearson(norm.mat),
-      stop(distance.method, " is not a supported distance method.")
+      distance_method,
+      "euclidean" = compute_fast_euclidean(norm_mat),
+      "cosine" = compute_cosine(norm_mat),
+      "pearson" = compute_pearson(norm_mat),
+      stop(distance_method, " is not a supported distance method.")
    )
    
    return(dist)

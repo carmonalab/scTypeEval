@@ -12,9 +12,9 @@ methods::setClass("scTypeEval",
                      data = "list",
                      dissimilarity = "list",
                      consistency = "list", # actual consistency results assays
-                     gene.lists = "list", # list of either HGV, markers
-                     black.list = "ANY", # list of genes in black list
-                     active.ident = "ANY", # default grouping variable
+                     gene_lists = "list", # list of either HGV, markers
+                     black_list = "ANY", # list of genes in black list
+                     active_ident = "ANY", # default grouping variable
                      reductions = "list", # list of dim reductions
                      version = "character" # package version
                   )
@@ -54,7 +54,7 @@ methods::setMethod("initialize", "scTypeEval", function(.Object, ...) {
    .Object
 })
 
-methods::setClass("DataAssay",
+methods::setClass("data_assay",
                   slots = c(
                      matrix = 'dgCMatrix',
                      aggregation = "character",
@@ -64,25 +64,25 @@ methods::setClass("DataAssay",
                   )
 )
 
-methods::setClass("DissimilarityAssay",
+methods::setClass("dissimilarity_assay",
                   slots = c(
                      dissimilarity = "dist",
                      method = "character",
                      aggregation = "character",
-                     gene.list = "character",
-                     black.list = "ANY",
+                     gene_list = "character",
+                     black_list = "ANY",
                      ident = "list",
                      sample = "factor"
                   )
 )
 
 
-methods::setClass("DimRed",
+methods::setClass("dim_red",
                   slots = c(
                      embeddings = 'matrix',
-                     feature.loadings = 'matrix',
-                     gene.list = "character",
-                     black.list = "ANY",
+                     feature_loadings = 'matrix',
+                     gene_list = "character",
+                     black_list = "ANY",
                      aggregation = "character",
                      group = "factor",
                      sample = "factor",
@@ -91,7 +91,7 @@ methods::setClass("DimRed",
                   )
 )
 
-methods::setClass("Mat_ident",
+methods::setClass("mat_ident",
                   slots = c(
                      matrix = 'dgCMatrix',
                      group = 'factor',

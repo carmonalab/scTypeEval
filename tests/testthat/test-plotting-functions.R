@@ -1,29 +1,29 @@
-test_that("plot.PCA generates a ggplot object", {
+test_that("plot_pca generates a ggplot object", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  p <- plot.PCA(sceval, reduction.slot = "single-cell")
+  p <- plot_pca(sceval, reduction_slot = "single-cell")
   
   expect_s3_class(p, "ggplot")
 })
 
 
-test_that("plot.PCA works with default parameters", {
+test_that("plot_pca works with default parameters", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  p <- plot.PCA(sceval)
+  p <- plot_pca(sceval)
   
   expect_type(p, "list")
   expect_true(length(p) > 0)
 })
 
 
-test_that("plot.PCA works with reduction.slot = 'all'", {
+test_that("plot_pca works with reduction_slot = 'all'", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  p <- plot.PCA(sceval, reduction.slot = "all")
+  p <- plot_pca(sceval, reduction_slot = "all")
   
   expect_type(p, "list")
   expect_true(all(c("single-cell", "pseudobulk") %in% names(p)))
@@ -32,92 +32,92 @@ test_that("plot.PCA works with reduction.slot = 'all'", {
 })
 
 
-test_that("plot.PCA respects label parameter", {
+test_that("plot_pca respects label parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  p_with_label <- plot.PCA(sceval, reduction.slot = "single-cell", label = TRUE)
-  p_without_label <- plot.PCA(sceval, reduction.slot = "single-cell", label = FALSE)
+  p_with_label <- plot_pca(sceval, reduction_slot = "single-cell", label = TRUE)
+  p_without_label <- plot_pca(sceval, reduction_slot = "single-cell", label = FALSE)
   
   expect_s3_class(p_with_label, "ggplot")
   expect_s3_class(p_without_label, "ggplot")
 })
 
 
-test_that("plot.PCA respects dims parameter", {
+test_that("plot_pca respects dims parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  p_12 <- plot.PCA(sceval, reduction.slot = "single-cell", dims = c(1, 2))
-  p_23 <- plot.PCA(sceval, reduction.slot = "single-cell", dims = c(2, 3))
+  p_12 <- plot_pca(sceval, reduction_slot = "single-cell", dims = c(1, 2))
+  p_23 <- plot_pca(sceval, reduction_slot = "single-cell", dims = c(2, 3))
   
   expect_s3_class(p_12, "ggplot")
   expect_s3_class(p_23, "ggplot")
 })
 
 
-test_that("plot.PCA respects show.legend parameter", {
+test_that("plot_pca respects show_legend parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  p_legend <- plot.PCA(sceval, reduction.slot = "single-cell", show.legend = TRUE)
-  p_no_legend <- plot.PCA(sceval, reduction.slot = "single-cell", show.legend = FALSE)
+  p_legend <- plot_pca(sceval, reduction_slot = "single-cell", show_legend = TRUE)
+  p_no_legend <- plot_pca(sceval, reduction_slot = "single-cell", show_legend = FALSE)
   
   expect_s3_class(p_legend, "ggplot")
   expect_s3_class(p_no_legend, "ggplot")
 })
 
 
-test_that("plot.PCA returns single plot for single reduction slot", {
+test_that("plot_pca returns single plot for single reduction slot", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  p <- plot.PCA(sceval, reduction.slot = "single-cell")
+  p <- plot_pca(sceval, reduction_slot = "single-cell")
   
   expect_s3_class(p, "ggplot")
   expect_false(is.list(p) && !inherits(p, "ggplot"))
 })
 
 
-test_that("plot.PCA errors without PCA data", {
+test_that("plot_pca errors without PCA data", {
   sceval <- create_processed_scTypeEval()
   
   expect_error(
-    plot.PCA(sceval, reduction.slot = "single-cell")
+    plot_pca(sceval, reduction_slot = "single-cell")
   )
 })
 
 
-test_that("plot.MDS generates a ggplot object", {
+test_that("plot_mds generates a ggplot object", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.MDS(sceval, dissimilarity.slot = "Pseudobulk:Euclidean")
+  p <- plot_mds(sceval, dissimilarity_slot = "Pseudobulk:Euclidean")
   
   expect_s3_class(p, "ggplot")
 })
 
 
-test_that("plot.MDS works with default parameters", {
+test_that("plot_mds works with default parameters", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.MDS(sceval)
+  p <- plot_mds(sceval)
   
   expect_s3_class(p, "ggplot")
 })
 
 
-test_that("plot.MDS works with dissimilarity.slot = 'all'", {
+test_that("plot_mds works with dissimilarity_slot = 'all'", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Cosine", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Cosine", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.MDS(sceval, dissimilarity.slot = "all")
+  p <- plot_mds(sceval, dissimilarity_slot = "all")
   
   expect_type(p, "list")
   expect_true(all(c("Pseudobulk:Euclidean", "Pseudobulk:Cosine") %in% names(p)))
@@ -126,97 +126,97 @@ test_that("plot.MDS works with dissimilarity.slot = 'all'", {
 })
 
 
-test_that("plot.MDS respects label parameter", {
+test_that("plot_mds respects label parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p_with_label <- plot.MDS(sceval, label = TRUE)
-  p_without_label <- plot.MDS(sceval, label = FALSE)
+  p_with_label <- plot_mds(sceval, label = TRUE)
+  p_without_label <- plot_mds(sceval, label = FALSE)
   
   expect_s3_class(p_with_label, "ggplot")
   expect_s3_class(p_without_label, "ggplot")
 })
 
 
-test_that("plot.MDS respects dims parameter", {
+test_that("plot_mds respects dims parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p_12 <- plot.MDS(sceval, dims = c(1, 2))
-  p_23 <- plot.MDS(sceval, dims = c(2, 3))
+  p_12 <- plot_mds(sceval, dims = c(1, 2))
+  p_23 <- plot_mds(sceval, dims = c(2, 3))
   
   expect_s3_class(p_12, "ggplot")
   expect_s3_class(p_23, "ggplot")
 })
 
 
-test_that("plot.MDS respects show.legend parameter", {
+test_that("plot_mds respects show_legend parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p_legend <- plot.MDS(sceval, show.legend = TRUE)
-  p_no_legend <- plot.MDS(sceval, show.legend = FALSE)
+  p_legend <- plot_mds(sceval, show_legend = TRUE)
+  p_no_legend <- plot_mds(sceval, show_legend = FALSE)
   
   expect_s3_class(p_legend, "ggplot")
   expect_s3_class(p_no_legend, "ggplot")
 })
 
 
-test_that("plot.MDS returns single plot for single dissimilarity slot", {
+test_that("plot_mds returns single plot for single dissimilarity slot", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.MDS(sceval, dissimilarity.slot = "Pseudobulk:Euclidean")
+  p <- plot_mds(sceval, dissimilarity_slot = "Pseudobulk:Euclidean")
   
   expect_s3_class(p, "ggplot")
   expect_false(is.list(p) && !inherits(p, "ggplot"))
 })
 
 
-test_that("plot.MDS errors without dissimilarity data", {
+test_that("plot_mds errors without dissimilarity data", {
   sceval <- create_processed_scTypeEval()
   
   expect_error(
-    plot.MDS(sceval, dissimilarity.slot = "Pseudobulk:Euclidean")
+    plot_mds(sceval, dissimilarity_slot = "Pseudobulk:Euclidean")
   )
 })
 
 
-test_that("plot.Heatmap generates a ggplot object", {
+test_that("plot_heatmap generates a ggplot object", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.Heatmap(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+  p <- plot_heatmap(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                     verbose = FALSE)
   
   expect_s3_class(p, "ggplot")
 })
 
 
-test_that("plot.Heatmap works with default parameters", {
+test_that("plot_heatmap works with default parameters", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.Heatmap(sceval, verbose = FALSE)
+  p <- plot_heatmap(sceval, verbose = FALSE)
   
   expect_s3_class(p, "ggplot")
 })
 
 
-test_that("plot.Heatmap works with dissimilarity.slot = 'all'", {
+test_that("plot_heatmap works with dissimilarity_slot = 'all'", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Cosine", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Cosine", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.Heatmap(sceval, dissimilarity.slot = "all", verbose = FALSE)
+  p <- plot_heatmap(sceval, dissimilarity_slot = "all", verbose = FALSE)
   
   expect_type(p, "list")
   expect_true(all(c("Pseudobulk:Euclidean", "Pseudobulk:Cosine") %in% names(p)))
@@ -225,15 +225,15 @@ test_that("plot.Heatmap works with dissimilarity.slot = 'all'", {
 })
 
 
-test_that("plot.Heatmap respects sort.similarity parameter", {
+test_that("plot_heatmap respects sort_similarity parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.Heatmap(
+  p <- plot_heatmap(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    sort.similarity = "Pseudobulk:Euclidean",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    sort_similarity = "Pseudobulk:Euclidean",
     verbose = FALSE
   )
   
@@ -241,15 +241,15 @@ test_that("plot.Heatmap respects sort.similarity parameter", {
 })
 
 
-test_that("plot.Heatmap respects sort.consistency parameter", {
+test_that("plot_heatmap respects sort_consistency parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.Heatmap(
+  p <- plot_heatmap(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    sort.consistency = "silhouette",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    sort_consistency = "silhouette",
     verbose = FALSE
   )
   
@@ -257,16 +257,16 @@ test_that("plot.Heatmap respects sort.consistency parameter", {
 })
 
 
-test_that("plot.Heatmap works with both sort.similarity and sort.consistency", {
+test_that("plot_heatmap works with both sort_similarity and sort_consistency", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.Heatmap(
+  p <- plot_heatmap(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    sort.similarity = "Pseudobulk:Euclidean",
-    sort.consistency = "silhouette",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    sort_similarity = "Pseudobulk:Euclidean",
+    sort_consistency = "silhouette",
     verbose = FALSE
   )
   
@@ -274,16 +274,16 @@ test_that("plot.Heatmap works with both sort.similarity and sort.consistency", {
 })
 
 
-test_that("plot.Heatmap respects color parameters", {
+test_that("plot_heatmap respects color parameters", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.Heatmap(
+  p <- plot_heatmap(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    low.color = "blue",
-    high.color = "red",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    low_color = "blue",
+    high_color = "red",
     verbose = FALSE
   )
   
@@ -291,16 +291,16 @@ test_that("plot.Heatmap respects color parameters", {
 })
 
 
-test_that("plot.Heatmap respects hclust.method parameter", {
+test_that("plot_heatmap respects hclust_method parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.Heatmap(
+  p <- plot_heatmap(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    sort.similarity = "Pseudobulk:Euclidean",
-    hclust.method = "complete",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    sort_similarity = "Pseudobulk:Euclidean",
+    hclust_method = "complete",
     verbose = FALSE
   )
   
@@ -308,30 +308,30 @@ test_that("plot.Heatmap respects hclust.method parameter", {
 })
 
 
-test_that("plot.Heatmap handles verbose parameter", {
+test_that("plot_heatmap handles verbose parameter", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
   # verbose = TRUE should produce messages
   expect_message(
-    p <- plot.Heatmap(sceval, verbose = TRUE),
+    p <- plot_heatmap(sceval, verbose = TRUE),
     "sorting cell type"
   )
   
   # verbose = FALSE should suppress messages
   expect_silent(
-    p <- plot.Heatmap(sceval, verbose = FALSE)
+    p <- plot_heatmap(sceval, verbose = FALSE)
   )
 })
 
 
-test_that("plot.Heatmap returns single plot for single dissimilarity slot", {
+test_that("plot_heatmap returns single plot for single dissimilarity slot", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p <- plot.Heatmap(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+  p <- plot_heatmap(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                     verbose = FALSE)
   
   expect_s3_class(p, "ggplot")
@@ -339,36 +339,36 @@ test_that("plot.Heatmap returns single plot for single dissimilarity slot", {
 })
 
 
-test_that("plot.Heatmap errors without dissimilarity data", {
+test_that("plot_heatmap errors without dissimilarity data", {
   sceval <- create_processed_scTypeEval()
   
   expect_error(
-    plot.Heatmap(sceval, dissimilarity.slot = "Pseudobulk:Euclidean", 
+    plot_heatmap(sceval, dissimilarity_slot = "Pseudobulk:Euclidean", 
                  verbose = FALSE)
   )
 })
 
 
-test_that("plot.Heatmap works with WasserStein dissimilarity", {
+test_that("plot_heatmap works with WasserStein dissimilarity", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "WasserStein", 
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_dissimilarity(sceval, method = "WasserStein", 
                                reduction = TRUE, verbose = FALSE)
   
-  p <- plot.Heatmap(sceval, dissimilarity.slot = "WasserStein", 
+  p <- plot_heatmap(sceval, dissimilarity_slot = "WasserStein", 
                     verbose = FALSE)
   
   expect_s3_class(p, "ggplot")
 })
 
 
-test_that("plot.Heatmap sorting produces different plots", {
+test_that("plot_heatmap sorting produces different plots", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
-  p_unsorted <- plot.Heatmap(sceval, verbose = FALSE)
-  p_sorted <- plot.Heatmap(sceval, sort.consistency = "silhouette", 
+  p_unsorted <- plot_heatmap(sceval, verbose = FALSE)
+  p_sorted <- plot_heatmap(sceval, sort_consistency = "silhouette", 
                            verbose = FALSE)
   
   # Both should be ggplot objects
@@ -376,45 +376,45 @@ test_that("plot.Heatmap sorting produces different plots", {
   expect_s3_class(p_sorted, "ggplot")
 })
 
-test_that("plot.PCA works with different aggregation types", {
+test_that("plot_pca works with different aggregation types", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  p_sc <- plot.PCA(sceval, reduction.slot = "single-cell")
-  p_pb <- plot.PCA(sceval, reduction.slot = "pseudobulk")
+  p_sc <- plot_pca(sceval, reduction_slot = "single-cell")
+  p_pb <- plot_pca(sceval, reduction_slot = "pseudobulk")
   
   expect_s3_class(p_sc, "ggplot")
   expect_s3_class(p_pb, "ggplot")
 })
 
 
-test_that("plot.MDS works with different dissimilarity methods", {
+test_that("plot_mds works with different dissimilarity methods", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Pearson", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Pearson", 
                                reduction = FALSE, verbose = FALSE)
   
-  p_euc <- plot.MDS(sceval, dissimilarity.slot = "Pseudobulk:Euclidean")
-  p_pear <- plot.MDS(sceval, dissimilarity.slot = "Pseudobulk:Pearson")
+  p_euc <- plot_mds(sceval, dissimilarity_slot = "Pseudobulk:Euclidean")
+  p_pear <- plot_mds(sceval, dissimilarity_slot = "Pseudobulk:Pearson")
   
   expect_s3_class(p_euc, "ggplot")
   expect_s3_class(p_pear, "ggplot")
 })
 
 
-test_that("plot.Heatmap can use different dissimilarity for sorting", {
+test_that("plot_heatmap can use different dissimilarity for sorting", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Cosine", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Cosine", 
                                reduction = FALSE, verbose = FALSE)
   
   # Plot Euclidean but sort by Cosine
-  p <- plot.Heatmap(
+  p <- plot_heatmap(
     sceval,
-    dissimilarity.slot = "Pseudobulk:Euclidean",
-    sort.similarity = "Pseudobulk:Cosine",
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    sort_similarity = "Pseudobulk:Cosine",
     verbose = FALSE
   )
   
@@ -424,9 +424,9 @@ test_that("plot.Heatmap can use different dissimilarity for sorting", {
 
 test_that("Plots can be combined with custom ggplot layers", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
-  p <- plot.PCA(sceval, reduction.slot = "single-cell")
+  p <- plot_pca(sceval, reduction_slot = "single-cell")
   
   # Add custom layer
   p_modified <- p + ggplot2::theme_minimal()
@@ -435,24 +435,24 @@ test_that("Plots can be combined with custom ggplot layers", {
 })
 
 
-test_that("plot.PCA handles high dimensional PCA", {
+test_that("plot_pca handles high dimensional PCA", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.PCA(sceval, ndim = 5, verbose = FALSE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
   
   # Plot later dimensions
-  p <- plot.PCA(sceval, reduction.slot = "single-cell", dims = c(4, 5))
+  p <- plot_pca(sceval, reduction_slot = "single-cell", dims = c(4, 5))
   
   expect_s3_class(p, "ggplot")
 })
 
 
-test_that("plot.MDS handles high dimensional MDS", {
+test_that("plot_mds handles high dimensional MDS", {
   sceval <- create_processed_scTypeEval()
-  sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
                                reduction = FALSE, verbose = FALSE)
   
   # Plot later dimensions
-  p <- plot.MDS(sceval, dims = c(3, 4))
+  p <- plot_mds(sceval, dims = c(3, 4))
   
   expect_s3_class(p, "ggplot")
 })

@@ -45,14 +45,14 @@ remotes::install_github("carmonalab/scTypeEval")
 library(scTypeEval)
 
 # From count matrix and metadata dataframe
-sceval <- create.scTypeEval(matrix = count_matrix,
+sceval <- create_scTypeEval(matrix = count_matrix,
                            metadata = metadata)
 
 # From Seurat object
-sceval <- create.scTypeEval(seurat_obj)
+sceval <- create_scTypeEval(seurat_obj)
 
 # From SCE object
-sceval <- create.scTypeEval(sce)
+sceval <- create_scTypeEval(sce)
 ```
 </details>
 
@@ -62,16 +62,16 @@ sceval <- create.scTypeEval(sce)
 
 Process and normalize data stored in an `scTypeEval` object. 
 
-This step aggregates, filters, and normalizes the count matrix, storing results as `DataAssay` objects for single-cell and pseudobulk data.  
+This step aggregates, filters, and normalizes the count matrix, storing results as `data_assay` objects for single-cell and pseudobulk data.  
 
 ```r
 # Run data processing on an scTypeEval object
-sceval <- Run.ProcessingData(
+sceval <- run_processing_data(
   scTypeEval = sceval,
   ident = "celltype",        # column in metadata defining identities (e.g. cell type)
   sample = "patient_id",     # column in metadata defining sample IDs
-  min.samples = 5,           # minimum samples required to retain a cell type
-  min.cells = 10,            # minimum cells required per sample-celltype
+  min_samples = 5,           # minimum samples required to retain a cell type
+  min_cells = 10,            # minimum cells required per sample-celltype
 )
 ```
 
@@ -86,22 +86,22 @@ Dissimilarity and subsequently consistency will be evaluated using these feature
 
 ```r
 # Identify highly variable genes (HVGs)
-sceval <- Run.HVG(
+sceval <- run_hvg(
   scTypeEval = sceval,
-  var.method = "scran",   # method to compute HVGs
+  var_method = "scran",   # method to compute HVGs
   ngenes = 2000,          # number of HVGs to retain
   sample = TRUE   # whether to perform sample-level blocking
 )
 
 # Identify marker genes per cell type
-sceval <- Run.GeneMarkers(
+sceval <- run_gene_markers(
   scTypeEval = sceval,
   method = "scran.findMarkers", # supported: scran.findMarkers
-  ngenes.celltype = 50          # max markers per cell type
+  ngenes_celltype = 50          # max markers per cell type
 )
 ```
 
-Custom gene list may be also added using `add.GeneList()`.
+Custom gene list may be also added using `add_gene_list()`.
 
 </details>
 
@@ -114,13 +114,13 @@ Consistency metrics can be measured directly on relevant features selected earli
 However, for most methods, their computation in a **low-dimensional space** (e.g., PCA) speeds up the process while yielding very similar results.  
 
 ```r
-sceval <- Run.PCA(
+sceval <- run_pca(
   scTypeEval = sceval,
   ndim = 30          # number of PCs
 )
 ```
 
-Alternatively, you can insert pre-computed embeddings (e.g., PCA, UMAP, t-SNE) using `add.DimReduction()`.
+Alternatively, you can insert pre-computed embeddings (e.g., PCA, UMAP, t-SNE) using `add_dim_reduction()`.
 
 
 </details>
@@ -129,14 +129,14 @@ Alternatively, you can insert pre-computed embeddings (e.g., PCA, UMAP, t-SNE) u
 <details>
 <summary><strong>4. Compute dissimilarity across cell type and samples</strong></summary> 
 
-The function `Run.Dissimilarity()` computes pairwise dissimilarities between cell types across samples stored in a `scTypeEval` object.  
+The function `run_dissimilarity()` computes pairwise dissimilarities between cell types across samples stored in a `scTypeEval` object.  
 You can choose among several strategies depending on whether you want to compare **cell type pseudobulk profiles**, **cell type single-cell distributions**, or **classification-based matches**.  
 
 **Available methods include:**
 - **`Pseudobulk:<distance>`** – computes distances between pseudobulk gene expression profiles.  
   Supported distances: *euclidean*, *cosine*, *pearson*.  
 - **`WasserStein`** – computes Wasserstein distances between distributions of cells.  
-- **`RecipClassif:<method>`** – matches cells across groups using a classifier and computes dissimilarities.  
+- **`recip_classif:<method>`** – matches cells across groups using a classifier and computes dissimilarities.  
   Supported methods: *Match*, *Score*.  
 
 By default, if `reduction = TRUE`, dissimilarity is computed on dimensional reduction embeddings (e.g. PCA).  
@@ -145,32 +145,32 @@ Set `reduction = FALSE` to instead compute dissimilarities on processed expressi
 
 ```r
 # Euclidean distance based on pseudobulk aggregation
-sceval <- Run.Dissimilarity(sceval,
+sceval <- run_dissimilarity(sceval,
                        method = "Pseudobulk:Euclidean",
                        reduction = FALSE) # whether to compute dissimilarities in low dimensional space
 
 # Wasserstein distance on embeddings
-sceval <- Run.Dissimilarity(sceval,
+sceval <- run_dissimilarity(sceval,
                        method = "WasserStein",
                        reduction = TRUE)
 
 # Reciprocal Classification Match using SingleR classifier
-sceval <- Run.Dissimilarity(sceval,
-                       method = "RecipClassif:Match",
-                       ReciprocalClassifier = "SingleR")
+sceval <- run_dissimilarity(sceval,
+                       method = "recip_classif:Match",
+                       reciprocal_classifier = "SingleR")
 ```
 
 <details>
 <summary>Visualize dissimilarity matrix</summary>
 
-The function `plot.Heatmap()` visualizes dissimilarity matrices stored in a scTypeEval object as annotated heatmaps.
+The function `plot_heatmap()` visualizes dissimilarity matrices stored in a scTypeEval object as annotated heatmaps.
 This produces a ggplot2 heatmap with cell types grouped and optionally ordered by similarity or consistency.
 
 ```r
-plot.Heatmap(sceval,
-            dissimilarity.slot = "RecipClassif:Match",
-            sort.consistency = "silhouette",
-            sort.similarity = "Pseudobulk:Euclidean")
+plot_heatmap(sceval,
+            dissimilarity_slot = "recip_classif:Match",
+            sort_consistency = "silhouette",
+            sort_similarity = "Pseudobulk:Euclidean")
 ```
 
 <p align="center">
@@ -194,26 +194,26 @@ Evaluate inter-sample label consistency.
 `scTypeEval` supports a range of **internal validation metrics** to evaluate cell type annotation quality without external ground truth:
 
 - **silhouette** – standard cohesion/separation score per cell type
-- **2label.silhouette** – silhouette variant comparing "own type" vs. all others
+- **2label_silhouette** – silhouette variant comparing "own type" vs. all others
 - **NeighborhoodPurity** – fraction of K nearest neighbors sharing the same cell type
-- **ward.PropMatch** – proportion of a cell type in its dominant cluster (Ward-based)
-- **Orbital.medoid** – fraction of cells closer to their medoid than any other type’s medoid
-- **Average.similarity** – within-cell type similarity relative to other types
+- **ward_PropMatch** – proportion of a cell type in its dominant cluster (Ward-based)
+- **Orbital_medoid** – fraction of cells closer to their medoid than any other type’s medoid
+- **Average_similarity** – within-cell type similarity relative to other types
 
 Higher values indicate stronger internal consistency. Metrics can be computed per dissimilarity assay for downstream comparison across cell types, metrics, and methods.
 
 </details>
 
 ``` r
-consis <- get.Consistency(scTypeEval,
-                          dissimilarity.slot = "Pseudobulk:Euclidean", # indicate in which dissimilarity space compute metrics
-                          Consistency.metric = "silhouette" # choose consistency metric
+consis <- get_consistency(scTypeEval,
+                          dissimilarity_slot = "Pseudobulk:Euclidean", # indicate in which dissimilarity space compute metrics
+                          consistency_metric = "silhouette" # choose consistency metric
                           )
 ```
 
 Example of results table:
 
-| celltype    | measure     | consistency.metric | dissimilarity_method     | ident     |
+| celltype    | measure     | consistency_metric | dissimilarity_method     | ident     |
 |------------|------------|------------------|------------------------|-----------|
 | CD4.Tn     | -0.03104529 | silhouette       | Pseudobulk:Euclidean   | celltype  |
 | CD4.Tstr   | -0.01739486 | silhouette       | Pseudobulk:Euclidean   | celltype  |
@@ -238,12 +238,12 @@ Example of results table:
 
 Based on our benchmark across **31 real scRNA-seq datasets**, we recommend the following ISC metric choices:
 
-By default (and in the benchmark), these metrics are computed on **highly variable genes (HVGs) identified with `scran`** via `Run.HVG(var.method = "scran")`.
+By default (and in the benchmark), these metrics are computed on **highly variable genes (HVGs) identified with `scran`** via `run_hvg(var_method = "scran")`.
 
 In our benchmark we observed a trade-off: some metrics are more sensitive to **global, gradual signal degradation**, while others are more sensitive to **local structural inconsistencies/over-partitioning**, so we recommend using one from each class.
 
-- **Local consistency (over-partitioning / fragmentation sensitive)**: `silhouette` in the **reciprocal-classification match** space (`RecipClassif:Match`) — also the top-ranked overall choice in the benchmark.
-- **Global consistency (signal degradation sensitive)**: `2label.silhouette` in **pseudobulk cosine** space (`Pseudobulk:Cosine`).
+- **Local consistency (over-partitioning / fragmentation sensitive)**: `silhouette` in the **reciprocal-classification match** space (`recip_classif:Match`) — also the top-ranked overall choice in the benchmark.
+- **Global consistency (signal degradation sensitive)**: `2label_silhouette` in **pseudobulk cosine** space (`Pseudobulk:Cosine`).
 - **Integrated score**: combine local + global ISC score by taking the **geometric mean**. In some datasets with high granularity (e.g. only CD8+ T cells subsets) usage of only Local consistency is recommended.
 
 <p align="center">
@@ -264,52 +264,52 @@ library(scTypeEval)
 # on single-cell data
 # Also, we recommend removing from selected genes within HVG the black listed
 # genes with high inter-sample variability
-bl <- list(black.list$TCR,
-           black.list$Immunoglobulins,
-           black.list$Ygenes) |>
+bl <- list(black_list$TCR,
+           black_list$Immunoglobulins,
+           black_list$Ygenes) |>
        unlist()
        
-sceval <- Run.HVG(
+sceval <- run_hvg(
   scTypeEval = sceval,
-  var.method = "scran",
+  var_method = "scran",
   ngenes = 2000,
   sample = TRUE,
   aggregation = "single-cell",
-  black.list = bl
+  black_list = bl
 )
 
-# Not affecting RecipClassif:Match but for Pseudobulk-based metrics,
+# Not affecting recip_classif:Match but for Pseudobulk-based metrics,
 # computation in PCA space is faster with similar results
 # (See Usage above to add dimensional reduction).
 
 # (1) Overall best and local structure: silhouette in
 # reciprocal-classification match space
-sceval <- Run.Dissimilarity(
+sceval <- run_dissimilarity(
   sceval,
-  method = "RecipClassif:Match",
+  method = "recip_classif:Match",
   reduction = FALSE
 )
 # (2) Complementary for global structure: 2-label silhouette 
 # in pseudobulk cosine space
-sceval <- Run.Dissimilarity(
+sceval <- run_dissimilarity(
   sceval,
   method = "Pseudobulk:Cosine",
   reduction = TRUE
 )
 # (3) Obtain consistency scores for computed dissimilarities and
-# for silhouette and 2label.silhouette
-isc <- get.Consistency(
+# for silhouette and 2label_silhouette
+isc <- get_consistency(
   sceval,
-  dissimilarity.slot = c("RecipClassif:Match", "Pseudobulk:Cosine"),
-  Consistency.metric = c("silhouette", "2label.silhouette")
+  dissimilarity_slot = c("recip_classif:Match", "Pseudobulk:Cosine"),
+  consistency_metric = c("silhouette", "2label_silhouette")
 )
 
 # (4) Filter to obtain best combinations for each cell type
-sel.methods <- c("local" = "silhouette | RecipClassif:Match",
-                "global" = "2label.silhouette | Pseudobulk:Cosine")
+sel.methods <- c("local" = "silhouette | recip_classif:Match",
+                "global" = "2label_silhouette | Pseudobulk:Cosine")
 
 isc |>
-  mutate(method.type = paste(consistency.metric,
+  mutate(method.type = paste(consistency_metric,
                              dissimilarity_method,
                              sep = " | ")
                              ) |>

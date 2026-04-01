@@ -10,18 +10,18 @@
 #'   matrix, or `NULL`. If `NULL`, an empty object is initialized.
 #' @param metadata A metadata dataframe. Required if `matrix` is a raw matrix or
 #'   `NULL`. Must have as many rows as the number of cells (columns of the count matrix).
-#' @param gene.lists A named list of gene sets to use in the evaluation (default: empty list).
-#' @param black.list A character vector of genes to exclude from analysis (default: empty).
-#' @param active.ident The active identity class or cluster label (optional). If provided,
+#' @param gene_lists A named list of gene sets to use in the evaluation (default: empty list).
+#' @param black_list A character vector of genes to exclude from analysis (default: empty).
+#' @param active_ident The active identity class or cluster label (optional). If provided,
 #'   it is validated against the metadata.
 #'
 #' @return An `scTypeEval` object containing:
 #' \itemize{
 #'   \item \code{counts}: A sparse count matrix (dgCMatrix).
 #'   \item \code{metadata}: A dataframe with metadata for each cell.
-#'   \item \code{gene.lists}: A list of gene sets used in classification.
-#'   \item \code{black.list}: A vector of excluded genes.
-#'   \item \code{active.ident}: Active cluster identity (if provided).
+#'   \item \code{gene_lists}: A list of gene sets used in classification.
+#'   \item \code{black_list}: A vector of excluded genes.
+#'   \item \code{active_ident}: Active cluster identity (if provided).
 #' }
 #'
 #' @details
@@ -30,7 +30,7 @@
 #' - For Seurat and SingleCellExperiment objects, counts and metadata are extracted automatically.
 #' - For raw matrices, metadata must be provided explicitly.
 #' - The function validates that the number of metadata rows matches the number of cells (matrix columns).
-#' - If `active.ident` is provided, it is checked for consistency with the metadata.
+#' - If `active_ident` is provided, it is checked for consistency with the metadata.
 #'
 #' @examples
 #' # Create synthetic test data
@@ -46,27 +46,27 @@
 #' )
 #' 
 #' # Create scTypeEval object from matrix
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
 #' 
 #' # With custom gene lists and active identity
 #' gene_list <- list(markers = rownames(counts)[1:10])
-#' sceval <- create.scTypeEval(
+#' sceval <- create_scTypeEval(
 #'   matrix = counts, 
 #'   metadata = metadata,
-#'   gene.lists = gene_list,
-#'   active.ident = "celltype"
+#'   gene_lists = gene_list,
+#'   active_ident = "celltype"
 #' )
 #' 
 #' @importClassesFrom Matrix dgCMatrix
 #'
-#' @export create.scTypeEval
+#' @export create_scTypeEval
 
 
-create.scTypeEval <- function(matrix = NULL,
+create_scTypeEval <- function(matrix = NULL,
                               metadata = NULL,
-                              gene.lists = list(),
-                              black.list = character(),
-                              active.ident = NULL) {
+                              gene_lists = list(),
+                              black_list = character(),
+                              active_ident = NULL) {
    
    # Handle NULL matrix case
    if (is.null(matrix)) {
@@ -136,14 +136,14 @@ create.scTypeEval <- function(matrix = NULL,
    scTypeEval_obj <- methods::new("scTypeEval",
                                   counts = counts,
                                   metadata = metadata,
-                                  gene.lists = gene.lists,
-                                  black.list = black.list,
-                                  active.ident = active.ident,
+                                  gene_lists = gene_lists,
+                                  black_list = black_list,
+                                  active_ident = active_ident,
                                   version = as.character(packageVersion("scTypeEval"))
    )
-   if(!is.null(active.ident)){
-      tmp <- .check_ident(scTypeEval_obj,
-                          active.ident,
+   if(!is.null(active_ident)){
+      tmp <- check_ident(scTypeEval_obj,
+                          active_ident,
                           verbose = FALSE)
    }
    
@@ -178,15 +178,15 @@ create.scTypeEval <- function(matrix = NULL,
 #' )
 #' 
 #' # Create scTypeEval object from matrix
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
 #' 
 #' # add active ident
-#' sceval <- set.activeIdent(sceval, ident = "celltype")
+#' sceval <- set_active_ident(sceval, ident = "celltype")
 #'
-#' @export set.activeIdent
+#' @export set_active_ident
 
 
-set.activeIdent <- function(scTypeEval,
+set_active_ident <- function(scTypeEval,
                             ident = NULL){
    if(is.null(ident)){
       stop("Specificy a cell type annotation in the provided metadata")
@@ -196,7 +196,7 @@ set.activeIdent <- function(scTypeEval,
            to group cells included in metadata")
    }
    
-   scTypeEval@active.ident <- ident
+   scTypeEval@active_ident <- ident
    
    return(scTypeEval)
 }
@@ -206,22 +206,22 @@ set.activeIdent <- function(scTypeEval,
 #'
 #' @description Runs processing on the count matrix stored in an `scTypeEval`
 #' object by aggregating, filtering, and normalizing data. 
-#' Results are stored as `DataAssay` objects within the `scTypeEval`.
+#' Results are stored as `data_assay` objects within the `scTypeEval`.
 #'
-#' @param scTypeEval An `scTypeEval` object generated by \code{create.scTypeEval}.
+#' @param scTypeEval An `scTypeEval` object generated by \code{create_scTypeEval}.
 #' @param ident A column name from metadata to use as the identity class (e.g. cell type, cluster). 
-#'   If `NULL`, defaults to \code{scTypeEval@active.ident}.
+#'   If `NULL`, defaults to \code{scTypeEval@active_ident}.
 #' @param sample A column name from metadata indicating sample identifiers, required.
-#' @param normalization.method A string specifying the normalization method to apply 
+#' @param normalization_method A string specifying the normalization method to apply 
 #'   (default: `"Log1p"`).
 #' @param aggregation Method to group cells, either `"single-cell"` or `"pseudobulk"`. Default is both.
-#' @param min.samples Minimum number of samples required to retain a cell type (default: 5).
-#' @param min.cells Minimum number of cells required to retain a cell type in a sample (default: 10).
+#' @param min_samples Minimum number of samples required to retain a cell type (default: 5).
+#' @param min_cells Minimum number of cells required to retain a cell type in a sample (default: 10).
 #' @param verbose Logical indicating whether to print progress messages (default: TRUE).
 #'
 #' @return An updated `scTypeEval` object containing:
 #' \itemize{
-#'   \item \code{data}: A list of `DataAssay` objects, one for single-cell other for pseudobulk.
+#'   \item \code{data}: A list of `data_assay` objects, one for single-cell other for pseudobulk.
 #' }
 #'
 #' @details
@@ -230,9 +230,9 @@ set.activeIdent <- function(scTypeEval,
 #'   \item Validates and sets the identity (\code{ident}) and sample grouping (\code{sample}).
 #'   \item Iterates over predefined \code{aggregation_types}: single-cell and pseudobulk.
 #'   \item Extracts and filters the count matrix using 
-#'         \code{min.samples} and \code{min.cells} thresholds.
+#'         \code{min_samples} and \code{min_cells} thresholds.
 #'   \item Normalizes the resulting matrix.
-#'   \item Wraps the processed data into `DataAssay` objects.
+#'   \item Wraps the processed data into `data_assay` objects.
 #'   \item Stores the list of processed assays inside the `scTypeEval` object.
 #' }
 #'
@@ -249,42 +249,42 @@ set.activeIdent <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
 #' 
 #' # Process data with filtering
-#' sceval <- Run.ProcessingData(
+#' sceval <- run_processing_data(
 #'   sceval,
 #'   ident = "celltype",
 #'   sample = "sample",
-#'   min.samples = 3,
-#'   min.cells = 3,
+#'   min_samples = 3,
+#'   min_cells = 3,
 #'   verbose = FALSE
 #' )
 #' 
 #' # Check processed data
 #' length(sceval@data)
 #'
-#' @export Run.ProcessingData
+#' @export run_processing_data
 
 
-Run.ProcessingData <- function(scTypeEval,
+run_processing_data <- function(scTypeEval,
                                ident = NULL,
                                sample = NULL,
                                aggregation = c("single-cell", "pseudobulk"),
-                               normalization.method = "Log1p",
-                               min.samples = 5,
-                               min.cells = 10,
+                               normalization_method = "Log1p",
+                               min_samples = 5,
+                               min_cells = 10,
                                verbose = TRUE){
    #### preflights checks
-   ident.name <- ident
-   if(is.null(ident.name)){
-      ident.name <- scTypeEval@active.ident
+   ident_name <- ident
+   if(is.null(ident_name)){
+      ident_name <- scTypeEval@active_ident
    }
-   ident <- .check_ident(scTypeEval, ident, verbose = verbose)
-   sample <- .check_sample(scTypeEval, sample, verbose = verbose)
+   ident <- check_ident(scTypeEval, ident, verbose = verbose)
+   sample <- check_sample(scTypeEval, sample, verbose = verbose)
    
    # set normalization method
-   normalization.method <- normalization.method[1]
+   normalization_method <- normalization_method[1]
    
    if(any(!tolower(aggregation) %in% aggregation_types)){
       stop("Invalid aggregation type. Valid options are: ",
@@ -297,23 +297,23 @@ Run.ProcessingData <- function(scTypeEval,
                           if(verbose){message("# Processing data for ", ag, " ... \n")}
                           # Transform data
                           if(verbose){message("   Transforming and filtering count matrix... \n")}
-                          mat <- get.matrix(scTypeEval@counts,
+                          mat <- get_matrix(scTypeEval@counts,
                                             ident = ident,
                                             sample = sample,
                                             aggregation = ag,
-                                            min.samples = min.samples,
-                                            min.cells = min.cells)
+                                            min_samples = min_samples,
+                                            min_cells = min_cells)
                           
                           # Normalize data
-                          if(verbose){message("   Normalizing count matrix via " , normalization.method, "... \n")}
-                          norm.mat <- Normalize_data(mat@matrix,
-                                                     method = normalization.method)
+                          if(verbose){message("   Normalizing count matrix via " , normalization_method, "... \n")}
+                          norm.mat <- normalize_data(mat@matrix,
+                                                     method = normalization_method)
                           
-                          rr <- methods::new("DataAssay",
+                          rr <- methods::new("data_assay",
                                              matrix = norm.mat,
                                              aggregation = ag,
                                              group = mat@group,
-                                             ident = setNames(list(mat@ident), ident.name),
+                                             ident = setNames(list(mat@ident), ident_name),
                                              sample = mat@sample)
                           return(rr)
                        })
@@ -329,29 +329,29 @@ Run.ProcessingData <- function(scTypeEval,
 #' @title Add externally processed data to an scTypeEval object
 #'
 #' @description Adds a user-supplied processed dataset (e.g. single-cell or pseudobulk)
-#' into an `scTypeEval` object as a `DataAssay`. Supports filtering and consistency checks
+#' into an `scTypeEval` object as a `data_assay`. Supports filtering and consistency checks
 #' on cell type and sample annotations.
 #'
-#' @param scTypeEval An `scTypeEval` object generated by \code{create.scTypeEval}.
+#' @param scTypeEval An `scTypeEval` object generated by \code{create_scTypeEval}.
 #' @param data A count matrix (dense or sparse) containing processed expression values 
 #'   (either single-cell or pseudobulk aggregated).
 #' @param aggregation A string specifying the aggregation type. Must be one of the 
 #'   supported: `"single-cell"` or `"pseudobulk"`.
 #' @param ident A vector of cell identities corresponding to the columns of \code{data}. 
 #'   Used to define grouping (e.g. cell type). Required.
-#' @param ident.name A string specifying the name under which the provided \code{ident}
+#' @param ident_name A string specifying the name under which the provided \code{ident}
 #'   will be stored (default: `"custom"`).
 #' @param sample A vector of sample identifiers corresponding to the columns of \code{data}. 
 #'   Required unless already encoded in the object.
-#' @param filter Logical indicating whether to filter the data based on \code{min.samples}
-#'   and \code{min.cells}. Only allowed when \code{aggregation = "single-cell"} (default: FALSE).
-#' @param min.samples Minimum number of samples required to retain a feature (default: 5).
-#' @param min.cells Minimum number of cells required to retain a feature (default: 10).
+#' @param filter Logical indicating whether to filter the data based on \code{min_samples}
+#'   and \code{min_cells}. Only allowed when \code{aggregation = "single-cell"} (default: FALSE).
+#' @param min_samples Minimum number of samples required to retain a feature (default: 5).
+#' @param min_cells Minimum number of cells required to retain a feature (default: 10).
 #' @param verbose Logical indicating whether to print progress messages (default: TRUE).
 #'
 #' @return An updated `scTypeEval` object containing:
 #' \itemize{
-#'   \item \code{data}: A new `DataAssay` object stored under the specified aggregation type.
+#'   \item \code{data}: A new `data_assay` object stored under the specified aggregation type.
 #' }
 #'
 #' @details
@@ -360,7 +360,7 @@ Run.ProcessingData <- function(scTypeEval,
 #'   samples or cells.
 #' - For \code{aggregation = "pseudobulk"}, the function checks that each (sample, identity) 
 #'   pair occurs exactly once (i.e., fully aggregated).
-#' - Processed data is wrapped in a `DataAssay` object and added to the `scTypeEval`.
+#' - Processed data is wrapped in a `data_assay` object and added to the `scTypeEval`.
 #'
 #' @examples
 #' # Create test data with enough samples
@@ -375,9 +375,9 @@ Run.ProcessingData <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
 #' 
-#' sceval <- Add.ProcessedData(
+#' sceval <- add_processed_data(
 #'   sceval,
 #'   data = counts,
 #'   aggregation = "single-cell",
@@ -386,20 +386,20 @@ Run.ProcessingData <- function(scTypeEval,
 #'   filter = FALSE
 #' )
 #' 
-#' @seealso \link{Run.ProcessingData}
+#' @seealso \link{run_processing_data}
 #'
-#' @export Add.ProcessedData
+#' @export add_processed_data
 
 
-Add.ProcessedData <- function(scTypeEval,
+add_processed_data <- function(scTypeEval,
                               data,
                               aggregation,
                               ident = NULL,
-                              ident.name = "custom",
+                              ident_name = "custom",
                               sample = NULL,
                               filter = FALSE,
-                              min.samples = 5,
-                              min.cells = 10,
+                              min_samples = 5,
+                              min_cells = 10,
                               verbose = TRUE){
    
    # preflight
@@ -407,11 +407,11 @@ Add.ProcessedData <- function(scTypeEval,
       stop("Only supported aggregations are just `single-cell` (no aggregation) or `pseudobulk` per cell type and sample.\n")
    }
    #### preflights checks
-   ident <- .check_ident(ident = ident, verbose = verbose)
+   ident <- check_ident(ident = ident, verbose = verbose)
    if(length(ident) != ncol(data)){
       stop("Different length of ident and ncol of data\n")
    }
-   sample <- .check_sample(sample = sample, verbose = verbose)
+   sample <- check_sample(sample = sample, verbose = verbose)
    if(length(sample) != ncol(data)){
       stop("Different length of sample and ncol of data\n")
    }
@@ -420,14 +420,14 @@ Add.ProcessedData <- function(scTypeEval,
    if(aggregation == "single-cell"){
       
       if(filter){
-         if(verbose){message(" - Filtering cells based on min.samples and min.cells\n")}
+         if(verbose){message(" - Filtering cells based on min_samples and min_cells\n")}
          
-         mat <- get.matrix(data,
+         mat <- get_matrix(data,
                            ident = ident,
                            sample = sample,
                            aggregation = aggregation,
-                           min.samples = min.samples,
-                           min.cells = min.cells)
+                           min_samples = min_samples,
+                           min_cells = min_cells)
          
          data <- mat@matrix
          ident <- mat@ident
@@ -450,11 +450,11 @@ Add.ProcessedData <- function(scTypeEval,
    
    
    # Create Data assay
-   rr <- methods::new("DataAssay",
+   rr <- methods::new("data_assay",
                       matrix = data,
                       aggregation = aggregation,
                       group = groups,
-                      ident = setNames(list(ident), ident.name),
+                      ident = setNames(list(ident), ident_name),
                       sample = sample)
    
    # add to scTypeEval object
@@ -468,19 +468,19 @@ Add.ProcessedData <- function(scTypeEval,
 #'
 #' @description Detects highly variable genes (HVGs) from the normalized
 #' single-cell data stored in an `scTypeEval` object. The identified HVGs are
-#' stored in the `gene.lists` slot under `"HVG"`.
+#' stored in the `gene_lists` slot under `"HVG"`.
 #'
 #' @param scTypeEval An `scTypeEval` object containing normalized data in the
-#'   `"single-cell"` slot (see \code{Run.ProcessingData}).
-#' @param var.method Character string specifying the method for identifying highly
+#'   `"single-cell"` slot (see \code{run_processing_data}).
+#' @param var_method Character string specifying the method for identifying highly
 #'   variable genes. Options: `"scran"` (default) or `"basic"`.
 #' @param ngenes Integer specifying the number of highly variable genes to retain
 #'   (default: `2000`).
 #' @param sample Logical indicating whether to leverage sample information when
 #'   computing HVGs. If `TRUE`, the \code{sample} annotation stored in data is used. If `FALSE`, HVGs are computed without sample grouping.
 #' @param aggregation Method to group cells stored in `scTypeEval@data`, either `"single-cell"` or `"pseudobulk"`. Default is `"single-cell"`.
-#' @param black.list A character vector of genes to exclude from HVG selection.
-#'   If `NULL`, uses the object’s internal blacklist (`scTypeEval@black.list`).
+#' @param black_list A character vector of genes to exclude from HVG selection.
+#'   If `NULL`, uses the object’s internal blacklist (`scTypeEval@black_list`).
 #' @param ncores Integer specifying the number of CPU cores to use for parallel
 #'   processing (default: `1`).
 #' @param bparam A \code{BiocParallel} backend parameter object for parallelization.
@@ -491,12 +491,12 @@ Add.ProcessedData <- function(scTypeEval,
 #' @param ... Additional arguments passed to internal HVG computation functions.
 #'
 #' @return The modified `scTypeEval` object with HVGs added to
-#'   \code{scTypeEval@gene.lists[["HVG"]]}.
+#'   \code{scTypeEval@gene_lists[["HVG"]]}.
 #'
 #' @details
 #' - Requires that normalized single-cell data has been generated with
-#'   \code{Run.ProcessingData}.
-#' - Genes present in the blacklist (\code{black.list}) are removed before HVG selection.
+#'   \code{run_processing_data}.
+#' - Genes present in the blacklist (\code{black_list}) are removed before HVG selection.
 #' - Available HVG methods:
 #'   \itemize{
 #'     \item \code{"scran"}: Uses the \pkg{scran} \link[scran]{modelGeneVar} function to
@@ -505,7 +505,7 @@ Add.ProcessedData <- function(scTypeEval,
 #'     coefficient of variation, selecting the top \code{ngenes}.
 #'   }
 #'   
-#' @seealso \link{Run.ProcessingData}, \link{Add.ProcessedData}
+#' @seealso \link{run_processing_data}, \link{add_processed_data}
 #'
 #' @examples
 #' # Create and process test data
@@ -520,33 +520,33 @@ Add.ProcessedData <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
-#'                              sample = "sample", min.samples = 3,
-#'                              min.cells = 3, verbose = FALSE)
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- run_processing_data(sceval, ident = "celltype",
+#'                              sample = "sample", min_samples = 3,
+#'                              min_cells = 3, verbose = FALSE)
 #' 
 #' # Compute HVGs using basic method
-#' sceval <- Run.HVG(sceval,
-#'                   var.method = "basic",
+#' sceval <- run_hvg(sceval,
+#'                   var_method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #'
-#' @export Run.HVG
+#' @export run_hvg
 
 
-Run.HVG <- function(scTypeEval,
-                    var.method = "scran",
+run_hvg <- function(scTypeEval,
+                    var_method = "scran",
                     ngenes = 2000,
                     sample = TRUE,
                     aggregation = "single-cell",
-                    black.list = NULL,
+                    black_list = NULL,
                     ncores = 1,
                     bparam = NULL,
                     progressbar = FALSE,
                     verbose = TRUE,
                     ...){
    
-   black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
+   black_list <- check_blacklist(scTypeEval, black_list, verbose = verbose)
    
    param <- set_parallel_params(ncores = ncores,
                                 bparam = bparam,
@@ -559,7 +559,7 @@ Run.HVG <- function(scTypeEval,
    # normalized matrix
    norm.mat <- scTypeEval@data[[aggregation]]
    if(is.null(norm.mat)){
-      stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
+      stop("No normalization slot found. Please run before `run_processing_data()`.\n")
    }
    mat <- norm.mat@matrix
    
@@ -571,29 +571,29 @@ Run.HVG <- function(scTypeEval,
    }
    
    # remove blacked listed genes
-   if(!is.null(black.list) && verbose){message("Filtering out black listed genes... \n")}
-   mat <- mat[!rownames(mat) %in% black.list,]
+   if(!is.null(black_list) && verbose){message("Filtering out black listed genes... \n")}
+   mat <- mat[!rownames(mat) %in% black_list,]
    
-   var.method <- var.method[1]
+   var_method <- var_method[1]
    
    # get highly variable genes
    if(verbose){message("Computing HVG... \n")}
-   hgv <- switch(var.method,
-                 "basic" = get.HVG(norm.mat = mat,
+   hgv <- switch(var_method,
+                 "basic" = get_hvg(norm_mat = mat,
                                    ngenes = ngenes,
                                    sample = sample,
                                    bparam = param,
                                    ...),
-                 "scran" = get.GeneVar(norm.mat = mat,
+                 "scran" = get_gene_var(norm_mat = mat,
                                        sample = sample,
                                        ngenes = ngenes,
                                        bparam = param,
                                        ...),
-                 stop(var.method, " not supported for getting variable genes.")
+                 stop(var_method, " not supported for getting variable genes.")
    )
    
    
-   scTypeEval@gene.lists[["HVG"]] <- hgv
+   scTypeEval@gene_lists[["HVG"]] <- hgv
    
    return(scTypeEval)
 }
@@ -603,10 +603,10 @@ Run.HVG <- function(scTypeEval,
 #'
 #' @description Identifies cell type marker genes from normalized single-cell data
 #' stored in an `scTypeEval` object. The identified markers are stored in the
-#' `gene.lists` slot under the chosen method (e.g. `"scran.findMarkers"`).
+#' `gene_lists` slot under the chosen method (e.g. `"scran.findMarkers"`).
 #'
 #' @param scTypeEval An `scTypeEval` object containing normalized data in the
-#'   `"single-cell"` slot (see \code{Run.ProcessingData}).
+#'   `"single-cell"` slot (see \code{run_processing_data}).
 #' @param method A character string specifying the marker gene identification
 #'   method. Currently supported:
 #'   \itemize{
@@ -614,11 +614,11 @@ Run.HVG <- function(scTypeEval,
 #'     \link[scran]{findMarkers} for differential expression analysis.
 #'   }
 #'   Default: `"scran.findMarkers"`.
-#' @param ngenes.celltype Integer specifying the max number of marker genes to retain
+#' @param ngenes_celltype Integer specifying the max number of marker genes to retain
 #'   per cell type (default: `50`).
 #' @param aggregation Method to group cells stored in `scTypeEval@data`, either `"single-cell"` or `"pseudobulk"`. Default is `"single-cell"`.
-#' @param black.list A character vector of genes to exclude from marker selection.
-#'   If `NULL`, uses the object’s internal blacklist (`scTypeEval@black.list`).
+#' @param black_list A character vector of genes to exclude from marker selection.
+#'   If `NULL`, uses the object’s internal blacklist (`scTypeEval@black_list`).
 #' @param ncores Integer specifying the number of cores to use for parallel
 #'   processing (default: `1`).
 #' @param bparam Optional. A \code{BiocParallel} parameter object for controlling
@@ -629,18 +629,18 @@ Run.HVG <- function(scTypeEval,
 #' @param ... Additional arguments passed to the underlying marker detection function.
 #'
 #' @return The modified `scTypeEval` object with marker genes added to
-#'   \code{scTypeEval@gene.lists[[method]]}.
+#'   \code{scTypeEval@gene_lists[[method]]}.
 #'
 #' @details
 #' - Requires that normalized single-cell data has been generated with
-#'   \code{Run.ProcessingData}.
+#'   \code{run_processing_data}.
 #' - Both cell identities and sample annotations are automatically extracted
 #'   from the normalized data.
-#' - Genes present in the blacklist (\code{black.list}) are removed before marker selection.
+#' - Genes present in the blacklist (\code{black_list}) are removed before marker selection.
 #' - For `"scran.findMarkers"`, the \pkg{scran} method \code{findMarkers} is applied
 #'   to identify differentially expressed genes per cell type while adjusting for sample effects.
 #'   
-#' @seealso \link{Run.ProcessingData}, \link{Add.ProcessedData}
+#' @seealso \link{run_processing_data}, \link{add_processed_data}
 #'
 #' @examples
 #' # Create and process test data
@@ -655,29 +655,29 @@ Run.HVG <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype", 
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- run_processing_data(sceval, ident = "celltype", 
 #'                              aggregation = "single-cell",
-#'                              sample = "sample", min.samples = 3,
-#'                              min.cells = 3, verbose = FALSE)
+#'                              sample = "sample", min_samples = 3,
+#'                              min_cells = 3, verbose = FALSE)
 #'
 #' # Identify marker genes per cell type
-#' sceval <- Run.GeneMarkers(sceval,
+#' sceval <- run_gene_markers(sceval,
 #'  method = "scran.findMarkers",
-#'  ngenes.celltype = 10,
+#'  ngenes_celltype = 10,
 #'  verbose = FALSE)
 #'
 #' @import bluster
 #'
-#' @export Run.GeneMarkers
+#' @export run_gene_markers
 
 
 
-Run.GeneMarkers <- function(scTypeEval,
+run_gene_markers <- function(scTypeEval,
                             method = c("scran.findMarkers"),
-                            ngenes.celltype = 50,
+                            ngenes_celltype = 50,
                             aggregation = "single-cell",
-                            black.list = NULL,
+                            black_list = NULL,
                             ncores = 1,
                             bparam = NULL,
                             progressbar = FALSE,
@@ -689,7 +689,7 @@ Run.GeneMarkers <- function(scTypeEval,
       stop("Supported gene markes definitions is `scran.findMarkers`")
    }
    
-   black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
+   black_list <- check_blacklist(scTypeEval, black_list, verbose = verbose)
    
    if(!tolower(aggregation) %in% aggregation_types){
       stop("Invalid aggregation type. Valid options are: ",
@@ -698,29 +698,29 @@ Run.GeneMarkers <- function(scTypeEval,
    # normalized matrix
    norm.mat <- scTypeEval@data[[aggregation]]
    if(is.null(norm.mat)){
-      stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
+      stop("No normalization slot found. Please run before `run_processing_data()`.\n")
    }
    mat <- norm.mat@matrix
    ident <- norm.mat@ident[[1]]
    sample <- norm.mat@sample
    
    # remove blacked listed genes
-   if(!is.null(black.list) && verbose){message("Filtering out black listed genes... \n")}
-   mat <- mat[!rownames(mat) %in% black.list,]
+   if(!is.null(black_list) && verbose){message("Filtering out black listed genes... \n")}
+   mat <- mat[!rownames(mat) %in% black_list,]
    
    if(verbose){message("Computing cell type markers for ", names(norm.mat@ident),  "... \n")}
    markers <- switch(method,
-                     "scran.findMarkers" = get.DEG(mat = mat,
+                     "scran.findMarkers" = get_deg(mat = mat,
                                                    ident = ident,
                                                    block = sample,
-                                                   ngenes.celltype = ngenes.celltype,
+                                                   ngenes_celltype = ngenes_celltype,
                                                    ncores = ncores,
                                                    bparam = bparam,
                                                    progressbar = progressbar,
                                                    ...)
    )
    
-   scTypeEval@gene.lists[[method]] <- markers
+   scTypeEval@gene_lists[[method]] <- markers
    
    
    return(scTypeEval)
@@ -733,12 +733,12 @@ Run.GeneMarkers <- function(scTypeEval,
 #' It ensures that the input list is valid and assigns names if they are missing.
 #'
 #' @param scTypeEval An `scTypeEval` object to which the gene list will be added.
-#' @param gene.list A named list of gene sets to append. If the list is unnamed, names will be assigned automatically.
+#' @param gene_list A named list of gene sets to append. If the list is unnamed, names will be assigned automatically.
 #'
 #' @return An updated `scTypeEval` object with the new gene list added.
 #'
-#' @details The function verifies that `gene.list` is provided and is a valid list.
-#'          If any elements in `gene.list` lack names, they are automatically renamed.
+#' @details The function verifies that `gene_list` is provided and is a valid list.
+#'          If any elements in `gene_list` lack names, they are automatically renamed.
 #'
 #' @examples
 #' #' # Create synthetic test data
@@ -754,41 +754,41 @@ Run.GeneMarkers <- function(scTypeEval,
 #' )
 #' 
 #' # Create scTypeEval object from matrix
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
 #' 
-#' sceval <- create.scTypeEval(
+#' sceval <- create_scTypeEval(
 #'   matrix = counts, 
 #'   metadata = metadata,
-#'   active.ident = "celltype"
+#'   active_ident = "celltype"
 #' )
 #' 
-#' sceval <- add.GeneList(sceval,
-#'                       gene.list = list("cytokines" = c("IL10", "IL6", "IL4")))
+#' sceval <- add_gene_list(sceval,
+#'                       gene_list = list("cytokines" = c("IL10", "IL6", "IL4")))
 #'
-#' @export add.GeneList
+#' @export add_gene_list
 
 
 
-add.GeneList <- function(scTypeEval,
-                         gene.list = NULL){
+add_gene_list <- function(scTypeEval,
+                         gene_list = NULL){
    
    # check if it is a list and if it is named
-   # Check if gene.list is provided
-   if (is.null(gene.list)) {
-      stop("gene.list cannot be NULL. Please provide a valid list.")
+   # Check if gene_list is provided
+   if (is.null(gene_list)) {
+      stop("gene_list cannot be NULL. Please provide a valid list.")
    }
    
-   if(!is.list(gene.list)){
-      gene.list <- list(gene.list)
+   if(!is.list(gene_list)){
+      gene_list <- list(gene_list)
    }
    
-   # If gene.list is unnamed, assign names
-   if (any(is.null(names(gene.list)))) {
-      names(gene.list) <- paste0("gene.list", seq_along(gene.list))
+   # If gene_list is unnamed, assign names
+   if (any(is.null(names(gene_list)))) {
+      names(gene_list) <- paste0("gene_list", seq_along(gene_list))
       warning("All or some names of the list is NULL, renaming list.")
    }
    
-   scTypeEval@gene.lists <- c(scTypeEval@gene.lists, gene.list)
+   scTypeEval@gene_lists <- c(scTypeEval@gene_lists, gene_list)
    
    return(scTypeEval)
 }
@@ -803,10 +803,10 @@ add.GeneList <- function(scTypeEval,
 #' data aggregation stored in the \code{scTypeEval} object (e.g., single-cell or pseudobulk).
 #' The resulting PCA embeddings and loadings are stored in the \code{reductions} slot of the object.
 #'
-#' @param scTypeEval A \code{scTypeEval} object containing processed expression data. See \code{Run.ProcessingData} or \code{Add.ProcessedData}).
-#' @param gene.list Named list of character vectors. Each element defines a gene set for PCA analysis.
+#' @param scTypeEval A \code{scTypeEval} object containing processed expression data. See \code{run_processing_data} or \code{add_processed_data}).
+#' @param gene_list Named list of character vectors. Each element defines a gene set for PCA analysis.
 #' If \code{NULL}, all pre-defined gene lists stored in \code{scTypeEval} are used.
-#' @param black.list Character vector of genes to exclude from PCA. If \code{NULL},
+#' @param black_list Character vector of genes to exclude from PCA. If \code{NULL},
 #' the blacklist stored in \code{scTypeEval} is used.
 #' @param ndim Integer. Number of principal components to compute (default: 30).
 #' @param verbose Logical. Whether to print progress messages during computation (default: \code{TRUE}).
@@ -816,12 +816,12 @@ add.GeneList <- function(scTypeEval,
 #'
 #' @details
 #' This function runs PCA on all processed data slots within the \code{scTypeEval} object.
-#' Each PCA result is stored as a \code{DimRed} assay containing:
+#' Each PCA result is stored as a \code{dim_red} assay containing:
 #' \itemize{
 #'   \item \code{embeddings}: PCA coordinates of samples/cells.
-#'   \item \code{feature.loadings}: Loadings of features (genes) on each PC.
-#'   \item \code{gene.list}: The gene sets used for PCA.
-#'   \item \code{black.list}: The genes excluded from PCA.
+#'   \item \code{feature_loadings}: Loadings of features (genes) on each PC.
+#'   \item \code{gene_list}: The gene sets used for PCA.
+#'   \item \code{black_list}: The genes excluded from PCA.
 #'   \item \code{aggregation}: The aggregation type (e.g., \code{"single-cell"}, \code{"pseudobulk"}).
 #'   \item \code{ident}, \code{sample}, and \code{group}: Metadata carried over from processed data.
 #' }
@@ -839,37 +839,37 @@ add.GeneList <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
-#'                              sample = "sample", min.samples = 3,
-#'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval,
-#'                   var.method = "basic",
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- run_processing_data(sceval, ident = "celltype",
+#'                              sample = "sample", min_samples = 3,
+#'                              min_cells = 3, verbose = FALSE)
+#' sceval <- run_hvg(sceval,
+#'                   var_method = "basic",
 #'                   ngenes = 20,
 #'                   verbose = FALSE)
 #' 
 #' # Run PCA on HVG genes
-#' sceval <- Run.PCA(sceval, gene.list = "HVG", ndim = 4, verbose = FALSE)
+#' sceval <- run_pca(sceval, gene_list = "HVG", ndim = 4, verbose = FALSE)
 #'
-#' @seealso \link{Add.ProcessedData}
+#' @seealso \link{add_processed_data}
 #'
-#' @export Run.PCA
+#' @export run_pca
 
 
 
 # obtain PCA from a gene list
-Run.PCA <- function(scTypeEval,
-                    gene.list = NULL,
-                    black.list = NULL,
+run_pca <- function(scTypeEval,
+                    gene_list = NULL,
+                    black_list = NULL,
                     ndim = 30,
                     verbose = TRUE){
    
    if(length(scTypeEval@data)<1){
-      stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
+      stop("No normalization slot found. Please run before `run_processing_data()`.\n")
    }
    
-   gene.list <- .check_genelist(scTypeEval, gene.list, verbose = verbose)
-   black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
+   gene_list <- check_genelist(scTypeEval, gene_list, verbose = verbose)
+   black_list <- check_blacklist(scTypeEval, black_list, verbose = verbose)
    
    pca.list <- lapply(names(scTypeEval@data),
                       function(ag){
@@ -877,13 +877,13 @@ Run.PCA <- function(scTypeEval,
                          # normalized matrix
                          mat <- scTypeEval@data[[ag]]
                          if(is.null(mat)){
-                            stop("No normalization slot found. Please run before `Run.ProcessingData()`.\n")
+                            stop("No normalization slot found. Please run before `run_processing_data()`.\n")
                          }
-                         ident.name <- names(mat@ident)
+                         ident_name <- names(mat@ident)
                          
-                         mat <- .general_filtering(mat,
-                                                   black.list = black.list,
-                                                   gene.list = gene.list,
+                         mat <- general_filtering(mat,
+                                                   black_list = black_list,
+                                                   gene_list = gene_list,
                                                    verbose = verbose)
                          
                          # compute PCA
@@ -892,15 +892,15 @@ Run.PCA <- function(scTypeEval,
                                              ndim = ndim,
                                              verbose = verbose)
                          
-                         # Create DimRed assay
-                         rr <- methods::new("DimRed",
+                         # Create dim_red assay
+                         rr <- methods::new("dim_red",
                                             embeddings = t(pr$x),
-                                            feature.loadings = pr$rotation,
-                                            gene.list = gene.list,
-                                            black.list = black.list,
+                                            feature_loadings = pr$rotation,
+                                            gene_list = gene_list,
+                                            black_list = black_list,
                                             aggregation = ag,
                                             group = mat@group,
-                                            ident = setNames(list(mat@ident), ident.name),
+                                            ident = setNames(list(mat@ident), ident_name),
                                             sample = mat@sample,
                                             key = "PCA")
                          return(rr)
@@ -922,7 +922,7 @@ Run.PCA <- function(scTypeEval,
 #' @description
 #' This function allows the user to insert pre-computed dimensionality reduction (e.g., PCA, UMAP, 
 #' t-SNE, or any embedding) into an \code{scTypeEval} object. The embeddings are stored in the 
-#' \code{reductions} slot as a \code{DimRed} object, enabling integration with the scTypeEval 
+#' \code{reductions} slot as a \code{dim_red} object, enabling integration with the scTypeEval 
 #' workflow for downstream analysis.
 #'
 #' @param scTypeEval A \code{scTypeEval} object where the dimensionality reduction will be stored.
@@ -931,22 +931,22 @@ Run.PCA <- function(scTypeEval,
 #' \code{"single-cell"} (no aggregation) or \code{"pseudobulk"} (aggregated per sample and cell type).
 #' @param ident Required. A vector of cell identities (e.g., cell type annotation). 
 #' If \code{NULL}, the function attempts to infer it.
-#' @param ident.name Character. Name assigned to the provided \code{ident} grouping (default: \code{"custom"}).
+#' @param ident_name Character. Name assigned to the provided \code{ident} grouping (default: \code{"custom"}).
 #' @param sample Required. A vector indicating sample identity of each observation. 
 #' If \code{NULL}, the function attempts to infer it.
 #' @param key Optional. Character. Key or label assigned to this dimensionality reduction (e.g., \code{"PCA"}, \code{"UMAP"}).
-#' @param gene.list Optional. Character vector or named list of genes associated with the embeddings 
+#' @param gene_list Optional. Character vector or named list of genes associated with the embeddings 
 #' (e.g., input features used for the dimensionality reduction). Default: \code{NULL}.
-#' @param black.list Optional. Character vector of genes excluded from the dimensionality reduction.
+#' @param black_list Optional. Character vector of genes excluded from the dimensionality reduction.
 #' Default: \code{NULL}.
-#' @param feature.loadings Optional. Matrix of feature loadings corresponding to the embeddings 
+#' @param feature_loadings Optional. Matrix of feature loadings corresponding to the embeddings 
 #' (e.g., PCA rotation matrix). Default: \code{NULL}.
 #' @param filter Logical. If \code{TRUE}, filters cells before adding the embeddings based on 
-#' \code{min.samples} and \code{min.cells}. Only supported for \code{"single-cell"} aggregation. 
+#' \code{min_samples} and \code{min_cells}. Only supported for \code{"single-cell"} aggregation. 
 #' Default: \code{FALSE}.
-#' @param min.samples Integer. Minimum number of samples required for retaining a cell type in 
+#' @param min_samples Integer. Minimum number of samples required for retaining a cell type in 
 #' single-cell filtering. Default: \code{5}.
-#' @param min.cells Integer. Minimum number of cells required per group for filtering. Default: \code{10}.
+#' @param min_cells Integer. Minimum number of cells required per group for filtering. Default: \code{10}.
 #' @param verbose Logical. Whether to print messages during execution. Default: \code{TRUE}.
 #'
 #' @return The modified \code{scTypeEval} object with the new dimensionality reduction stored 
@@ -966,21 +966,21 @@ Run.PCA <- function(scTypeEval,
 #' )
 #' 
 #' # Create scTypeEval object from matrix
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
 #' 
-#' sceval <- create.scTypeEval(
+#' sceval <- create_scTypeEval(
 #'   matrix = counts, 
 #'   metadata = metadata,
-#'   active.ident = "celltype"
+#'   active_ident = "celltype"
 #' )
 #' 
 #' #' # Process data with filtering
-#' sceval <- Run.ProcessingData(
+#' sceval <- run_processing_data(
 #'   sceval,
 #'   ident = "celltype",
 #'   sample = "sample",
-#'   min.samples = 3,
-#'   min.cells = 3,
+#'   min_samples = 3,
+#'   min_cells = 3,
 #'   verbose = FALSE
 #' )
 #' 
@@ -991,7 +991,7 @@ Run.PCA <- function(scTypeEval,
 #' ident <- sceval@data[["single-cell"]]@ident[[1]]
 #' sample <- sceval@data[["single-cell"]]@sample
 #' 
-#' sceval <- add.DimReduction(
+#' sceval <- add_dim_reduction(
 #'    sceval,
 #'    embeddings = embeddings,
 #'    aggregation = "single-cell",
@@ -1001,24 +1001,24 @@ Run.PCA <- function(scTypeEval,
 #'   verbose = FALSE
 #' )
 #'
-#' @seealso \link{Run.PCA}
+#' @seealso \link{run_pca}
 #'
-#' @export add.DimReduction
+#' @export add_dim_reduction
 
 
-add.DimReduction <- function(scTypeEval,
+add_dim_reduction <- function(scTypeEval,
                              embeddings,
                              aggregation,
                              ident = NULL,
-                             ident.name = "custom",
+                             ident_name = "custom",
                              sample = NULL,
                              key = NULL,
-                             gene.list = NULL,
-                             black.list = NULL,
-                             feature.loadings = NULL,
+                             gene_list = NULL,
+                             black_list = NULL,
+                             feature_loadings = NULL,
                              filter = FALSE,
-                             min.samples = 5,
-                             min.cells = 10,
+                             min_samples = 5,
+                             min_cells = 10,
                              verbose = TRUE
                              
 )
@@ -1027,11 +1027,11 @@ add.DimReduction <- function(scTypeEval,
    if(!aggregation %in% aggregation_types){
       stop("Only supported aggregations are just `single-cell` (no aggregation) or `pseudobulk` per cell type and sample.\n")
    }
-   ident <- .check_ident(ident = ident, verbose = verbose)
+   ident <- check_ident(ident = ident, verbose = verbose)
    if(length(ident) != ncol(embeddings)){
       stop("Different length of ident vector and ncol of data\n")
    }
-   sample <- .check_sample(sample = sample, verbose = verbose)
+   sample <- check_sample(sample = sample, verbose = verbose)
    if(length(sample) != ncol(embeddings)){
       stop("Different length of sample vector and ncol of data\n")
    }
@@ -1040,14 +1040,14 @@ add.DimReduction <- function(scTypeEval,
    if(aggregation == "single-cell"){
       
       if(filter){
-         if(verbose){message(" - Filtering cells based on min.samples and min.cells\n")}
+         if(verbose){message(" - Filtering cells based on min_samples and min_cells\n")}
          
-         mat <- get.matrix(embeddings,
+         mat <- get_matrix(embeddings,
                            ident = ident,
                            sample = sample,
                            aggregation = aggregation,
-                           min.samples = min.samples,
-                           min.cells = min.cells)
+                           min_samples = min_samples,
+                           min_cells = min_cells)
          
          embeddings <- mat@matrix
          ident <- mat@ident
@@ -1069,25 +1069,25 @@ add.DimReduction <- function(scTypeEval,
    }
    
    # Provide defaults for required slots if NULL
-   if(is.null(feature.loadings)){
-      feature.loadings <- matrix(numeric(0), nrow = nrow(embeddings), ncol = 0)
+   if(is.null(feature_loadings)){
+      feature_loadings <- matrix(numeric(0), nrow = nrow(embeddings), ncol = 0)
    }
-   if(is.null(gene.list)){
-      gene.list <- character(0)
+   if(is.null(gene_list)){
+      gene_list <- character(0)
    }
-   if(is.null(black.list)){
-      black.list <- character(0)
+   if(is.null(black_list)){
+      black_list <- character(0)
    }
    
-   # Create DimRed assay
-   rr <- methods::new("DimRed",
+   # Create dim_red assay
+   rr <- methods::new("dim_red",
                       embeddings = embeddings,
-                      feature.loadings = feature.loadings,
-                      gene.list = gene.list,
-                      black.list = black.list,
+                      feature_loadings = feature_loadings,
+                      gene_list = gene_list,
+                      black_list = black_list,
                       aggregation = aggregation,
                       group = groups,
-                      ident = setNames(list(ident), ident.name),
+                      ident = setNames(list(ident), ident_name),
                       sample = sample,
                       key = key)
    
@@ -1112,11 +1112,11 @@ add.DimReduction <- function(scTypeEval,
 #'        \code{names(dissimilarity_methods)}. Default is \code{"WasserStein"}.
 #' @param reduction Logical. Whether to compute dissimilarity on dimensional 
 #'        reduction embeddings (if available). Default is \code{TRUE}.
-#' @param gene.list Optional. Character vector of genes to include. If 
+#' @param gene_list Optional. Character vector of genes to include. If 
 #'        \code{NULL}, the method will use the default or inherited gene list.
-#' @param black.list Optional. Character vector of genes to exclude. If 
+#' @param black_list Optional. Character vector of genes to exclude. If 
 #'        \code{NULL}, the method will use the default or inherited blacklist.
-#' @param ReciprocalClassifier Character. Classifier to use for RecipClassif 
+#' @param reciprocal_classifier Character. Classifier to use for recip_classif 
 #'        dissimilarity methods. Default is 
 #'        \code{"SingleR"}.
 #' @param ncores Integer. Number of cores for parallelization. Default is \code{1}.
@@ -1133,18 +1133,18 @@ add.DimReduction <- function(scTypeEval,
 #'         pseudobulk profiles using the specified distance metric. Supported distances are euclidean, cosine, and pearson.
 #'   \item \code{"WasserStein"} – computes Wasserstein distances between groups 
 #'         of embeddings or cells.
-#'   \item \code{"RecipClassif:<method>"} – assigns cells pairwise between samples using 
+#'   \item \code{"recip_classif:<method>"} – assigns cells pairwise between samples using 
 #'         the specified classifier, then computes dissimilarity between assignments.
 #'         Supported methods are 'match' and 'score'.
 #' }
 #'
 #' If \code{reduction = TRUE}, the function expects that dimensional reduction 
-#' embeddings have been added previously via \code{Run.PCA()} or 
-#' \code{add.DimReduction()}. If unavailable, set \code{reduction = FALSE} 
+#' embeddings have been added previously via \code{run_pca()} or 
+#' \code{add_dim_reduction()}. If unavailable, set \code{reduction = FALSE} 
 #' to compute dissimilarity on processed expression data instead.
 #'
 #' @return
-#' An updated \code{scTypeEval} object with a new \code{DissimilarityAssay} 
+#' An updated \code{scTypeEval} object with a new \code{dissimilarity_assay} 
 #' stored in \code{scTypeEval@dissimilarity[[method]]}.
 #'
 #' @examples
@@ -1160,33 +1160,33 @@ add.DimReduction <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
-#'                              sample = "sample", min.samples = 3,
-#'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval,
-#'                   var.method = "basic",
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- run_processing_data(sceval, ident = "celltype",
+#'                              sample = "sample", min_samples = 3,
+#'                              min_cells = 3, verbose = FALSE)
+#' sceval <- run_hvg(sceval,
+#'                   var_method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
-#' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+#' sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 #'                             reduction = FALSE, verbose = FALSE)
 #'
 #' @seealso 
-#' \code{\link{add.DimReduction}}, \code{\link{Run.PCA}}, 
-#' \code{\link{Run.ProcessingData}}
+#' \code{\link{add_dim_reduction}}, \code{\link{run_pca}}, 
+#' \code{\link{run_processing_data}}
 #'
-#' @export Run.Dissimilarity
+#' @export run_dissimilarity
 
 
 
-Run.Dissimilarity <- function(scTypeEval,
+run_dissimilarity <- function(scTypeEval,
                               method = "WasserStein",
                               reduction = TRUE,
-                              gene.list = NULL,
-                              black.list = NULL,
-                              ReciprocalClassifier = "SingleR",
+                              gene_list = NULL,
+                              black_list = NULL,
+                              reciprocal_classifier = "SingleR",
                               ncores = 1,
                               bparam = NULL,
                               progressbar = FALSE,
@@ -1213,25 +1213,25 @@ Run.Dissimilarity <- function(scTypeEval,
       mat_ident <- scTypeEval@reductions[[slot]]
       if(is.null(mat_ident)){
          stop("No dimensional reduction slot found for ", slot ,
-              ". Please run before `Run.PCA()` or add a valid dimensional reduction assay.\n")
+              ". Please run before `run_pca()` or add a valid dimensional reduction assay.\n")
       }
       mat <- mat_ident@embeddings
-      ident.name <- names(mat_ident@ident)
-      gene.list <- mat_ident@gene.list
-      black.list <- mat_ident@black.list
+      ident_name <- names(mat_ident@ident)
+      gene_list <- mat_ident@gene_list
+      black_list <- mat_ident@black_list
       
    } else {
       mat_ident <- scTypeEval@data[[slot]]
       if(is.null(mat_ident)){
          stop("No processed data slot found for ", slot ,
-              ". Please run before `Run.ProcessingData()` or add a data assay.\n")
+              ". Please run before `run_processing_data()` or add a data assay.\n")
       }
-      gene.list <- .check_genelist(scTypeEval, gene.list, verbose = verbose)
-      black.list <- .check_blacklist(scTypeEval, black.list, verbose = verbose)
-      ident.name <- names(mat_ident@ident)
-      mat_ident <- .general_filtering(mat_ident,
-                                      black.list = black.list,
-                                      gene.list = gene.list,
+      gene_list <- check_genelist(scTypeEval, gene_list, verbose = verbose)
+      black_list <- check_blacklist(scTypeEval, black_list, verbose = verbose)
+      ident_name <- names(mat_ident@ident)
+      mat_ident <- general_filtering(mat_ident,
+                       black_list = black_list,
+                       gene_list = gene_list,
                                       verbose = verbose)
       mat <- mat_ident@matrix
    }
@@ -1241,14 +1241,14 @@ Run.Dissimilarity <- function(scTypeEval,
       group_levels <- levels(mat_ident@group)
       ident <- sapply(group_levels, function(x){strsplit(x, "_")[[1]][2]}) |>
          factor()
-      ident <- setNames(list(ident), ident.name)
+      ident <- setNames(list(ident), ident_name)
       sample <- sapply(group_levels, function(x){strsplit(x, "_")[[1]][1]}) |>
          factor()
       
    } else if(slot == "pseudobulk"){
       ident <- mat_ident@ident
       if(!is.list(ident)){
-         ident <- setNames(list(ident), ident.name)
+         ident <- setNames(list(ident), ident_name)
       }
       sample <- mat_ident@sample
    }
@@ -1266,18 +1266,18 @@ Run.Dissimilarity <- function(scTypeEval,
    
    dist <- switch(
       aggregation,
-      "pseudobulk" = get.distance(norm.mat = mat,
-                                  distance.method = dist.type,
+      "pseudobulk" = get_distance(norm_mat = mat,
+                                  distance_method = dist.type,
                                   verbose = verbose),
       "wasserstein" = compute_wasserstein(mat = mat,
                                           group = mat_ident@group,
                                           bparam = param,
                                           verbose = verbose),
-      "recipclassif" = RecipClassif(mat = mat,
+      "recip_classif" = recip_classif(mat = mat,
                                     ident = ident[[1]],
                                     sample = sample,
                                     group = mat_ident@group,
-                                    classifier = ReciprocalClassifier,
+                                    classifier = reciprocal_classifier,
                                     method = dist.type,
                                     bparam = param,
                                     verbose = verbose),
@@ -1285,11 +1285,11 @@ Run.Dissimilarity <- function(scTypeEval,
    )
    
    # build dissimilarity object
-   rr <- methods::new("DissimilarityAssay",
+   rr <- methods::new("dissimilarity_assay",
                       dissimilarity = dist,
                       method = method,
-                      gene.list = gene.list,
-                      black.list = black.list,
+                      gene_list = gene_list,
+                      black_list = black_list,
                       aggregation = aggregation,
                       ident = ident,
                       sample = sample)
@@ -1312,15 +1312,15 @@ Run.Dissimilarity <- function(scTypeEval,
 #' are calculated per cell type and returned in a tidy \code{data.frame}.
 #'
 #' @param scTypeEval A \code{scTypeEval} object containing one or more 
-#'        dissimilarity assays (see \code{Run.Dissimilarity}).
-#' @param dissimilarity.slot Character. Which dissimilarity assay(s) to use. 
+#'        dissimilarity assays (see \code{run_dissimilarity}).
+#' @param dissimilarity_slot Character. Which dissimilarity assay(s) to use. 
 #'        Can be \code{"all"} (default) or the name(s) of specific slots stored 
 #'        in \code{scTypeEval@dissimilarity}.
-#' @param Consistency.metric Character vector. Internal validation metrics to compute. 
+#' @param consistency_metric Character vector. Internal validation metrics to compute. 
 #'        Supported options include:
 #'        \itemize{
 #'          \item \code{"silhouette"} – cohesion/separation score
-#'          \item \code{"2label.silhouette"} – Variant of the silhouette score where,
+#'          \item \code{"2label_silhouette"} – Variant of the silhouette score where,
 #'           for each cell, the within-cluster distance is compared against the average
 #'           distance to all cells outside its cluster (rather than just the closest
 #'           other cluster). This effectively treats the clustering as a two-group
@@ -1332,37 +1332,37 @@ Run.Dissimilarity <- function(scTypeEval,
 #'          Optionally, values can be normalized relative to the expected proportion by chance.
 #'          Higher scores indicate that cells are surrounded by neighbors of the same type,
 #'          reflecting strong local label consistency.
-#'          \item \code{"ward.PropMatch"} – For each true cell type, identifies the cluster that contains
+#'          \item \code{"ward_PropMatch"} – For each true cell type, identifies the cluster that contains
 #'           the largest number of its cells (the dominant cluster) and computes the proportion of cells
 #'           from that cell type that fall into this cluster. Optionally, this proportion can be normalized
 #'           relative to the expected proportion by chance. Higher values indicate better alignment between
 #'           true labels and cluster assignments.
-#'          \item \code{"Orbital.medoid"} – For each cell type, identifies a representative medoid cell
+#'          \item \code{"Orbital_medoid"} – For each cell type, identifies a representative medoid cell
 #'           (the cell minimizing the total distance to all other cells of the same type).
 #'            Then, for each non-medoid cell, it checks whether the cell is closer to its own medoid
 #'             than to the medoids of other cell types. The metric for each cell type is the proportion
 #'             of cells that are closer to their own medoid than to any other medoid. 
 #'              Optionally, this proportion can be normalized relative to the expected proportion by chance.
 #'              Higher values indicate that cells are well-clustered around their medoid.
-#'          \item \code{"Average.similarity"} – Measures how similar cells are within
+#'          \item \code{"Average_similarity"} – Measures how similar cells are within
 #'           the same cell type relative to cells of other types. For each cell,
 #'           it computes the average distance to other cells in its group and to
 #'          cells outside its group, then combines these into a normalized score (higher = better).
 #'          Scores are then averaged per cell type. This metric is similar in spirit to a one-label silhouette.
 #'        }
 #'        Default: all supported metrics.
-#' @param KNNGraph_k Integer. Number of nearest neighbors to use for 
+#' @param knn_graph_k Integer. Number of nearest neighbors to use for 
 #'        graph-based metrics (e.g. \code{"NeighborhoodPurity"}). Default is \code{5}.
-#' @param hclust.method Character. Agglomeration method passed to \code{\link{hclust}} 
+#' @param hclust_method Character. Agglomeration method passed to \code{\link{hclust}} 
 #'        for Ward-based metrics. Default is \code{"ward.D2"}.
 #' @param normalize Logical. Whether to normalize metric values (e.g., scaling 
 #'        across dissimilarity methods). Default is \code{FALSE}.
-#' @param return.scTypeEval Logical. Whether to return data frame with inter-sample consistencies or store within scTypeEval@consistency slot. Default is \code{FALSE}.
+#' @param return_scTypeEval Logical. Whether to return data frame with inter-sample consistencies or store within scTypeEval@consistency slot. Default is \code{FALSE}.
 #' @param verbose Logical. Whether to print progress messages. Default is \code{TRUE}.
 #'
 #' @details
 #' This function builds upon the dissimilarity assays generated by 
-#' \code{\link{Run.Dissimilarity}}. For each selected dissimilarity representation, 
+#' \code{\link{run_dissimilarity}}. For each selected dissimilarity representation, 
 #' the chosen internal validation metrics are computed and stored in a long-format 
 #' data frame, allowing downstream comparison across cell types, metrics, 
 #' and dissimilarity methods.
@@ -1372,7 +1372,7 @@ Run.Dissimilarity <- function(scTypeEval,
 #' \itemize{
 #'   \item \code{celltype} – the annotation/group label
 #'   \item \code{measure} – numeric consistency score
-#'   \item \code{consistency.metric} – the metric name
+#'   \item \code{consistency_metric} – the metric name
 #'   \item \code{dissimilarity_method} – the dissimilarity method used
 #'   \item \code{ident} – the identity class (from \code{scTypeEval@ident})
 #' }
@@ -1390,67 +1390,67 @@ Run.Dissimilarity <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
-#'                              sample = "sample", min.samples = 3,
-#'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval,
-#'                   var.method = "basic",
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- run_processing_data(sceval, ident = "celltype",
+#'                              sample = "sample", min_samples = 3,
+#'                              min_cells = 3, verbose = FALSE)
+#' sceval <- run_hvg(sceval,
+#'                   var_method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
-#' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+#' sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 #'                             reduction = FALSE, verbose = FALSE)
 #' 
 #' # Obtain consistency
-#' cons <- get.Consistency(sceval, verbose = FALSE)
+#' cons <- get_consistency(sceval, verbose = FALSE)
 #'
 #' @seealso 
-#' \code{\link{Run.Dissimilarity}}
+#' \code{\link{run_dissimilarity}}
 #'
-#' @export get.Consistency
+#' @export get_consistency
 
 
-get.Consistency <- function(scTypeEval,
-                            dissimilarity.slot = "all", 
-                            Consistency.metric = c("silhouette",
-                                                   "2label.silhouette",
+get_consistency <- function(scTypeEval,
+                            dissimilarity_slot = "all", 
+                            consistency_metric = c("silhouette",
+                                                   "2label_silhouette",
                                                    "NeighborhoodPurity",
-                                                   "ward.PropMatch",
-                                                   "Orbital.medoid",
-                                                   "Average.similarity"),
-                            KNNGraph_k = 5,
-                            hclust.method = "ward.D2",
+                                                   "ward_PropMatch",
+                                                   "Orbital_medoid",
+                                                   "Average_similarity"),
+                            knn_graph_k = 5,
+                            hclust_method = "ward.D2",
                             normalize = FALSE,
-                            return.scTypeEval = FALSE,
+                            return_scTypeEval = FALSE,
                             verbose = TRUE
                             
 ){
    
-   diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
+   diss.assays <- check_dissimilarity_assays(scTypeEval, slot = dissimilarity_slot)
    
    consist.list <- lapply(diss.assays,
                           function(da){
                              assay <- scTypeEval@dissimilarity[[da]]
                              
                              dist <- assay@dissimilarity
-                             # if RecipClassif match, convert 0.5 (for plotting to 1)
-                             if (da == "RecipClassif:Match") {
+                             # if recip_classif match, convert 0.5 (for plotting to 1)
+                             if (da == "recip_classif:Match") {
                                 dist[dist == 0.5] <- 1
                              }
                              
                              ident <- assay@ident[[1]]
-                             ident.name <- names(assay@ident)
+                             ident_name <- names(assay@ident)
                              # all expected clusters
-                             all_clusters <- purge_label(unique(scTypeEval@metadata[[ident.name]]))
+                             all_clusters <- purge_label(unique(scTypeEval@metadata[[ident_name]]))
                              all_clusters <- all_clusters[!is.na(all_clusters)]
                              
                              # compute internal validation metrics
                              if(verbose){message("Computing internal validation metrics for ", da, " ... \n")}
-                             con <- calculate_IntVal_metric(dist = dist,
-                                                            metrics = Consistency.metric,
+                             con <- calculate_int_val_metric(dist = dist,
+                                                            metrics = consistency_metric,
                                                             ident = ident,
-                                                            KNNGraph_k = KNNGraph_k,
-                                                            hclust.method = hclust.method,
+                                                            knn_graph_k = knn_graph_k,
+                                                            hclust_method = hclust_method,
                                                             normalize = normalize)
                              dfl <- lapply(names(con),
                                            function(int){
@@ -1462,7 +1462,7 @@ get.Consistency <- function(scTypeEval,
                                               # start consistency dataframe object
                                               r <- data.frame(celltype = names(con[[int]]),
                                                               measure = con[[int]],
-                                                              consistency.metric = int)
+                                                              consistency_metric = int)
                                               return(r)
                                            })
                              
@@ -1475,11 +1475,11 @@ get.Consistency <- function(scTypeEval,
    
    consist <- do.call(rbind, consist.list) 
    
-   if(!return.scTypeEval){
+   if(!return_scTypeEval){
       return(consist)
    } else {
-      ident.name <- unique(consist$ident)
-      scTypeEval@consistency[[ident.name]] <- consist
+      ident_name <- unique(consist$ident)
+      scTypeEval@consistency[[ident_name]] <- consist
       return(scTypeEval)
    }
    
@@ -1493,19 +1493,19 @@ get.Consistency <- function(scTypeEval,
 #' \code{reductions} slot of an \code{scTypeEval} object.
 #'
 #' @param scTypeEval An \code{scTypeEval} object containing PCA results in the \code{reductions} slot.
-#' @param reduction.slot Character. Name(s) of the reduction(s) to plot. If \code{"all"} 
+#' @param reduction_slot Character. Name(s) of the reduction(s) to plot. If \code{"all"} 
 #' (default), all available PCA reductions in the object are plotted.
 #' @param label Logical. Whether to add cluster labels to the PCA plot (default: \code{TRUE}).
 #' @param dims Integer vector of length 2. The principal component (PC) dimensions to plot 
 #' (default: \code{c(1,2)}).
-#' @param show.legend Logical. Whether to display a legend (default: \code{FALSE}).
+#' @param show_legend Logical. Whether to display a legend (default: \code{FALSE}).
 #'
 #' @return A named list of PCA plots (\link[ggplot2]{ggplot} objects) corresponding to 
 #' the PCA analyses stored in the \code{reductions} slot of an \code{scTypeEval} object 
-#' (generated by \link{add.DimReduction}). If only one reduction is selected, a single ggplot object 
+#' (generated by \link{add_dim_reduction}). If only one reduction is selected, a single ggplot object 
 #' is returned.
 #'
-#' @seealso \link{add.DimReduction}
+#' @seealso \link{add_dim_reduction}
 #'
 #' @examples
 #' # Create and process test data
@@ -1520,35 +1520,35 @@ get.Consistency <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
-#'                              sample = "sample", min.samples = 3,
-#'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval,
-#'                   var.method = "basic",
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- run_processing_data(sceval, ident = "celltype",
+#'                              sample = "sample", min_samples = 3,
+#'                              min_cells = 3, verbose = FALSE)
+#' sceval <- run_hvg(sceval,
+#'                   var_method = "basic",
 #'                   ngenes = 20,
 #'                   verbose = FALSE)
 #' 
 #' # Run PCA on HVG genes
-#' sceval <- Run.PCA(sceval,
-#'                  gene.list = "HVG",
+#' sceval <- run_pca(sceval,
+#'                  gene_list = "HVG",
 #'                  ndim = 4,
 #'                  verbose = FALSE)
 #' 
 #' # plot PCA
-#' plot.PCA(sceval)
+#' plot_pca(sceval)
 #'
-#' @export plot.PCA
+#' @export plot_pca
 
 
 
-plot.PCA <- function(scTypeEval,
-                     reduction.slot = "all",
+plot_pca <- function(scTypeEval,
+                     reduction_slot = "all",
                      label = TRUE,
                      dims = c(1,2),
-                     show.legend = FALSE) {
+                     show_legend = FALSE) {
    
-   red.assays <- .check_DimRedAssays(scTypeEval, slot = reduction.slot)
+   red.assays <- check_dim_red_assays(scTypeEval, slot = reduction_slot)
    
    pls <- lapply(red.assays,
                  function(da){
@@ -1561,13 +1561,13 @@ plot.PCA <- function(scTypeEval,
                        dplyr::mutate(ident = ident)
                     
                     # compute variance of PCs
-                    vrs <- var_PCA(t(assay@embeddings))[dims]
+                    vrs <- var_pca(t(assay@embeddings))[dims]
                     vrs <- round(vrs*100, 2)
                     
                     labs <- paste0("PC", dims, " (", vrs, "%)")
                     
-                    pl <- helper.plot.scatter(df,
-                                              show.legend = show.legend,
+                    pl <- helper_plot_scatter(df,
+                                              show_legend = show_legend,
                                               label = label) +
                        ggplot2::labs(x = labs[1],
                                      y = labs[2],
@@ -1593,9 +1593,9 @@ plot.PCA <- function(scTypeEval,
 #' clustering method.
 #'
 #' @param scTypeEval An \code{scTypeEval} object containing dissimilarity matrices in the \code{dissimilarity} slot.
-#' @param dissimilarity.slot Character string. Specifies which dissimilarity assays to cluster.
+#' @param dissimilarity_slot Character string. Specifies which dissimilarity assays to cluster.
 #'   Use \code{"all"} (default) to include all available assays.
-#' @param hierarchy.method Character string specifying the hierarchical clustering method
+#' @param hierarchy_method Character string specifying the hierarchical clustering method
 #'   (default: \code{"ward.D2"}). See \link[stats]{hclust} for available options.
 #' @param verbose Logical. If \code{TRUE}, prints messages about progress (default: \code{TRUE}).
 #'
@@ -1620,32 +1620,32 @@ plot.PCA <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
-#'                              sample = "sample", min.samples = 3,
-#'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval,
-#'                   var.method = "basic",
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- run_processing_data(sceval, ident = "celltype",
+#'                              sample = "sample", min_samples = 3,
+#'                              min_cells = 3, verbose = FALSE)
+#' sceval <- run_hvg(sceval,
+#'                   var_method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
-#' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+#' sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 #'                             reduction = FALSE, verbose = FALSE)
 #' # Perform hierarchical clustering on all available dissimilarity matrices
-#' hier_results <- get.hierarchy(sceval, verbose = FALSE)
+#' hier_results <- get_hierarchy(sceval, verbose = FALSE)
 #'
-#' @seealso \link{Run.Dissimilarity}, \link[stats]{hclust}
+#' @seealso \link{run_dissimilarity}, \link[stats]{hclust}
 #'
-#' @export get.hierarchy
+#' @export get_hierarchy
 
 
-get.hierarchy <- function(scTypeEval,
-                          dissimilarity.slot = "all", 
-                          hierarchy.method = "ward.D2",
+get_hierarchy <- function(scTypeEval,
+                          dissimilarity_slot = "all", 
+                          hierarchy_method = "ward.D2",
                           verbose = TRUE
 ){
-   diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
+   diss.assays <- check_dissimilarity_assays(scTypeEval, slot = dissimilarity_slot)
    
    hier.list <- lapply(diss.assays,
                        function(da){
@@ -1659,7 +1659,7 @@ get.hierarchy <- function(scTypeEval,
                           attr(dist, "Labels") <- ident
                           
                           hclust_result <- stats::hclust(dist,
-                                                         method = hierarchy.method)
+                                                         method = hierarchy_method)
                           clusters <- stats::cutree(hclust_result,
                                                     k = length(unique(ident)))
                           
@@ -1685,9 +1685,9 @@ get.hierarchy <- function(scTypeEval,
 #' and aggregates results at the group level.
 #'
 #' @param scTypeEval An object containing dissimilarity matrices and metadata.
-#' @param dissimilarity.slot A character string specifying which dissimilarity assay(s) 
+#' @param dissimilarity_slot A character string specifying which dissimilarity assay(s) 
 #'   to use. If `"all"`, all available dissimilarity assays are processed (default: `"all"`).
-#' @param KNNGraph_k Integer; the number of neighbors to consider in the KNN graph (default: `5`).
+#' @param knn_graph_k Integer; the number of neighbors to consider in the KNN graph (default: `5`).
 #' @param normalize Logical; if `TRUE`, normalizes neighbor proportions relative to expected 
 #'   frequencies of each cell type (default: `FALSE`).
 #' @param verbose Logical; if `TRUE`, prints progress messages during computation (default: `TRUE`).
@@ -1718,34 +1718,34 @@ get.hierarchy <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
-#'                              sample = "sample", min.samples = 3,
-#'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval,
-#'                   var.method = "basic",
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- run_processing_data(sceval, ident = "celltype",
+#'                              sample = "sample", min_samples = 3,
+#'                              min_cells = 3, verbose = FALSE)
+#' sceval <- run_hvg(sceval,
+#'                   var_method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
-#' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+#' sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 #'                             reduction = FALSE, verbose = FALSE)
 #' # Get nearest neighbors                            
-#' result <- get.NN(scTypeEval = sceval,
-#'                  KNNGraph_k = 5,
+#' result <- get_nn(scTypeEval = sceval,
+#'                  knn_graph_k = 5,
 #'                  normalize = TRUE,
 #'                  verbose = FALSE)
 #'
-#' @export get.NN
+#' @export get_nn
 
 
-get.NN <- function(scTypeEval,
-                   dissimilarity.slot = "all",
-                   KNNGraph_k = 5,
+get_nn <- function(scTypeEval,
+                   dissimilarity_slot = "all",
+                   knn_graph_k = 5,
                    normalize = FALSE,
                    verbose = TRUE
 ){
-   diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
+   diss.assays <- check_dissimilarity_assays(scTypeEval, slot = dissimilarity_slot)
    
    nn.list <- lapply(diss.assays,
                      function(da){
@@ -1758,9 +1758,9 @@ get.NN <- function(scTypeEval,
                         if(verbose){message("Computing hierarchical clustering for ", da, " ... \n")}
                         attr(dist, "Labels") <- ident
                         
-                        nn <- nn.helper(dist = dist,
+                        nn <- nn_helper(dist = dist,
                                         ident = ident,
-                                        KNNGraph_k = KNNGraph_k,
+                                        knn_graph_k = knn_graph_k,
                                         normalize = normalize)
                         
                         return(nn)
@@ -1783,11 +1783,11 @@ get.NN <- function(scTypeEval,
 #' MDS is performed using `stats::cmdscale()` and results are displayed as scatterplots.
 #'
 #' @param scTypeEval An `scTypeEval` object containing one or more dissimilarity assays.
-#' @param dissimilarity.slot Character string specifying which dissimilarity assay(s) 
+#' @param dissimilarity_slot Character string specifying which dissimilarity assay(s) 
 #'   to use. If `"all"`, all available dissimilarity assays are plotted (default: `"all"`).
 #' @param label Logical; whether to add cluster labels to the MDS plot (default: `TRUE`).
 #' @param dims Integer vector of length 2; the MDS dimensions to plot (default: `c(1, 2)`).
-#' @param show.legend Logical; whether to display a legend (default: `FALSE`).
+#' @param show_legend Logical; whether to display a legend (default: `FALSE`).
 #'
 #' @return 
 #' A named list of MDS plots (`ggplot2` objects), one per dissimilarity assay. 
@@ -1816,32 +1816,32 @@ get.NN <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
-#'                              sample = "sample", min.samples = 3,
-#'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval,
-#'                   var.method = "basic",
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- run_processing_data(sceval, ident = "celltype",
+#'                              sample = "sample", min_samples = 3,
+#'                              min_cells = 3, verbose = FALSE)
+#' sceval <- run_hvg(sceval,
+#'                   var_method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
-#' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+#' sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 #'                             reduction = FALSE, verbose = FALSE)
 #' # Plot MDS for all dissimilarity assays
-#' mds_plots <- plot.MDS(sceval)
+#' mds_plots <- plot_mds(sceval)
 #'
-#' @export plot.MDS
+#' @export plot_mds
 
 
 
-plot.MDS <- function(scTypeEval,
-                     dissimilarity.slot = "all",
+plot_mds <- function(scTypeEval,
+                     dissimilarity_slot = "all",
                      label = TRUE,
                      dims = c(1,2),
-                     show.legend = FALSE) {
+                     show_legend = FALSE) {
    
-   diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
+   diss.assays <- check_dissimilarity_assays(scTypeEval, slot = dissimilarity_slot)
    
    pls <- lapply(diss.assays,
                  function(da){
@@ -1861,8 +1861,8 @@ plot.MDS <- function(scTypeEval,
                     
                     labs <- paste0("Dim", dims)
                     
-                    pl <- helper.plot.scatter(df,
-                                              show.legend = show.legend,
+                    pl <- helper_plot_scatter(df,
+                                              show_legend = show_legend,
                                               label = label) +
                        ggplot2::labs(x = labs[1],
                                      y = labs[2],
@@ -1888,18 +1888,18 @@ plot.MDS <- function(scTypeEval,
 #' or consistency metrics. Group boundaries are marked to highlight cell-type consistency.
 #'
 #' @param scTypeEval An `scTypeEval` object containing one or more dissimilarity assays.
-#' @param dissimilarity.slot Character string specifying which dissimilarity assay(s) 
+#' @param dissimilarity_slot Character string specifying which dissimilarity assay(s) 
 #'   to plot. If `"all"`, all available dissimilarity assays are included (default: `"all"`).
-#' @param sort.similarity Optional. Character string naming a dissimilarity assay to use
+#' @param sort_similarity Optional. Character string naming a dissimilarity assay to use
 #'   for ordering cells by similarity (hierarchical clustering within each cell type).
-#' @param sort.consistency Optional. Character string specifying a consistency metric
-#'   (passed to `get.Consistency()`) for ordering cell types by overall consistency.
-#' @param low.color Color for the low end of the heatmap gradient (default: `"black"`).
-#' @param high.color Color for the low end of the heatmap gradient (default: `"white"`).
-#' @param hclust.method Clustering method to use when `sort.similarity` is provided
+#' @param sort_consistency Optional. Character string specifying a consistency metric
+#'   (passed to `get_consistency()`) for ordering cell types by overall consistency.
+#' @param low_color Color for the low end of the heatmap gradient (default: `"black"`).
+#' @param high_color Color for the low end of the heatmap gradient (default: `"white"`).
+#' @param hclust_method Clustering method to use when `sort_similarity` is provided
 #'   (default: `"ward.D2"`).
 #' @param verbose Logical. Whether to print progress and diagnostic messages (default: `TRUE`).
-#' @param ... Additional arguments passed to `get.Consistency()`.
+#' @param ... Additional arguments passed to `get_consistency()`.
 #'
 #' @return
 #' A named list of `ggplot2` objects, one per dissimilarity assay.
@@ -1908,11 +1908,11 @@ plot.MDS <- function(scTypeEval,
 #' @details
 #' Ordering logic:
 #' \itemize{
-#'   \item If both `sort.similarity` and `sort.consistency` are `NULL`, cell types are
+#'   \item If both `sort_similarity` and `sort_consistency` are `NULL`, cell types are
 #'         ordered alphabetically, and cells within each type are ordered alphabetically.
-#'   \item If only `sort.consistency` is provided, cell types are ordered by the
+#'   \item If only `sort_consistency` is provided, cell types are ordered by the
 #'         selected consistency metric, and cells within each type are ordered alphabetically.
-#'   \item If only `sort.similarity` is provided, cell types are ordered by hierarchical
+#'   \item If only `sort_similarity` is provided, cell types are ordered by hierarchical
 #'         clustering of average similarities, and cells within each type are clustered.
 #'   \item If both are provided, cell types are ordered by consistency, while cells
 #'         within each type are ordered by similarity clustering.
@@ -1934,51 +1934,51 @@ plot.MDS <- function(scTypeEval,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' sceval <- Run.ProcessingData(sceval, ident = "celltype",
-#'                              sample = "sample", min.samples = 3,
-#'                              min.cells = 3, verbose = FALSE)
-#' sceval <- Run.HVG(sceval,
-#'                   var.method = "basic",
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' sceval <- run_processing_data(sceval, ident = "celltype",
+#'                              sample = "sample", min_samples = 3,
+#'                              min_cells = 3, verbose = FALSE)
+#' sceval <- run_hvg(sceval,
+#'                   var_method = "basic",
 #'                   ngenes = 10,
 #'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
-#' sceval <- Run.Dissimilarity(sceval, method = "Pseudobulk:Euclidean",
+#' sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 #'                             reduction = FALSE, verbose = FALSE)
 #' # Plot heatmaps for all dissimilarity assays
-#' heatmap <- plot.Heatmap(sceval)
+#' heatmap <- plot_heatmap(sceval)
 #' 
-#' @seealso \link{Run.Dissimilarity}, \link[stats]{hclust}, \link{get.Consistency}
+#' @seealso \link{run_dissimilarity}, \link[stats]{hclust}, \link{get_consistency}
 #'
-#' @export plot.Heatmap
+#' @export plot_heatmap
 
 
 
-plot.Heatmap <- function(scTypeEval,
-                         dissimilarity.slot = "all",
-                         sort.similarity = NULL,
-                         sort.consistency = NULL,
-                         low.color = "black",
-                         high.color = "white",
-                         hclust.method = "ward.D2",
+plot_heatmap <- function(scTypeEval,
+                         dissimilarity_slot = "all",
+                         sort_similarity = NULL,
+                         sort_consistency = NULL,
+                         low_color = "black",
+                         high_color = "white",
+                         hclust_method = "ward.D2",
                          verbose = TRUE,
                          ...
 ) {
    
    # check if dissimilarity object are present in object
-   diss.assays <- .check_dissimilarityAssays(scTypeEval, slot = dissimilarity.slot)
+   diss.assays <- check_dissimilarity_assays(scTypeEval, slot = dissimilarity_slot)
    
    # if not indicated just order cell types based on alphabetical
-   if(is.null(sort.similarity) && is.null(sort.consistency)){
-      if(verbose){message("No ordering (sort.similarity or sort.consistency) indicated,
+   if(is.null(sort_similarity) && is.null(sort_consistency)){
+      if(verbose){message("No ordering (sort_similarity or sort_consistency) indicated,
                           sorting cell type by alphabetical order.")}
    }
    
    # Compute similarity of cell types if indicated
-   if(!is.null(sort.similarity)){
+   if(!is.null(sort_similarity)){
       # get dissimilarity matrix
-      diss.assays.cluster <- .check_dissimilarityAssays(scTypeEval, slot = sort.similarity)
+      diss.assays.cluster <- check_dissimilarity_assays(scTypeEval, slot = sort_similarity)
       assay_cluster <- scTypeEval@dissimilarity[[diss.assays.cluster]]
       d_mat_cluster <- as.matrix(assay_cluster@dissimilarity)
       # get similarities between cell types
@@ -1996,7 +1996,7 @@ plot.Heatmap <- function(scTypeEval,
          }
       }
       hc <- stats::hclust(as.dist(mat),
-                          method = hclust.method)
+                          method = hclust_method)
       ident_order <- hc$labels[hc$order]
    } else {
       ident_order <- NULL
@@ -2012,13 +2012,13 @@ plot.Heatmap <- function(scTypeEval,
                     annot_ident <- assay@ident[[1]]
                     
                     #  order by consistency if indicated
-                    if (!is.null(sort.consistency)) {
+                    if (!is.null(sort_consistency)) {
                        
-                       if(verbose){message("Computing consistency metric for ", sort.consistency, ".\n")}
+                       if(verbose){message("Computing consistency metric for ", sort_consistency, ".\n")}
                        
-                       consis <- get.Consistency(scTypeEval,
-                                                 dissimilarity.slot = da,
-                                                 Consistency.metric = sort.consistency,
+                       consis <- get_consistency(scTypeEval,
+                                                 dissimilarity_slot = da,
+                                                 consistency_metric = sort_consistency,
                                                  verbose = FALSE,
                                                  ...) |>
                           dplyr::arrange(measure) |>
@@ -2035,12 +2035,12 @@ plot.Heatmap <- function(scTypeEval,
                     }
                     
                     # reorder cells within cell type: first by ident order, then cluster within ident
-                    if(!is.null(sort.similarity)){
+                    if(!is.null(sort_similarity)){
                        ordering <- unlist(lapply(ident_order, function(iden) {
                           cells <- names(annot_ident)[annot_ident == iden]
                           if (length(cells) > 2) {
                              hc <- stats::hclust(as.dist(d_mat_cluster[cells, cells]),
-                                                 method = hclust.method)
+                                                 method = hclust_method)
                              cells[hc$order]
                           } else {
                              cells
@@ -2073,8 +2073,8 @@ plot.Heatmap <- function(scTypeEval,
                     # build plot
                     p <- ggplot2::ggplot(df, ggplot2::aes(x = col, y = row, fill = value)) +
                        ggplot2::geom_tile() +
-                       ggplot2::scale_fill_gradient(low = low.color,
-                                                    high = high.color) +
+                       ggplot2::scale_fill_gradient(low = low_color,
+                                                    high = high_color) +
                        ggplot2::scale_x_discrete(
                           breaks = ordering[x_ticks],
                           labels = ident_labels,
@@ -2173,12 +2173,12 @@ plot.Heatmap <- function(scTypeEval,
 #' 
 #' saveRDS(sce_obj, filepath)
 #' 
-#' obj <- load_singleCell_object(filepath, split = TRUE)
+#' obj <- load_single_cell_object(filepath, split = TRUE)
 #'
-#' @export load_singleCell_object
+#' @export load_single_cell_object
 
 
-load_singleCell_object <- function(path,
+load_single_cell_object <- function(path,
                                    split = TRUE) {
    
    if (!file.exists(path)) stop("File does not exist: ", path)
@@ -2266,7 +2266,7 @@ load_singleCell_object <- function(path,
 #' This function integrates multiple internal \pkg{scTypeEval} pipeline steps, 
 #' including data preparation, HVG selection, PCA reduction, and dissimilarity computation, 
 #' providing a streamlined workflow for single-cell data evaluation.
-#' @param scTypeEval An `scTypeEval` object generated by \code{create.scTypeEval}. 
+#' @param scTypeEval An `scTypeEval` object generated by \code{create_scTypeEval}. 
 #' If null count_matrix and metadata must be provided to build scTypeEval object internally.
 #' @param count_matrix A numeric or sparse \code{dgCMatrix} of raw counts 
 #'   (genes as rows, cells as columns).
@@ -2276,30 +2276,30 @@ load_singleCell_object <- function(path,
 #' @param sample Character string specifying the metadata column containing 
 #'   sample identifiers (used for pseudobulk aggregation).
 #' @param aggregation Method to group cells, either `"single-cell"` or `"pseudobulk"`. Default is `"single-cell"`.
-#' @param gene.list Optional named list of gene sets to include in the analysis.  
+#' @param gene_list Optional named list of gene sets to include in the analysis.  
 #'   If \code{NULL}, highly variable genes (HVGs) are automatically computed.
 #' @param reduction Logical; if \code{TRUE}, performs PCA dimensionality 
 #'   reduction prior to dissimilarity computation (default: \code{TRUE}).
 #' @param ndim Integer; number of principal components to retain 
 #'   when \code{reduction = TRUE} (default: \code{30}).
-#' @param black.list Optional character vector of genes to exclude from analysis.  
+#' @param black_list Optional character vector of genes to exclude from analysis.  
 #'   If \code{NULL}, no genes are blacklisted.
-#' @param normalization.method Character string specifying the normalization 
+#' @param normalization_method Character string specifying the normalization 
 #'   method to apply. Options include \code{"Log1p"}, \code{"CLR"}, and \code{"pearson"} 
 #'   (default: \code{"Log1p"}).
-#' @param dissimilarity.method Character vector of dissimilarity metrics to compute.  
+#' @param dissimilarity_method Character vector of dissimilarity metrics to compute.  
 #'   Available options include:
 #'   \itemize{
 #'     \item \code{"WasserStein"}
 #'     \item \code{"Pseudobulk:Euclidean"}
 #'     \item \code{"Pseudobulk:Cosine"}
 #'     \item \code{"Pseudobulk:Pearson"}
-#'     \item \code{"RecipClassif:Match"}
-#'     \item \code{"RecipClassif:Score"}
+#'     \item \code{"recip_classif:Match"}
+#'     \item \code{"recip_classif:Score"}
 #'   }
 #'   Multiple methods can be provided for comparative evaluation.
-#' @param min.samples Integer; minimum number of samples required for pseudobulk analysis (default: \code{5}).
-#' @param min.cells Integer; minimum number of cells required per group for inclusion (default: \code{10}).
+#' @param min_samples Integer; minimum number of samples required for pseudobulk analysis (default: \code{5}).
+#' @param min_cells Integer; minimum number of cells required per group for inclusion (default: \code{10}).
 #' @param ncores Integer; number of CPU cores for parallel execution (default: \code{1}).
 #' @param bparam Optional \code{BiocParallelParam} object for fine-grained parallelization control.  
 #'   Overrides \code{ncores} if provided.
@@ -2318,11 +2318,11 @@ load_singleCell_object <- function(path,
 #' @details
 #' This wrapper combines multiple pipeline steps from \pkg{scTypeEval}:
 #' \enumerate{
-#'   \item \code{create.scTypeEval()} — initializes the object.
-#'   \item \code{Run.ProcessingData()} — performs normalization and filtering.
-#'   \item \code{Run.HVG()} or \code{add.GeneList()} — defines gene sets.
-#'   \item \code{Run.PCA()} — performs PCA if \code{reduction = TRUE}.
-#'   \item \code{Run.Dissimilarity()} — computes dissimilarities across methods.
+#'   \item \code{create_scTypeEval()} — initializes the object.
+#'   \item \code{run_processing_data()} — performs normalization and filtering.
+#'   \item \code{run_hvg()} or \code{add_gene_list()} — defines gene sets.
+#'   \item \code{run_pca()} — performs PCA if \code{reduction = TRUE}.
+#'   \item \code{run_dissimilarity()} — computes dissimilarities across methods.
 #' }
 #'
 #' This provides a simple entry point for end-to-end setup and dissimilarity computation 
@@ -2345,10 +2345,10 @@ load_singleCell_object <- function(path,
 #'   metadata = metadata,
 #'   ident = "celltype",
 #'   sample = "sample",
-#'   min.samples = 3,
-#'   min.cells = 3,
-#'   normalization.method = "Log1p",
-#'   dissimilarity.method = c("Pseudobulk:Euclidean"),
+#'   min_samples = 3,
+#'   min_cells = 3,
+#'   normalization_method = "Log1p",
+#'   dissimilarity_method = c("Pseudobulk:Euclidean"),
 #'   reduction = TRUE,
 #'   ndim = 4,
 #'   verbose = FALSE
@@ -2356,11 +2356,11 @@ load_singleCell_object <- function(path,
 
 #'
 #' @seealso 
-#' \code{\link{create.scTypeEval}}, 
-#' \code{\link{Run.ProcessingData}}, 
-#' \code{\link{Run.Dissimilarity}}, 
-#' \code{\link{Run.PCA}}, 
-#' \code{\link{Run.HVG}}
+#' \code{\link{create_scTypeEval}}, 
+#' \code{\link{run_processing_data}}, 
+#' \code{\link{run_dissimilarity}}, 
+#' \code{\link{run_pca}}, 
+#' \code{\link{run_hvg}}
 #'
 #' @export wrapper_scTypeEval
 
@@ -2370,64 +2370,64 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
                                ident,
                                sample,
                                aggregation = c("single-cell", "pseudobulk"),
-                               gene.list = NULL,
+                               gene_list = NULL,
                                reduction = TRUE,
                                ndim = 30,
-                               black.list = NULL,
-                               normalization.method = "Log1p",
-                               dissimilarity.method = c("WasserStein", "Pseudobulk:Euclidean",
+                               black_list = NULL,
+                               normalization_method = "Log1p",
+                               dissimilarity_method = c("WasserStein", "Pseudobulk:Euclidean",
                                                         "Pseudobulk:Cosine", "Pseudobulk:Pearson",
-                                                        "RecipClassif:Match", "RecipClassif:Score"),
-                               min.samples = 5,
-                               min.cells = 10,
+                                                        "recip_classif:Match", "recip_classif:Score"),
+                               min_samples = 5,
+                               min_cells = 10,
                                ncores = 1,
                                bparam = NULL,
                                progressbar = FALSE,
                                verbose = TRUE){
    
    if(is.null(scTypeEval)){
-      sc <- create.scTypeEval(matrix = count_matrix,
+      sc <- create_scTypeEval(matrix = count_matrix,
                               metadata = metadata,
-                              active.ident = ident,
-                              black.list = black.list)
+                              active_ident = ident,
+                              black_list = black_list)
    } else {
       sc <- scTypeEval
    }
    
    if(is.null(aggregation)){
-      aggregation <- dissimilarity_methods[names(dissimilarity_methods) %in% dissimilarity.method] |>
+      aggregation <- dissimilarity_methods[names(dissimilarity_methods) %in% dissimilarity_method] |>
          unique()
    }
    
-   sc <- Run.ProcessingData(sc, 
+   sc <- run_processing_data(sc, 
                             ident = ident,
                             sample = sample,
                             aggregation = aggregation,
-                            normalization.method = normalization.method,
-                            min.samples = min.samples,
-                            min.cells = min.cells,
+                            normalization_method = normalization_method,
+                            min_samples = min_samples,
+                            min_cells = min_cells,
                             verbose = verbose)
    
-   if(is.null(gene.list)){
+   if(is.null(gene_list)){
       if(verbose){message("Obtaining HVG from ", aggregation[1], "slot.")}
-      sc <- Run.HVG(sc,
+      sc <- run_hvg(sc,
                     aggregation = aggregation[1],
                     ncores = ncores,
                     verbose = verbose)
    } else {
-      sc <- add.GeneList(sc,
-                         gene.list)
+      sc <- add_gene_list(sc,
+                         gene_list)
    }
    
    if(reduction){
-      sc <- Run.PCA(sc,
+      sc <- run_pca(sc,
                     ndim = ndim,
                     verbose = verbose)
    }
    
-   for(m in dissimilarity.method){
+   for(m in dissimilarity_method){
       if(verbose){message(">.  Running ", m, "\n")}
-      sc <- Run.Dissimilarity(sc,
+      sc <- run_dissimilarity(sc,
                               reduction = reduction,
                               method = m,
                               ncores = ncores,
@@ -2453,7 +2453,7 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #' user-defined thresholds. The final output is an \code{scTypeEval} object
 #' annotated with an optimal clustering assignment.
 #'
-#' @param X Optional numeric matrix of features (cells as rows, features as columns). 
+#' @param x Optional numeric matrix of features (cells as rows, features as columns). 
 #'    Usually a low dimensional embeddings for all cells of datasets are expected.
 #'   If \code{NULL}, the function preprocesses the provided \code{scTypeEval} object
 #'   using \code{process_clustering()} to obtain a PCA embedding or filtered matrix.
@@ -2462,29 +2462,29 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #' @param sample Character string specifying the metadata column containing
 #'   sample identifiers.
 #' @param reduction Logical; if \code{TRUE}, PCA is performed during preprocessing
-#'   when \code{X} is not provided (default: \code{TRUE}).
+#'   when \code{x} is not provided (default: \code{TRUE}).
 #' @param ndim Integer; number of principal components to retain when
 #'   \code{reduction = TRUE} (default: \code{30}).
-#' @param gene.list Optional named list of gene sets used for consistency
+#' @param gene_list Optional named list of gene sets used for consistency
 #'   computation. If \code{NULL}, highly variable genes (HVGs) are computed.
-#' @param min.cells Integer; minimum number of cells required per cluster
+#' @param min_cells Integer; minimum number of cells required per cluster
 #'   to be considered during consistency computation (default: \code{10}).
-#' @param min.samples Integer; minimum number of samples required per cluster
+#' @param min_samples Integer; minimum number of samples required per cluster
 #'   for consistency evaluation (default: \code{5}).
 #' @param clustering_method Character string specifying the clustering algorithm
 #'   used for splitting. Currently supported: \code{"kmeans"}.
 #'   \code{"leiden"} is reserved for future implementation.
 #' @param consistency_method Character vector specifying consistency metrics to
 #'   evaluate cluster splits. Each entry must follow the format
-#'   \code{"<metric> | <dissimilarity.method>"}.
-#' @param hvg.ngenes Integer; number of highly variable genes to select when
-#'   \code{gene.list = NULL} (default: \code{2000}).
-#' @param normalization.method Character string specifying the normalization
+#'   \code{"<metric> | <dissimilarity_method>"}.
+#' @param hvg_ngenes Integer; number of highly variable genes to select when
+#'   \code{gene_list = NULL} (default: \code{2000}).
+#' @param normalization_method Character string specifying the normalization
 #'   method used during preprocessing (default: \code{"Log1p"}).
 #' @param ncores Integer; number of CPU cores for parallel execution
 #'   (default: \code{1}).
 #' @param nchild Integer; number of childs per cluster in each iteration when using kmeans (default: \code{2}).
-#' @param max_Nclusters Integer; maximum number of clusters allowed before
+#' @param max_nclusters Integer; maximum number of clusters allowed before
 #'   stopping the hierarchical splitting process (default: \code{100}).
 #' @param max_iter Integer; maximum number of hierarchical splitting iterations
 #'   (default: \code{100}).
@@ -2492,7 +2492,7 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #'   (default: \code{30}).
 #' @param epsilon Numeric; tolerance allowing child cluster consistency to be
 #'   slightly lower than the parent cluster consistency (default: \code{0.2}).
-#' @param min.consistency Numeric; minimum consistency score required for a
+#' @param min_consistency Numeric; minimum consistency score required for a
 #'   cluster to be retained in the final solution (default: \code{0.5}).
 #' @param weight_by Character string specifying how to aggregate child
 #'   consistency scores when evaluating a split:
@@ -2515,14 +2515,14 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #' @details
 #' The algorithm proceeds as follows:
 #' \enumerate{
-#'   \item Preprocesses the data if \code{X} is not provided
+#'   \item Preprocesses the data if \code{x} is not provided
 #'   \item Initializes all cells into a root cluster
 #'   \item Iteratively splits clusters into subclusters
 #'   \item Computes consistency metrics for each split using
 #'         \code{compute_consistency()}
 #'   \item Retains splits that satisfy consistency improvement and threshold
 #'         criteria
-#'   \item Reverts clusters failing \code{min.consistency} to their parent cluster
+#'   \item Reverts clusters failing \code{min_consistency} to their parent cluster
 #' }
 #'
 #' This strategy identifies a data-driven clustering resolution without
@@ -2542,18 +2542,18 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #'   row.names = colnames(counts)
 #' )
 #' 
-#' sceval <- create.scTypeEval(matrix = counts, metadata = metadata)
-#' scTypeEval <- get.optimal_clustering(
+#' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
+#' scTypeEval <- get_optimal_clustering(
 #'   scTypeEval = sceval,
 #'   sample = "sample",
 #'   consistency_method = c(
-#'     "silhouette | RecipClassif:Match",
-#'     "2label.silhouette | Pseudobulk:Cosine"
+#'     "silhouette | recip_classif:Match",
+#'     "2label_silhouette | Pseudobulk:Cosine"
 #'   ),
 #'   ndim = 5,
-#'   min.samples = 3,
-#'   min.cells = 3,
-#'   min.consistency = 0.6,
+#'   min_samples = 3,
+#'   min_cells = 3,
+#'   min_consistency = 0.6,
 #'   verbose = FALSE
 #' )
 #'
@@ -2563,31 +2563,31 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #' @seealso
 #' \code{process_clustering},
 #' \code{compute_consistency},
-#' \code{get.clusters}
+#' \code{get_clusters}
 #'
-#' @export get.optimal_clustering
+#' @export get_optimal_clustering
 
 
-get.optimal_clustering <- function(X = NULL,
+get_optimal_clustering <- function(x = NULL,
                                    scTypeEval,
                                    sample = "sample",
                                    reduction = TRUE,
                                    ndim = 30,
-                                   gene.list = NULL,
-                                   min.cells = 10,
-                                   min.samples = 5,
+                                   gene_list = NULL,
+                                   min_cells = 10,
+                                   min_samples = 5,
                                    clustering_method = c("kmeans", "louvain", "leiden"),
-                                   consistency_method = c("silhouette | RecipClassif:Match",
-                                                          "2label.silhouette | Pseudobulk:Cosine"),
-                                   hvg.ngenes = 2000,
-                                   normalization.method = "Log1p",
+                                   consistency_method = c("silhouette | recip_classif:Match",
+                                                          "2label_silhouette | Pseudobulk:Cosine"),
+                                   hvg_ngenes = 2000,
+                                   normalization_method = "Log1p",
                                    ncores = 1,
                                    nchild = 2,
-                                   max_Nclusters = 100,
+                                   max_nclusters = 100,
                                    max_iter = 100,
                                    nstart = 30,
                                    epsilon = 0.2,
-                                   min.consistency = 0.5,
+                                   min_consistency = 0.5,
                                    weight_by = c("none", "cells", "samples" ),
                                    verbose = TRUE) {
    
@@ -2599,30 +2599,30 @@ get.optimal_clustering <- function(X = NULL,
    }
    weight_by <- weight_by[1] |> tolower()
    
-   # 1. preprocess data if X not provided
-   if(is.null(X)){
-      if(verbose) message("X not provided, processing scTypeEval object")
+   # 1. preprocess data if x not provided
+   if(is.null(x)){
+      if(verbose) message("x not provided, processing scTypeEval object")
       ret <- process_clustering(scTypeEval,
                                 sample = sample,
                                 reduction = reduction,
                                 ndim = ndim,
-                                gene.list = gene.list,
-                                hvg.ngenes = hvg.ngenes,
-                                normalization.method = normalization.method,
+                                gene_list = gene_list,
+                                hvg_ngenes = hvg_ngenes,
+                                normalization_method = normalization_method,
                                 ncores = ncores,
                                 verbose = verbose)
-      X <- t(ret$X)
-      if(is.null(gene.list)) gene.list <- ret$gene.list
+      x <- t(ret$x)
+      if(is.null(gene_list)) gene_list <- ret$gene_list
    }
    
    scTypeEval@metadata$.tmp <- "root"
-   allcells <- rownames(X)
+   allcells <- rownames(x)
    ct_follow <- "root"
    cons.list <- list()
    parent_score <- c("root" = 0)
    iter <- 0
    
-   while(dplyr::n_distinct(scTypeEval@metadata$.tmp) < max_Nclusters && iter < max_iter){
+   while(dplyr::n_distinct(scTypeEval@metadata$.tmp) < max_nclusters && iter < max_iter){
       
       if(length(ct_follow) == 0) {break}
       child_vector <- c()
@@ -2639,7 +2639,7 @@ get.optimal_clustering <- function(X = NULL,
          nclus <- 1
          while(nclus < nchild && resolution_iter <= 10){
             # removed set.seed to comply with Bioconductor guidelines
-            cl <- get.clusters(X[cells, , drop=FALSE],
+            cl <- get_clusters(x[cells, , drop=FALSE],
                                clustering_method = clustering_method,
                                nclusters = nchild,
                                nstart = nstart,
@@ -2660,10 +2660,10 @@ get.optimal_clustering <- function(X = NULL,
          cons <- compute_consistency(scTypeEval,
                                      ident = ".tmp",
                                      sample = sample,
-                                     gene.list = gene.list,
+                                     gene_list = gene_list,
                                      consistency_method = consistency_method,
-                                     min.samples = min.samples,
-                                     min.cells = min.cells,
+                                     min_samples = min_samples,
+                                     min_cells = min_cells,
                                      ncores = ncores,
                                      verbose = FALSE)
          
@@ -2691,7 +2691,7 @@ get.optimal_clustering <- function(X = NULL,
             dplyr::mutate(ident = clus_col,
                           parent = cu)
          
-         if(child_score >= (parent_score[cu] - epsilon) && child_score >= min.consistency){
+         if(child_score >= (parent_score[cu] - epsilon) && child_score >= min_consistency){
             to_follow <- c(to_follow, child_celltypes)
          }
          child_score_pass <- cons |>
@@ -2713,10 +2713,10 @@ get.optimal_clustering <- function(X = NULL,
    
    while(length(nfail) > 0 && iter_fail < 500){
       iter_fail <- iter_fail + 1 # safety break
-      # get clusters do not passing the threshold of min.consistency
+      # get clusters do not passing the threshold of min_consistency
       # revert all childs to parent, even if only one child is poor consistent
       nfail_parent <- allcons |>
-         dplyr::filter(product < min.consistency ) |>
+         dplyr::filter(product < min_consistency ) |>
          dplyr::filter(celltype %in% unique(scTypeEval@metadata$optimal0)) |>
          dplyr::pull(parent)
       nfail <- allcons |>
