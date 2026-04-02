@@ -8,7 +8,7 @@ create_scTypeEval(
   matrix = NULL,
   metadata = NULL,
   gene_lists = list(),
-  black_list = character(),
+  black_list = NULL,
   active_ident = NULL
 )
 }
