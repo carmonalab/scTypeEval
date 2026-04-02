@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   warning = FALSE,
-  message = FALSE
+  message = TRUE
 )
 ```
 
@@ -92,39 +92,32 @@ print(results)
 
 ## From a Seurat Object
 
-```{r seurat_example, eval=FALSE}
+```{r seurat_example, message= F}
 library(Seurat)
 
-# Assuming you have a Seurat object named 'seurat_obj'
-sceval <- create_scTypeEval(seurat_obj)
+# Create Seurat object with example data generated earlier
+seurat_obj <- Seurat::CreateSeuratObject(
+  counts = counts,
+  meta.data = metadata
+)
+
+sceval_seurat <- create_scTypeEval(seurat_obj)
 
 # Continue with standard workflow
-sceval <- run_processing_data(
-  sceval,
-  ident = "celltype",      # Adjust to your metadata column
-  sample = "orig.ident",   # Adjust to your sample column
-  min_samples = 5,
-  min_cells = 10
-)
-
-sceval <- run_hvg(sceval)
-sceval <- run_pca(sceval, ndim = 30)
-sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean")
-
-consistency <- get_consistency(
-  sceval,
-  dissimilarity_slot = "Pseudobulk:Euclidean",
-  consistency_metric = "silhouette"
-)
 ```
 
 ## From a SingleCellExperiment Object
 
-```{r sce_example, eval=FALSE}
+```{r sce_example, message = F}
 library(SingleCellExperiment)
 
-# Assuming you have a SingleCellExperiment object named 'sce'
-sceval <- create_scTypeEval(sce)
+# Create SCE object with example data generated earlier
+sce <- SingleCellExperiment::SingleCellExperiment(
+  assays = list(counts = counts),
+  colData = metadata
+)
+
+sceval_sce <- create_scTypeEval(sce)
 
 # Continue with workflow as above
 ```
@@ -133,7 +126,7 @@ sceval <- create_scTypeEval(sce)
 
 ## Compare Multiple Dissimilarity Methods
 
-```{r compare_methods, eval=FALSE}
+```{r compare_methods}
 # Compute different dissimilarity methods
 sceval <- run_dissimilarity(
   sceval,
@@ -152,37 +145,40 @@ sceval <- run_dissimilarity(
 )
 
 # Compare consistency across methods
-methods <- c("Pseudobulk:Euclidean", "Pseudobulk:Cosine", "WasserStein")
-comparison <- lapply(methods, function(m) {
+dissimilarity_methods <- c("Pseudobulk:Euclidean",
+                           "Pseudobulk:Cosine",
+                           "WasserStein")
+results_df <- 
   get_consistency(
     sceval,
-    dissimilarity_slot = m,
+    dissimilarity_slot = dissimilarity_methods, # compute for multiple dissimilarities
     consistency_metric = "silhouette"
   )
-})
-results_df <- do.call(rbind, comparison)
+
+results_df
 ```
 
 ## Evaluate Multiple Consistency Metrics
 
-```{r multiple_metrics, eval=FALSE}
+```{r multiple_metrics}
 # Compute multiple consistency metrics
-metrics <- c("silhouette", "NeighborhoodPurity", "Average_similarity")
+consistency_metrics <- c("silhouette",
+                         "NeighborhoodPurity",
+                         "Average_similarity")
 
-all_metrics <- lapply(metrics, function(metric) {
+all_metrics <- 
   get_consistency(
     sceval,
     dissimilarity_slot = "Pseudobulk:Euclidean",
-    consistency_metric = metric
+    consistency_metric = consistency_metrics
   )
-})
 
-combined_results <- do.call(rbind, all_metrics)
+all_metrics
 ```
 
 ## Visualize Results
 
-```{r visualize, eval=FALSE}
+```{r visualize}
 # Heatmap of dissimilarities
 plot_heatmap(
   sceval,
@@ -190,6 +186,7 @@ plot_heatmap(
   sort_consistency = "silhouette"
 )
 
+# Pseudobulk PCA per sample & cell type
 plot_pca(
   sceval,
   reduction_slot = "pseudobulk"
@@ -198,7 +195,7 @@ plot_pca(
 
 ## Using Marker Genes Instead of HVGs
 
-```{r markers, eval=FALSE}
+```{r markers}
 # Identify cell type markers
 sceval <- run_gene_markers(
   sceval,
@@ -210,28 +207,26 @@ sceval <- run_gene_markers(
 sceval <- run_dissimilarity(
   sceval,
   method = "Pseudobulk:Euclidean",
-  gene_list = "Marker_genes",
+  gene_list = "scran.findMarkers", # gene list recently added
   reduction = FALSE
 )
 ```
 
 ## Focus on Specific Gene Sets
 
-```{r gene_sets, eval=FALSE}
+```{r custom_gene_sets}
 # Add custom gene list
 immune_genes <- c("CD3D", "CD4", "CD8A", "CD19", "CD14", "NCAM1")
 sceval <- add_gene_list(
   sceval,
-  list.name = "immune_markers",
-  gene_list = immune_genes
+  gene_list = list("immune_markers" = immune_genes) # add a named list
 )
 
 # Run analysis on custom genes
 sceval <- run_dissimilarity(
   sceval,
   method = "Pseudobulk:Euclidean",
-  gene_list = "immune_markers",
-  reduction = FALSE
+  gene_list = "immune_markers" # name of the list to use
 )
 ```
 

@@ -1,5 +1,5 @@
 ---
-title: "scTypeEval: Evaluating Cell Type Labels in scRNA-seq"
+title: "scTypeEval: Evaluating Cell Type Labels Consistency in scRNA-seq"
 author:
   - name: Josep Garnica
     affiliation: University of Geneva
@@ -214,9 +214,9 @@ Identify biologically relevant features for evaluating consistency.
 # Identify HVGs using the basic method
 sceval <- run_hvg(
   scTypeEval = sceval,
-  var_method = "basic",        # Method for variance modeling
-  ngenes = 2000,               # Number of HVGs to retain
-  sample = TRUE                # Perform sample-level blocking
+  var_method = "basic", # Method for variance modeling: "basic" or "scran"
+  ngenes = 1000,        # Number of HVGs to retain
+  sample = TRUE         # Perform sample-level blocking
 )
 
 # View stored gene lists
@@ -248,7 +248,7 @@ if (!is.null(gene_lists$scran.findMarkers)) {
 
 You can also add custom gene lists using `add_gene_list()`:
 
-```{r custom_genes, eval=FALSE}
+```{r custom_genes}
 # Example: Add a custom list of immune response genes
 custom_genes <- c("Gene_1", "Gene_50", "Gene_100", "Gene_150")
 
@@ -257,6 +257,14 @@ sceval <- add_gene_list(
   gene_list = list("custom_genes" = custom_genes)
 )
 ```
+
+These different selected features are stored within the scTypeEval object and can be used in the subsequent steps.
+
+```{r explore_gene_lists}
+gene_lists <- sceval@gene_lists
+names(gene_lists)
+```
+
 
 ## Step 4: Dimensional Reduction (Optional but Recommended)
 
@@ -268,7 +276,8 @@ significantly speeds up the analysis while yielding similar results.
 # Run PCA on processed data
 sceval <- run_pca(
   scTypeEval = sceval,
-  ndim = 30                    # Number of principal components
+  ndim = 20,         # Number of principal components
+  gene_list = "HVG" # specify gene list to subset if multiple were added
 )
 
 # View available reductions
@@ -295,7 +304,7 @@ Compute distances between pseudobulk gene expression profiles:
 sceval <- run_dissimilarity(
   sceval,
   method = "Pseudobulk:Euclidean",
-  reduction = FALSE              # Use processed expression data
+  reduction = FALSE # Use processed expression data of selected features
 )
 
 # Cosine distance on PCA embeddings
@@ -328,7 +337,10 @@ Match cells across samples using a classifier:
 sceval <- run_dissimilarity(
   sceval,
   method = "recip_classif:Match",
-  reciprocal_classifier = "SingleR"
+  reciprocal_classifier = "SingleR",
+  # usage of dimensional reduction not supported
+  # for this dissimilarity approach
+  reduction = FALSE 
 )
 ```
 
@@ -389,20 +401,17 @@ print(consistency_nbhd)
 ### Compare Multiple Metrics
 
 ```{r compare_metrics}
-# Compute multiple metrics for comparison
-metrics <- c("silhouette", "NeighborhoodPurity", "Average_similarity")
-
-consistency_all <- lapply(metrics, function(metric) {
+consistency_all <- 
   get_consistency(
     sceval,
-    dissimilarity_slot = "Pseudobulk:Euclidean",
-    consistency_metric = metric
+    dissimilarity_slot = c("Pseudobulk:Euclidean",
+                           "WasserStein"), # allow multiple arguments
+    consistency_metric = c("silhouette",
+                           "NeighborhoodPurity",
+                           "Average_similarity") # allow multiple arguments
   )
-})
 
-# Combine results
-consistency_df <- do.call(rbind, consistency_all)
-print(consistency_df)
+print(consistency_all)
 ```
 
 # Visualization
@@ -426,84 +435,17 @@ The heatmap shows pairwise dissimilarities between samples, grouped by cell
 type. Cell types with higher consistency (e.g., more coherent annotations)
 show tighter clustering of their samples.
 
-# Advanced Usage
+## Pseudobulk PCA
 
-## Using Different Dissimilarity Methods
+Pseudobulk PCA per sample & cell type
 
-Different dissimilarity methods capture different aspects of cell type
-similarity:
-
-```{r compare_methods}
-# Compute multiple dissimilarity methods
-methods <- c("Pseudobulk:Euclidean", "Pseudobulk:Cosine", "WasserStein")
-
-for (method in methods) {
-  sceval <- run_dissimilarity(
-    sceval,
-    method = method,
-    reduction = TRUE
-  )
-}
-
-# Compare consistency across methods
-comparison <- lapply(methods, function(method) {
-  get_consistency(
-    sceval,
-    dissimilarity_slot = method,
-    consistency_metric = "silhouette"
-  )
-})
-
-comparison_df <- do.call(rbind, comparison)
-print(comparison_df)
-```
-
-## Working with Real Data
-
-When working with real scRNA-seq data from Seurat or
-SingleCellExperiment:
-
-```{r real_data_example, eval=FALSE}
-# From Seurat object
-library(Seurat)
-sceval <- create_scTypeEval(seurat_object)
-
-# From SingleCellExperiment object
-library(SingleCellExperiment)
-sceval <- create_scTypeEval(sce_object)
-
-# Continue with standard workflow
-sceval <- run_processing_data(
+```{r pca_pseudobulk}
+plot_pca(
   sceval,
-  ident = "celltype",
-  sample = "orig.ident",
-  min_samples = 5,
-  min_cells = 10
-)
-# ... rest of analysis
-```
-
-## Custom Gene Lists for Specific Analyses
-
-Focus analysis on specific gene sets (e.g., immune genes, pathways):
-
-```{r custom_analysis, eval=FALSE}
-# Add pathway-specific genes
-sceval <- add_gene_list(
-  scTypeEval = sceval,
-  gene_list = list("TCR_signaling" = c("CD3D", "CD3E", "CD3G",
-                                       "CD247", "LCK", "ZAP70")
-                   )
-)
-
-# Run analysis focused on these genes
-sceval <- run_dissimilarity(
-  sceval,
-  method = "Pseudobulk:Euclidean",
-  gene_list = "TCR_signaling",  # Use specific gene list
-  reduction = FALSE
+  reduction_slot = "pseudobulk"
 )
 ```
+
 
 # Interpretation Guidelines
 
