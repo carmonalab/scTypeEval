@@ -1182,7 +1182,7 @@ add_dim_reduction <- function(scTypeEval,
 
 
 run_dissimilarity <- function(scTypeEval,
-                              method = "WasserStein",
+                              method = "Pseudobulk:Euclidean",
                               reduction = TRUE,
                               gene_list = NULL,
                               black_list = NULL,

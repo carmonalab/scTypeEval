@@ -6,7 +6,7 @@
 \usage{
 run_dissimilarity(
   scTypeEval,
-  method = "WasserStein",
+  method = "Pseudobulk:Euclidean",
   reduction = TRUE,
   gene_list = NULL,
   black_list = NULL,
