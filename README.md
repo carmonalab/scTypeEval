@@ -264,6 +264,7 @@ library(scTypeEval)
 # on single-cell data
 # Also, we recommend removing from selected genes within HVG the black listed
 # genes with high inter-sample variability
+data(black_list)
 bl <- list(black_list$TCR,
            black_list$Immunoglobulins,
            black_list$Ygenes) |>
