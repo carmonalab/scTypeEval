@@ -51,7 +51,7 @@ get_deg_logfc <- function(mat,
          # sort by FC
          m <- sort(m, decreasing = TRUE)
          nge <- min(ngenes_celltype, length(m))
-         names(m[1:nge])
+         names(m[seq_len(nge)])
       }) |>
          unlist() |>
          unique()
@@ -235,7 +235,7 @@ recip_classif <- function(mat,
                              sample = sample,
                              bparam = param)
    n <- length(mat.split)
-   combs <- split(expand.grid(1:n, 1:n), seq_len(n^2))
+   combs <- split(expand.grid(seq_len(n), seq_len(n)), seq_len(n^2))
    
    # set classifier
    classifier <- switch(classifier,

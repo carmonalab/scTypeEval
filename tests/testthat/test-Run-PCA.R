@@ -46,7 +46,7 @@ test_that("run_pca uses gene.list parameter", {
   
   # Add a custom gene list
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
-  custom_genes <- all_genes[1:100]
+  custom_genes <- all_genes[seq_len(100)]
   sceval <- add_gene_list(sceval, gene_list = list(custom = custom_genes))
   
   sceval <- run_pca(
@@ -68,7 +68,7 @@ test_that("run_pca respects black_list parameter", {
   sceval <- create_processed_scTypeEval()
   
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
-  black_genes <- all_genes[1:10]
+  black_genes <- all_genes[seq_len(10)]
   sceval@black_list <- black_genes
   
   sceval <- run_pca(

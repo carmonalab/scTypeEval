@@ -23,7 +23,7 @@ compute_hvg <- function(mat,
    cv[is.na(cv) | is.infinite(cv)] <- 0  # Handle edge cases
    
    # Rank genes by CV and select the top ngenes
-   ranked_genes <- order(cv, decreasing = TRUE)[1:ngenes]
+   ranked_genes <- order(cv, decreasing = TRUE)[seq_len(min(ngenes, length(cv)))]
    if (margin == 1L) {
       hvg <- rownames(mat)[ranked_genes]
    } else {
@@ -62,18 +62,18 @@ get_hvg <- function(norm_mat,
       hvg_freq <- freq_table[all_hvgs]
       
       # Compute rank within each sample
-      rank_matrix <- sapply(hvg_per_sample, function(hvg) {
+      rank_matrix <- vapply(hvg_per_sample, function(hvg) {
          ranks <- match(all_hvgs, hvg)  # Rank within this sample
          ranks[is.na(ranks)] <- ngenes * 2     # Set non-present genes to max
          ranks
-      })
+      }, FUN.VALUE = numeric(length(all_hvgs)))
       
       # Calculate median rank across samples for each gene
       med_rank <- apply(rank_matrix, 1, function(x) median(x, na.rm = TRUE))
       
       # Rank genes first by frequency, then by median rank
       rank_order <- order(-hvg_freq, med_rank)
-      top_hvgs <- all_hvgs[rank_order][1:ngenes]
+      top_hvgs <- all_hvgs[rank_order][seq_len(min(ngenes, length(rank_order)))]
 
    }
    

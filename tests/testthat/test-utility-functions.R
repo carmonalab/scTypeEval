@@ -31,7 +31,7 @@ test_that("add_gene_list adds a custom gene list", {
   sceval <- create_test_scTypeEval()
   
   all_genes <- rownames(sceval@counts)
-  custom_genes <- all_genes[1:50]
+  custom_genes <- all_genes[seq_len(50)]
   
   sceval <- add_gene_list(
     sceval,
@@ -48,7 +48,7 @@ test_that("add_gene_list handles multiple gene lists", {
   
   all_genes <- rownames(sceval@counts)
   
-  sceval <- add_gene_list(sceval, gene_list = list("list1" = all_genes[1:30]))
+  sceval <- add_gene_list(sceval, gene_list = list("list1" = all_genes[seq_len(30)]))
   sceval <- add_gene_list(sceval, gene_list = list("list2" = all_genes[31:60]))
   expect_true(all(c("list1", "list2") %in% names(sceval@gene_lists)))
 })
@@ -60,8 +60,8 @@ test_that("add_processed_data adds single-cell data", {
   
   # Create test data matching dimensions
   test_counts <- test_data$counts
-  test_ident <- test_data$metadata$celltype[1:ncol(test_counts)]
-  test_sample <- test_data$metadata$sample[1:ncol(test_counts)]
+  test_ident <- test_data$metadata$celltype[seq_len(ncol(test_counts))]
+  test_sample <- test_data$metadata$sample[seq_len(ncol(test_counts))]
   
   # Bug fixed: == changed to != in add_processed_data
   # Now correctly-sized data should succeed
@@ -86,8 +86,8 @@ test_that("add_processed_data adds pseudobulk data", {
   
   # Aggregate by sample and celltype
   pb_data <- test_data$counts
-  pb_ident <- test_data$metadata$celltype[1:ncol(pb_data)]
-  pb_sample <- test_data$metadata$sample[1:ncol(pb_data)]
+  pb_ident <- test_data$metadata$celltype[seq_len(ncol(pb_data))]
+  pb_sample <- test_data$metadata$sample[seq_len(ncol(pb_data))]
   
   sceval <- create_test_scTypeEval()
   # Bug fixed: == changed to != in add_processed_data
@@ -268,7 +268,7 @@ test_that("add_dim_reduction handles black_list parameter", {
   sceval <- create_processed_scTypeEval()
   
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
-  black_genes <- all_genes[1:10]
+  black_genes <- all_genes[seq_len(10)]
   
   n_cells <- ncol(sceval@data[["single-cell"]]@matrix)
   embeddings <- matrix(rnorm(n_cells * 10), nrow = 10, ncol = n_cells)
@@ -299,7 +299,7 @@ test_that("utility functions work together", {
   
   # Add custom gene list (use correct format: list with named elements)
   all_genes <- rownames(sceval@counts)
-  sceval <- add_gene_list(sceval, gene_list = list("custom" = all_genes[1:50]))
+  sceval <- add_gene_list(sceval, gene_list = list("custom" = all_genes[seq_len(50)]))
   
   # Process data using active ident
   sceval <- run_processing_data(

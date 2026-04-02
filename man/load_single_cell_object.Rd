@@ -57,8 +57,8 @@ filepath <- file.path(tempdir(), "sce_test.rds")
 
 # Create small SCE object with sparse matrix
 counts <- Matrix::Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
-rownames(counts) <- paste0("Gene", 1:50)
-colnames(counts) <- paste0("Cell", 1:20)
+rownames(counts) <- paste0("Gene", seq_len(50))
+colnames(counts) <- paste0("Cell", seq_len(20))
 sce_obj <- SingleCellExperiment::SingleCellExperiment(
    assays = list(counts = counts),
    colData = data.frame(

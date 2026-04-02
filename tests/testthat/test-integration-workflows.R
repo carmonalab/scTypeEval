@@ -105,7 +105,7 @@ test_that("Workflow with custom gene lists", {
   
   # Add custom gene list
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
-  custom_genes <- all_genes[1:100]
+  custom_genes <- all_genes[seq_len(100)]
   sceval <- add_gene_list(sceval, gene_list = list("custom" = custom_genes))
   
   # Run PCA with custom genes
@@ -133,7 +133,7 @@ test_that("Workflow with black list filtering", {
   
   # Set black list
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
-  black_genes <- all_genes[1:20]
+  black_genes <- all_genes[seq_len(20)]
   sceval@black_list <- black_genes
   
   # Run HVG with black list

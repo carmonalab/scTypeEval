@@ -49,7 +49,7 @@ test_that("run_gene_markers respects black_list parameter", {
   
   # Get some gene names
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
-  black_genes <- all_genes[1:10]
+  black_genes <- all_genes[seq_len(10)]
   
   sceval@black_list <- black_genes
   
@@ -69,7 +69,7 @@ test_that("run_gene_markers accepts custom black_list parameter", {
   sceval <- create_processed_scTypeEval()
   
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
-  custom_black <- all_genes[1:5]
+  custom_black <- all_genes[seq_len(5)]
   
   sceval <- run_gene_markers(
     sceval,

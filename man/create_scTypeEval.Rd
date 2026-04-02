@@ -55,12 +55,12 @@ and requires a metadata dataframe.
 # Create synthetic test data
 library(Matrix)
 counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
-rownames(counts) <- paste0("Gene", 1:50)
-colnames(counts) <- paste0("Cell", 1:20)
+rownames(counts) <- paste0("Gene", seq_len(50))
+colnames(counts) <- paste0("Cell", seq_len(20))
 
 metadata <- data.frame(
   celltype = rep(c("TypeA", "TypeB"), each = 10),
-  sample = rep(paste0("Sample", 1:4), each = 5),
+  sample = rep(paste0("Sample", seq_len(4)), each = 5),
   row.names = colnames(counts)
 )
 
@@ -68,7 +68,7 @@ metadata <- data.frame(
 sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
 
 # With custom gene lists and active identity
-gene_list <- list(markers = rownames(counts)[1:10])
+gene_list <- list(markers = rownames(counts)[seq_len(10)])
 sceval <- create_scTypeEval(
   matrix = counts, 
   metadata = metadata,

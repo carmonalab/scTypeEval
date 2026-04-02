@@ -138,7 +138,7 @@ compute_knn <- function(dist, knn_graph_k){
    
    # For each row, find the indices of the k nearest neighbors
    knn <- apply(dist_matrix, 1, function(row) {
-      order(row)[1:(knn_graph_k + 1)]  # Include self-neighbor
+      order(row)[seq_len(knn_graph_k + 1)]  # Include self-neighbor
    })
    # Transpose the result and remove the first column (self-neighbor)
    knn <- t(knn)[, -1]

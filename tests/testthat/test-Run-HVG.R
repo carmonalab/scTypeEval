@@ -168,7 +168,7 @@ test_that("run_hvg respects black_list parameter", {
   
   # Get some gene names
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
-  black_genes <- all_genes[1:10]
+  black_genes <- all_genes[seq_len(10)]
   
   sceval@black_list <- black_genes
   
@@ -188,7 +188,7 @@ test_that("run_hvg accepts custom black_list parameter", {
   sceval <- create_processed_scTypeEval(hvg = FALSE)
   
   all_genes <- rownames(sceval@data[["single-cell"]]@matrix)
-  custom_black <- all_genes[1:5]
+  custom_black <- all_genes[seq_len(5)]
   
   sceval <- run_hvg(
     sceval,

@@ -265,8 +265,8 @@ wr_missclasify <- function(count_matrix,
    
    # produce missclassification on metadata
    # get seed for each replicate
-   sds <- seed + 1:replicates
-   names(sds) <- 1:replicates
+   sds <- seed + seq_len(replicates)
+   names(sds) <- seq_len(replicates)
    
    original_vector <- metadata[[ident]]
    # vector for annotations
@@ -416,8 +416,8 @@ wr_nsamples <- function(count_matrix,
    
    # produce diferents combinations of samples
    # get seed for each replicate
-   sds <- seed + 1:replicates
-   names(sds) <- 1:replicates
+   sds <- seed + seq_len(replicates)
+   names(sds) <- seq_len(replicates)
    
    # number of samples
    ss <- unique(metadata[[sample]])
@@ -727,8 +727,8 @@ wr_ncell <- function(count_matrix,
    
    # produce diferents combinations of samples
    # get seed for each replicate
-   sds <- seed + 1:replicates
-   names(sds) <- 1:replicates
+   sds <- seed + seq_len(replicates)
+   names(sds) <- seq_len(replicates)
    
    # get number of cells from ctype
    nb <- table(metadata[[ident]])
@@ -761,7 +761,7 @@ wr_ncell <- function(count_matrix,
    
    combi <- expand.grid(names(sds), rates)
    
-   df_res <- lapply(1:nrow(combi),
+   df_res <- lapply(seq_len(nrow(combi)),
                     function(i){
                        tryCatch(
                           {
@@ -1057,8 +1057,8 @@ wr_split_cell_type <- function(count_matrix,
    
    # produce missclassification on metadata
    # get seed for each replicate
-   sds <- seed + 1:replicates
-   names(sds) <- 1:replicates
+   sds <- seed + seq_len(replicates)
+   names(sds) <- seq_len(replicates)
    
    original_vector <- as.character(metadata[[ident]])
    

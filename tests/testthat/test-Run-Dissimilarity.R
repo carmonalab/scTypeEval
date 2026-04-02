@@ -147,7 +147,7 @@ test_that("run_dissimilarity respects black_list parameter", {
   sceval <- create_processed_scTypeEval()
   
   all_genes <- rownames(sceval@data[["pseudobulk"]]@matrix)
-  black_genes <- all_genes[1:10]
+  black_genes <- all_genes[seq_len(10)]
   
   sceval <- run_dissimilarity(
     sceval,

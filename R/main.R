@@ -36,12 +36,12 @@
 #' # Create synthetic test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:50)
-#' colnames(counts) <- paste0("Cell", 1:20)
+#' rownames(counts) <- paste0("Gene", seq_len(50))
+#' colnames(counts) <- paste0("Cell", seq_len(20))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 10),
-#'   sample = rep(paste0("Sample", 1:4), each = 5),
+#'   sample = rep(paste0("Sample", seq_len(4)), each = 5),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -49,7 +49,7 @@
 #' sceval <- create_scTypeEval(matrix = counts, metadata = metadata)
 #' 
 #' # With custom gene lists and active identity
-#' gene_list <- list(markers = rownames(counts)[1:10])
+#' gene_list <- list(markers = rownames(counts)[seq_len(10)])
 #' sceval <- create_scTypeEval(
 #'   matrix = counts, 
 #'   metadata = metadata,
@@ -168,12 +168,12 @@ create_scTypeEval <- function(matrix = NULL,
 #' # Create synthetic test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:50)
-#' colnames(counts) <- paste0("Cell", 1:20)
+#' rownames(counts) <- paste0("Gene", seq_len(50))
+#' colnames(counts) <- paste0("Cell", seq_len(20))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 10),
-#'   sample = rep(paste0("Sample", 1:4), each = 5),
+#'   sample = rep(paste0("Sample", seq_len(4)), each = 5),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -240,12 +240,12 @@ set_active_ident <- function(scTypeEval,
 #' # Create test data with enough samples
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -366,12 +366,12 @@ run_processing_data <- function(scTypeEval,
 #' # Create test data with enough samples
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -511,12 +511,12 @@ add_processed_data <- function(scTypeEval,
 #' # Create and process test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -646,12 +646,12 @@ run_hvg <- function(scTypeEval,
 #' # Create and process test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -744,12 +744,12 @@ run_gene_markers <- function(scTypeEval,
 #' #' # Create synthetic test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:50)
-#' colnames(counts) <- paste0("Cell", 1:20)
+#' rownames(counts) <- paste0("Gene", seq_len(50))
+#' colnames(counts) <- paste0("Cell", seq_len(20))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 10),
-#'   sample = rep(paste0("Sample", 1:4), each = 5),
+#'   sample = rep(paste0("Sample", seq_len(4)), each = 5),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -830,12 +830,12 @@ add_gene_list <- function(scTypeEval,
 #' # Create and process test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -956,12 +956,12 @@ run_pca <- function(scTypeEval,
 #' # Create test data with enough samples
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -1151,12 +1151,12 @@ add_dim_reduction <- function(scTypeEval,
 #' # Create and process test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -1239,10 +1239,10 @@ run_dissimilarity <- function(scTypeEval,
    # inheret ident and sample
    if(slot == "single-cell") {
       group_levels <- levels(mat_ident@group)
-      ident <- sapply(group_levels, function(x){strsplit(x, "_")[[1]][2]}) |>
+      ident <- vapply(group_levels, function(x){strsplit(x, "_")[[1]][2]}, FUN.VALUE = character(1)) |>
          factor()
       ident <- setNames(list(ident), ident_name)
-      sample <- sapply(group_levels, function(x){strsplit(x, "_")[[1]][1]}) |>
+      sample <- vapply(group_levels, function(x){strsplit(x, "_")[[1]][1]}, FUN.VALUE = character(1)) |>
          factor()
       
    } else if(slot == "pseudobulk"){
@@ -1381,12 +1381,12 @@ run_dissimilarity <- function(scTypeEval,
 #' # Create and process test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -1511,12 +1511,12 @@ get_consistency <- function(scTypeEval,
 #' # Create and process test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -1611,12 +1611,12 @@ plot_pca <- function(scTypeEval,
 #' # Create and process test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -1709,12 +1709,12 @@ get_hierarchy <- function(scTypeEval,
 #' # Create and process test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -1807,12 +1807,12 @@ get_nn <- function(scTypeEval,
 #' #' # Create and process test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -1925,12 +1925,12 @@ plot_mds <- function(scTypeEval,
 #' #' # Create and process test data
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 
@@ -2159,14 +2159,14 @@ plot_heatmap <- function(scTypeEval,
 #'
 #'# Create small SCE object with sparse matrix
 #' counts <- Matrix::Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:50)
-#' colnames(counts) <- paste0("Cell", 1:20)
+#' rownames(counts) <- paste0("Gene", seq_len(50))
+#' colnames(counts) <- paste0("Cell", seq_len(20))
 
 #' sce_obj <- SingleCellExperiment::SingleCellExperiment(
 #'    assays = list(counts = counts),
 #'    colData = data.frame(
 #'       cell_type = rep(c("TypeA", "TypeB"), each = 10),
-# '      sample = rep(paste0("Sample", 1:4), each = 5),
+# '      sample = rep(paste0("Sample", seq_len(4)), each = 5),
 #'       row.names = colnames(counts)
 #'   )
 #' )
@@ -2332,12 +2332,12 @@ load_single_cell_object <- function(path,
 #' #' # Create test data with enough samples
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' sc_res <- wrapper_scTypeEval(
@@ -2533,12 +2533,12 @@ wrapper_scTypeEval <- function(scTypeEval = NULL,
 #' #' # Create test data with enough samples
 #' library(Matrix)
 #' counts <- Matrix(rpois(6000, 5), nrow = 100, ncol = 60, sparse = TRUE)
-#' rownames(counts) <- paste0("Gene", 1:100)
-#' colnames(counts) <- paste0("Cell", 1:60)
+#' rownames(counts) <- paste0("Gene", seq_len(100))
+#' colnames(counts) <- paste0("Cell", seq_len(60))
 #' 
 #' metadata <- data.frame(
 #'   celltype = rep(c("TypeA", "TypeB"), each = 30),
-#'   sample = rep(paste0("Sample", 1:6), times = 10),
+#'   sample = rep(paste0("Sample", seq_len(6)), times = 10),
 #'   row.names = colnames(counts)
 #' )
 #' 

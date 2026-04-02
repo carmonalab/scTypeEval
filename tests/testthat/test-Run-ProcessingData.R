@@ -595,7 +595,7 @@ test_that("run_processing_data filtering verifies correct number of samples per 
     # Get all groups for this cell type
     ct_groups <- sc_data@group[grepl(paste0("_", ct, "$"), sc_data@group)]
     # Extract unique samples for this cell type
-    ct_samples <- unique(sapply(as.character(ct_groups), function(x) strsplit(x, "_")[[1]][1]))
+    ct_samples <- unique(vapply(as.character(ct_groups), function(x) strsplit(x, "_")[[1]][1], FUN.VALUE = character(1)))
     
     # Each cell type should be in at least min_samples (4)
     expect_true(length(ct_samples) >= 4,

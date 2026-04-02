@@ -45,12 +45,12 @@ library(Matrix)
 # Generate example data
 set.seed(123)
 counts <- Matrix(rpois(50000, 5), nrow=500, ncol=100, sparse=TRUE)
-rownames(counts) <- paste0("Gene", 1:500)
-colnames(counts) <- paste0("Cell", 1:100)
+rownames(counts) <- paste0("Gene", seq_len(500))
+colnames(counts) <- paste0("Cell", seq_len(100))
 
 metadata <- data.frame(
   celltype = rep(c("TypeA", "TypeB", "TypeC", "TypeD"), each=25),
-  sample = rep(paste0("S", 1:5), times=20),
+  sample = rep(paste0("S", seq_len(5)), times=20),
   row.names = colnames(counts)
 )
 

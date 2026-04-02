@@ -57,7 +57,7 @@ test_that("create_scTypeEval requires metadata for matrix input", {
 
 test_that("create_scTypeEval validates dimensions", {
   test_data <- generate_small_test_data()
-  wrong_metadata <- test_data$metadata[1:10, ]
+  wrong_metadata <- test_data$metadata[seq_len(10), ]
   
   expect_error(
     create_scTypeEval(matrix = test_data$counts, metadata = wrong_metadata),
@@ -68,7 +68,7 @@ test_that("create_scTypeEval validates dimensions", {
 
 test_that("create_scTypeEval accepts gene_lists parameter", {
   test_data <- generate_small_test_data()
-  gene_list <- list(markers = rownames(test_data$counts)[1:50])
+  gene_list <- list(markers = rownames(test_data$counts)[seq_len(50)])
   
   sceval <- create_scTypeEval(
     matrix = test_data$counts,
@@ -83,7 +83,7 @@ test_that("create_scTypeEval accepts gene_lists parameter", {
 
 test_that("create_scTypeEval accepts black_list parameter", {
   test_data <- generate_small_test_data()
-  black_genes <- rownames(test_data$counts)[1:10]
+  black_genes <- rownames(test_data$counts)[seq_len(10)]
   
   sceval <- create_scTypeEval(
     matrix = test_data$counts,

@@ -14,14 +14,14 @@ create_test_seurat_file <- function(filename) {
   
   # Create small Seurat object with sparse matrix
   counts <- Matrix::Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
-  rownames(counts) <- paste0("Gene", 1:50)
-  colnames(counts) <- paste0("Cell", 1:20)
+  rownames(counts) <- paste0("Gene", seq_len(50))
+  colnames(counts) <- paste0("Cell", seq_len(20))
   
   seurat_obj <- Seurat::CreateSeuratObject(
     counts = counts,
     meta.data = data.frame(
       cell_type = rep(c("TypeA", "TypeB"), each = 10),
-      sample = rep(paste0("Sample", 1:4), each = 5),
+      sample = rep(paste0("Sample", seq_len(4)), each = 5),
       row.names = colnames(counts)
     )
   )
@@ -40,14 +40,14 @@ create_test_sce_file <- function(filename) {
   
   # Create small SCE object with sparse matrix
   counts <- Matrix::Matrix(rpois(1000, 5), nrow = 50, ncol = 20, sparse = TRUE)
-  rownames(counts) <- paste0("Gene", 1:50)
-  colnames(counts) <- paste0("Cell", 1:20)
+  rownames(counts) <- paste0("Gene", seq_len(50))
+  colnames(counts) <- paste0("Cell", seq_len(20))
   
   sce_obj <- SingleCellExperiment::SingleCellExperiment(
     assays = list(counts = counts),
     colData = data.frame(
       cell_type = rep(c("TypeA", "TypeB"), each = 10),
-      sample = rep(paste0("Sample", 1:4), each = 5),
+      sample = rep(paste0("Sample", seq_len(4)), each = 5),
       row.names = colnames(counts)
     )
   )
@@ -187,7 +187,7 @@ test_that("load_single_cell_object errors with unsupported .rds object type", {
   filepath <- file.path(test_dir, "unsupported.rds")
   
   # Save a regular list (unsupported type)
-  saveRDS(list(data = 1:10), filepath)
+  saveRDS(list(data = seq_len(10)), filepath)
   
   expect_error(
     load_single_cell_object(filepath, split = TRUE),

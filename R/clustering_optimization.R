@@ -85,8 +85,8 @@ compute_consistency <- function(scTypeEval,
                                 ncores = 1,
                                 verbose = FALSE) {
    
-   dissimilarity_method <- sapply(consistency_method, \(x) strsplit(x, " [|] ")[[1]][2])
-   consistency_metric  <- sapply(consistency_method, \(x) strsplit(x, " [|] ")[[1]][1])
+   dissimilarity_method <- vapply(consistency_method, \(x) strsplit(x, " [|] ")[[1]][2], FUN.VALUE = character(1))
+   consistency_metric  <- vapply(consistency_method, \(x) strsplit(x, " [|] ")[[1]][1], FUN.VALUE = character(1))
    
    # all expected clusters
    all_clusters <- purge_label(unique(scTypeEval@metadata[[ident]]))
