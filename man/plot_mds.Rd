@@ -18,7 +18,7 @@ plot_mds(
 \item{dissimilarity_slot}{Character string specifying which dissimilarity assay(s)
 to use. If \code{"all"}, all available dissimilarity assays are plotted (default: \code{"all"}).}
 
-\item{label}{Logical; whether to add cluster labels to the MDS plot (default: \code{TRUE}).}
+\item{label}{Logical; whether to add medoid labels to the MDS plot (default: \code{TRUE}).}
 
 \item{dims}{Integer vector of length 2; the MDS dimensions to plot (default: \code{c(1, 2)}).}
 
@@ -62,7 +62,7 @@ sceval <- run_processing_data(sceval, ident = "celltype",
                              min_cells = 3, verbose = FALSE)
 sceval <- run_hvg(sceval,
                   var_method = "basic",
-                  ngenes = 10,
+                  ngenes = 100,
                   verbose = FALSE)
 
 # Compute Pseudobulk Euclidean dissimilarity
@@ -71,4 +71,7 @@ sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 # Plot MDS for all dissimilarity assays
 mds_plots <- plot_mds(sceval)
 
+}
+\seealso{
+\link{run_dissimilarity}
 }

@@ -22,20 +22,23 @@ run_dissimilarity(
 and/or dimensional reduction assays.}
 
 \item{method}{Character. Dissimilarity method to use. Must be one of
-\code{names(dissimilarity_methods)}. Default is \code{"WasserStein"}.}
+\code{"WasserStein", "Pseudobulk:Euclidean", "Pseudobulk:Cosine",
+        "Pseudobulk:Pearson", "recip_classif:Match", or "recip_classif:Score"}.
+Default is \code{"Pseudobulk:Euclidean"}.}
 
 \item{reduction}{Logical. Whether to compute dissimilarity on dimensional
-reduction embeddings (if available). Default is \code{TRUE}.}
+reduction embeddings (if available).
+No supported for "recip_classif" dissimilarity methods.
+Default is \code{TRUE}.}
 
-\item{gene_list}{Optional. Character vector of genes to include. If
-\code{NULL}, the method will use the default or inherited gene list.}
+\item{gene_list}{Optional. Character vector of genes to include.
+If \code{NULL}, first gene list stored in \code{scTypeEval} is used.}
 
 \item{black_list}{Optional. Character vector of genes to exclude. If
 \code{NULL}, the method will use the default or inherited blacklist.}
 
 \item{reciprocal_classifier}{Character. Classifier to use for recip_classif
-dissimilarity methods. Default is
-\code{"SingleR"}.}
+dissimilarity methods. Default is \code{"SingleR"}.}
 
 \item{ncores}{Integer. Number of cores for parallelization. Default is \code{1}.}
 
@@ -61,12 +64,13 @@ Dissimilarity can be computed either on dimensional reduction embeddings
 The function supports multiple dissimilarity strategies:
 \itemize{
 \item \code{"Pseudobulk:<distance>"} – computes pairwise distances between
-pseudobulk profiles using the specified distance metric. Supported distances are euclidean, cosine, and pearson.
+pseudobulk profiles using the specified distance metric.
+Supported distances are euclidean, cosine, and pearson.
 \item \code{"WasserStein"} – computes Wasserstein distances between groups
 of embeddings or cells.
 \item \code{"recip_classif:<method>"} – assigns cells pairwise between samples using
 the specified classifier, then computes dissimilarity between assignments.
-Supported methods are 'match' and 'score'.
+Supported methods are 'match' (binary) and 'score'.
 }
 
 If \code{reduction = TRUE}, the function expects that dimensional reduction
@@ -93,7 +97,7 @@ sceval <- run_processing_data(sceval, ident = "celltype",
                              min_cells = 3, verbose = FALSE)
 sceval <- run_hvg(sceval,
                   var_method = "basic",
-                  ngenes = 10,
+                  ngenes = 100,
                   verbose = FALSE)
 
 # Compute Pseudobulk Euclidean dissimilarity

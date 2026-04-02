@@ -15,8 +15,8 @@ run_pca(
 \arguments{
 \item{scTypeEval}{A \code{scTypeEval} object containing processed expression data. See \code{run_processing_data} or \code{add_processed_data}).}
 
-\item{gene_list}{Named list of character vectors. Each element defines a gene set for PCA analysis.
-If \code{NULL}, all pre-defined gene lists stored in \code{scTypeEval} are used.}
+\item{gene_list}{Named list of features defining the gene set for PCA analysis.
+If \code{NULL}, first gene list stored in \code{scTypeEval} is used.}
 
 \item{black_list}{Character vector of genes to exclude from PCA. If \code{NULL},
 the blacklist stored in \code{scTypeEval} is used.}
@@ -31,7 +31,7 @@ The modified \code{scTypeEval} object with PCA results stored in the
 }
 \description{
 This function computes Principal Component Analysis (PCA) for each processed
-data aggregation stored in the \code{scTypeEval} object (e.g., single-cell or pseudobulk).
+data aggregation stored in the \code{scTypeEval} object (e.g., single-cell and/or pseudobulk).
 The resulting PCA embeddings and loadings are stored in the \code{reductions} slot of the object.
 }
 \details{
@@ -65,7 +65,7 @@ sceval <- run_processing_data(sceval, ident = "celltype",
                              min_cells = 3, verbose = FALSE)
 sceval <- run_hvg(sceval,
                   var_method = "basic",
-                  ngenes = 20,
+                  ngenes = 100,
                   verbose = FALSE)
 
 # Run PCA on HVG genes
@@ -73,5 +73,5 @@ sceval <- run_pca(sceval, gene_list = "HVG", ndim = 4, verbose = FALSE)
 
 }
 \seealso{
-\link{add_processed_data}
+\link{run_processing_data}
 }

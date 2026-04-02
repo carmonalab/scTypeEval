@@ -19,8 +19,7 @@ run_hvg(
 )
 }
 \arguments{
-\item{scTypeEval}{An \code{scTypeEval} object containing normalized data in the
-\code{"single-cell"} slot (see \code{run_processing_data}).}
+\item{scTypeEval}{An \code{scTypeEval} object containing normalized data (see \code{run_processing_data}).}
 
 \item{var_method}{Character string specifying the method for identifying highly
 variable genes. Options: \code{"scran"} (default) or \code{"basic"}.}
@@ -93,7 +92,7 @@ sceval <- run_processing_data(sceval, ident = "celltype",
 # Compute HVGs using basic method
 sceval <- run_hvg(sceval,
                   var_method = "basic",
-                  ngenes = 10,
+                  ngenes = 100,
                   verbose = FALSE)
 
 }

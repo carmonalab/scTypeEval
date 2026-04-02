@@ -28,9 +28,9 @@ for ordering cells by similarity (hierarchical clustering within each cell type)
 \item{sort_consistency}{Optional. Character string specifying a consistency metric
 (passed to \code{get_consistency()}) for ordering cell types by overall consistency.}
 
-\item{low_color}{Color for the low end of the heatmap gradient (default: \code{"black"}).}
+\item{low_color}{Color for the low dissimilarity end of the heatmap gradient (default: \code{"black"}).}
 
-\item{high_color}{Color for the low end of the heatmap gradient (default: \code{"white"}).}
+\item{high_color}{Color for the high dissimilarity end of the heatmap gradient (default: \code{"white"}).}
 
 \item{hclust_method}{Clustering method to use when \code{sort_similarity} is provided
 (default: \code{"ward.D2"}).}
@@ -46,7 +46,7 @@ If only a single assay is selected, the corresponding heatmap plot is returned d
 \description{
 Visualize dissimilarity matrices stored in an \code{scTypeEval} object as annotated
 heatmaps. Each selected dissimilarity assay is shown as a heatmap where rows and
-columns represenent cell type and sample, ordered by cell type and optionally sorted by similarity
+columns represent cell type and sample, ordered by cell type and optionally sorted by similarity
 or consistency metrics. Group boundaries are marked to highlight cell-type consistency.
 }
 \details{
@@ -84,7 +84,7 @@ sceval <- run_processing_data(sceval, ident = "celltype",
                              min_cells = 3, verbose = FALSE)
 sceval <- run_hvg(sceval,
                   var_method = "basic",
-                  ngenes = 10,
+                  ngenes = 100,
                   verbose = FALSE)
 
 # Compute Pseudobulk Euclidean dissimilarity

@@ -56,7 +56,7 @@ sceval <- run_processing_data(sceval, ident = "celltype",
                              min_cells = 3, verbose = FALSE)
 sceval <- run_hvg(sceval,
                   var_method = "basic",
-                  ngenes = 10,
+                  ngenes = 100,
                   verbose = FALSE)
 
 # Compute Pseudobulk Euclidean dissimilarity

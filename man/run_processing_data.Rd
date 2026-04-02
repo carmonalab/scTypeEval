@@ -37,7 +37,7 @@ If \code{NULL}, defaults to \code{scTypeEval@active_ident}.}
 \value{
 An updated \code{scTypeEval} object containing:
 \itemize{
-\item \code{data}: A list of \code{data_assay} objects, one for single-cell other for pseudobulk.
+\item \code{data}: A list of \code{data_assay} objects, one for each aggregation method.
 }
 }
 \description{
@@ -49,7 +49,7 @@ Results are stored as \code{data_assay} objects within the \code{scTypeEval}.
 The function performs the following steps:
 \enumerate{
 \item Validates and sets the identity (\code{ident}) and sample grouping (\code{sample}).
-\item Iterates over predefined \code{aggregation_types}: single-cell and pseudobulk.
+\item Iterates over \code{aggregation_types}: single-cell and/or pseudobulk.
 \item Extracts and filters the count matrix using
 \code{min_samples} and \code{min_cells} thresholds.
 \item Normalizes the resulting matrix.

@@ -47,7 +47,7 @@ relative to the expected proportion by chance. Higher values indicate better ali
 true labels and cluster assignments.
 \item \code{"Orbital_medoid"} – For each cell type, identifies a representative medoid cell
 (the cell minimizing the total distance to all other cells of the same type).
-Then, for each non-medoid cell, it checks whether the cell is closer to its own medoid
+Then, for each non-medoid cell, it checks whether the cell is closer to its own medoid cell type
 than to the medoids of other cell types. The metric for each cell type is the proportion
 of cells that are closer to their own medoid than to any other medoid.
 Optionally, this proportion can be normalized relative to the expected proportion by chance.
@@ -56,18 +56,18 @@ Higher values indicate that cells are well-clustered around their medoid.
 the same cell type relative to cells of other types. For each cell,
 it computes the average distance to other cells in its group and to
 cells outside its group, then combines these into a normalized score (higher = better).
-Scores are then averaged per cell type. This metric is similar in spirit to a one-label silhouette.
+Scores are then averaged per cell type. This metric is similar in spirit to a \code{"2label_silhouette"}.
 }
 Default: all supported metrics.}
 
 \item{knn_graph_k}{Integer. Number of nearest neighbors to use for
-graph-based metrics (e.g. \code{"NeighborhoodPurity"}). Default is \code{5}.}
+graph-based metrics (\code{"NeighborhoodPurity"}). Default is \code{5}.}
 
 \item{hclust_method}{Character. Agglomeration method passed to \code{\link{hclust}}
 for Ward-based metrics. Default is \code{"ward.D2"}.}
 
-\item{normalize}{Logical. Whether to normalize metric values (e.g., scaling
-across dissimilarity methods). Default is \code{FALSE}.}
+\item{normalize}{Logical. Whether to normalize metric values for expected proportions by chance.
+Default is \code{FALSE}.}
 
 \item{return_scTypeEval}{Logical. Whether to return data frame with inter-sample consistencies or store within scTypeEval@consistency slot. Default is \code{FALSE}.}
 
@@ -86,7 +86,7 @@ A \code{data.frame} with the following columns:
 \description{
 Computes internal validation metrics (consistency measures) for cell type
 annotations based on dissimilarity assays stored in a \code{scTypeEval} object.
-For each dissimilarity representation, one or more internal validation metrics
+For each indicted dissimilarity representation, one or more internal validation metrics
 are calculated per cell type and returned in a tidy \code{data.frame}.
 }
 \details{
@@ -115,7 +115,7 @@ sceval <- run_processing_data(sceval, ident = "celltype",
                              min_cells = 3, verbose = FALSE)
 sceval <- run_hvg(sceval,
                   var_method = "basic",
-                  ngenes = 10,
+                  ngenes = 100,
                   verbose = FALSE)
 sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean",
                             reduction = FALSE, verbose = FALSE)

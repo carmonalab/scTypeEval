@@ -41,7 +41,7 @@ cell identities (e.g., cell types or clusters).}
 \item{sample}{Character string specifying the metadata column containing
 sample identifiers (used for pseudobulk aggregation).}
 
-\item{aggregation}{Method to group cells, either \code{"single-cell"} or \code{"pseudobulk"}. Default is \code{"single-cell"}.}
+\item{aggregation}{Method to group cells, either \code{"single-cell"} or \code{"pseudobulk"}, or both. Default is both.}
 
 \item{gene_list}{Optional named list of gene sets to include in the analysis.
 If \code{NULL}, highly variable genes (HVGs) are automatically computed.}
@@ -69,7 +69,7 @@ Available options include:
 \item \code{"recip_classif:Match"}
 \item \code{"recip_classif:Score"}
 }
-Multiple methods can be provided for comparative evaluation.}
+By default all supported methods are run, and multiple methods can be provided.}
 
 \item{min_samples}{Integer; minimum number of samples required for pseudobulk analysis (default: \code{5}).}
 
@@ -101,7 +101,7 @@ and computes one or more dissimilarity metrics between cell populations.
 
 This function integrates multiple internal \pkg{scTypeEval} pipeline steps,
 including data preparation, HVG selection, PCA reduction, and dissimilarity computation,
-providing a streamlined workflow for single-cell data evaluation.
+providing a streamlined workflow for single-cell data annotation evaluation.
 }
 \details{
 This wrapper combines multiple pipeline steps from \pkg{scTypeEval}:

@@ -221,14 +221,14 @@ set_active_ident <- function(scTypeEval,
 #'
 #' @return An updated `scTypeEval` object containing:
 #' \itemize{
-#'   \item \code{data}: A list of `data_assay` objects, one for single-cell other for pseudobulk.
+#'   \item \code{data}: A list of `data_assay` objects, one for each aggregation method.
 #' }
 #'
 #' @details
 #' The function performs the following steps:
 #' \enumerate{
 #'   \item Validates and sets the identity (\code{ident}) and sample grouping (\code{sample}).
-#'   \item Iterates over predefined \code{aggregation_types}: single-cell and pseudobulk.
+#'   \item Iterates over \code{aggregation_types}: single-cell and/or pseudobulk.
 #'   \item Extracts and filters the count matrix using 
 #'         \code{min_samples} and \code{min_cells} thresholds.
 #'   \item Normalizes the resulting matrix.
@@ -470,8 +470,7 @@ add_processed_data <- function(scTypeEval,
 #' single-cell data stored in an `scTypeEval` object. The identified HVGs are
 #' stored in the `gene_lists` slot under `"HVG"`.
 #'
-#' @param scTypeEval An `scTypeEval` object containing normalized data in the
-#'   `"single-cell"` slot (see \code{run_processing_data}).
+#' @param scTypeEval An `scTypeEval` object containing normalized data (see \code{run_processing_data}).
 #' @param var_method Character string specifying the method for identifying highly
 #'   variable genes. Options: `"scran"` (default) or `"basic"`.
 #' @param ngenes Integer specifying the number of highly variable genes to retain
@@ -528,7 +527,7 @@ add_processed_data <- function(scTypeEval,
 #' # Compute HVGs using basic method
 #' sceval <- run_hvg(sceval,
 #'                   var_method = "basic",
-#'                   ngenes = 10,
+#'                   ngenes = 100,
 #'                   verbose = FALSE)
 #'
 #' @export run_hvg
@@ -603,10 +602,9 @@ run_hvg <- function(scTypeEval,
 #'
 #' @description Identifies cell type marker genes from normalized single-cell data
 #' stored in an `scTypeEval` object. The identified markers are stored in the
-#' `gene_lists` slot under the chosen method (e.g. `"scran.findMarkers"`).
+#' `gene_lists` slot under the chosen method.
 #'
-#' @param scTypeEval An `scTypeEval` object containing normalized data in the
-#'   `"single-cell"` slot (see \code{run_processing_data}).
+#' @param scTypeEval An `scTypeEval` object containing normalized data (see \code{run_processing_data}).
 #' @param method A character string specifying the marker gene identification
 #'   method. Currently supported:
 #'   \itemize{
@@ -800,12 +798,12 @@ add_gene_list <- function(scTypeEval,
 #' @title Perform PCA on Processed Data and Store Results in scTypeEval Object
 #'
 #' @description This function computes Principal Component Analysis (PCA) for each processed
-#' data aggregation stored in the \code{scTypeEval} object (e.g., single-cell or pseudobulk).
+#' data aggregation stored in the \code{scTypeEval} object (e.g., single-cell and/or pseudobulk).
 #' The resulting PCA embeddings and loadings are stored in the \code{reductions} slot of the object.
 #'
 #' @param scTypeEval A \code{scTypeEval} object containing processed expression data. See \code{run_processing_data} or \code{add_processed_data}).
-#' @param gene_list Named list of character vectors. Each element defines a gene set for PCA analysis.
-#' If \code{NULL}, all pre-defined gene lists stored in \code{scTypeEval} are used.
+#' @param gene_list Named list of features defining the gene set for PCA analysis.
+#' If \code{NULL}, first gene list stored in \code{scTypeEval} is used.
 #' @param black_list Character vector of genes to exclude from PCA. If \code{NULL},
 #' the blacklist stored in \code{scTypeEval} is used.
 #' @param ndim Integer. Number of principal components to compute (default: 30).
@@ -845,13 +843,13 @@ add_gene_list <- function(scTypeEval,
 #'                              min_cells = 3, verbose = FALSE)
 #' sceval <- run_hvg(sceval,
 #'                   var_method = "basic",
-#'                   ngenes = 20,
+#'                   ngenes = 100,
 #'                   verbose = FALSE)
 #' 
 #' # Run PCA on HVG genes
 #' sceval <- run_pca(sceval, gene_list = "HVG", ndim = 4, verbose = FALSE)
 #'
-#' @seealso \link{add_processed_data}
+#' @seealso \link{run_processing_data}
 #'
 #' @export run_pca
 
@@ -1109,16 +1107,19 @@ add_dim_reduction <- function(scTypeEval,
 #' @param scTypeEval A \code{scTypeEval} object containing processed data 
 #'        and/or dimensional reduction assays.
 #' @param method Character. Dissimilarity method to use. Must be one of 
-#'        \code{names(dissimilarity_methods)}. Default is \code{"WasserStein"}.
+#'        \code{"WasserStein", "Pseudobulk:Euclidean", "Pseudobulk:Cosine",
+#'         "Pseudobulk:Pearson", "recip_classif:Match", or "recip_classif:Score"}.
+#'        Default is \code{"Pseudobulk:Euclidean"}.
 #' @param reduction Logical. Whether to compute dissimilarity on dimensional 
-#'        reduction embeddings (if available). Default is \code{TRUE}.
-#' @param gene_list Optional. Character vector of genes to include. If 
-#'        \code{NULL}, the method will use the default or inherited gene list.
+#'        reduction embeddings (if available). 
+#'        No supported for "recip_classif" dissimilarity methods.
+#'        Default is \code{TRUE}.
+#' @param gene_list Optional. Character vector of genes to include. 
+#'                  If \code{NULL}, first gene list stored in \code{scTypeEval} is used.
 #' @param black_list Optional. Character vector of genes to exclude. If 
 #'        \code{NULL}, the method will use the default or inherited blacklist.
 #' @param reciprocal_classifier Character. Classifier to use for recip_classif 
-#'        dissimilarity methods. Default is 
-#'        \code{"SingleR"}.
+#'        dissimilarity methods. Default is \code{"SingleR"}.
 #' @param ncores Integer. Number of cores for parallelization. Default is \code{1}.
 #' @param bparam Optional. BiocParallel parameter object to control 
 #'        parallelization. Default is \code{NULL}.
@@ -1130,12 +1131,13 @@ add_dim_reduction <- function(scTypeEval,
 #' The function supports multiple dissimilarity strategies:
 #' \itemize{
 #'   \item \code{"Pseudobulk:<distance>"} – computes pairwise distances between 
-#'         pseudobulk profiles using the specified distance metric. Supported distances are euclidean, cosine, and pearson.
+#'         pseudobulk profiles using the specified distance metric. 
+#'         Supported distances are euclidean, cosine, and pearson.
 #'   \item \code{"WasserStein"} – computes Wasserstein distances between groups 
 #'         of embeddings or cells.
 #'   \item \code{"recip_classif:<method>"} – assigns cells pairwise between samples using 
 #'         the specified classifier, then computes dissimilarity between assignments.
-#'         Supported methods are 'match' and 'score'.
+#'         Supported methods are 'match' (binary) and 'score'.
 #' }
 #'
 #' If \code{reduction = TRUE}, the function expects that dimensional reduction 
@@ -1166,7 +1168,7 @@ add_dim_reduction <- function(scTypeEval,
 #'                              min_cells = 3, verbose = FALSE)
 #' sceval <- run_hvg(sceval,
 #'                   var_method = "basic",
-#'                   ngenes = 10,
+#'                   ngenes = 100,
 #'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
@@ -1308,7 +1310,7 @@ run_dissimilarity <- function(scTypeEval,
 #' @description
 #' Computes internal validation metrics (consistency measures) for cell type 
 #' annotations based on dissimilarity assays stored in a \code{scTypeEval} object. 
-#' For each dissimilarity representation, one or more internal validation metrics 
+#' For each indicted dissimilarity representation, one or more internal validation metrics 
 #' are calculated per cell type and returned in a tidy \code{data.frame}.
 #'
 #' @param scTypeEval A \code{scTypeEval} object containing one or more 
@@ -1339,24 +1341,24 @@ run_dissimilarity <- function(scTypeEval,
 #'           true labels and cluster assignments.
 #'          \item \code{"Orbital_medoid"} – For each cell type, identifies a representative medoid cell
 #'           (the cell minimizing the total distance to all other cells of the same type).
-#'            Then, for each non-medoid cell, it checks whether the cell is closer to its own medoid
-#'             than to the medoids of other cell types. The metric for each cell type is the proportion
-#'             of cells that are closer to their own medoid than to any other medoid. 
-#'              Optionally, this proportion can be normalized relative to the expected proportion by chance.
+#'            Then, for each non-medoid cell, it checks whether the cell is closer to its own medoid cell type
+#'            than to the medoids of other cell types. The metric for each cell type is the proportion
+#'            of cells that are closer to their own medoid than to any other medoid. 
+#'            Optionally, this proportion can be normalized relative to the expected proportion by chance.
 #'              Higher values indicate that cells are well-clustered around their medoid.
 #'          \item \code{"Average_similarity"} – Measures how similar cells are within
 #'           the same cell type relative to cells of other types. For each cell,
 #'           it computes the average distance to other cells in its group and to
 #'          cells outside its group, then combines these into a normalized score (higher = better).
-#'          Scores are then averaged per cell type. This metric is similar in spirit to a one-label silhouette.
+#'          Scores are then averaged per cell type. This metric is similar in spirit to a \code{"2label_silhouette"}.
 #'        }
 #'        Default: all supported metrics.
 #' @param knn_graph_k Integer. Number of nearest neighbors to use for 
-#'        graph-based metrics (e.g. \code{"NeighborhoodPurity"}). Default is \code{5}.
+#'        graph-based metrics (\code{"NeighborhoodPurity"}). Default is \code{5}.
 #' @param hclust_method Character. Agglomeration method passed to \code{\link{hclust}} 
 #'        for Ward-based metrics. Default is \code{"ward.D2"}.
-#' @param normalize Logical. Whether to normalize metric values (e.g., scaling 
-#'        across dissimilarity methods). Default is \code{FALSE}.
+#' @param normalize Logical. Whether to normalize metric values for expected proportions by chance.
+#'                  Default is \code{FALSE}.
 #' @param return_scTypeEval Logical. Whether to return data frame with inter-sample consistencies or store within scTypeEval@consistency slot. Default is \code{FALSE}.
 #' @param verbose Logical. Whether to print progress messages. Default is \code{TRUE}.
 #'
@@ -1396,7 +1398,7 @@ run_dissimilarity <- function(scTypeEval,
 #'                              min_cells = 3, verbose = FALSE)
 #' sceval <- run_hvg(sceval,
 #'                   var_method = "basic",
-#'                   ngenes = 10,
+#'                   ngenes = 100,
 #'                   verbose = FALSE)
 #' sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean",
 #'                             reduction = FALSE, verbose = FALSE)
@@ -1433,7 +1435,7 @@ get_consistency <- function(scTypeEval,
                              assay <- scTypeEval@dissimilarity[[da]]
                              
                              dist <- assay@dissimilarity
-                             # if recip_classif match, convert 0.5 (for plotting to 1)
+                             # if recip_classif match, convert 0.5 (only for plotting heatmap) to 1
                              if (da == "recip_classif:Match") {
                                 dist[dist == 0.5] <- 1
                              }
@@ -1495,17 +1497,17 @@ get_consistency <- function(scTypeEval,
 #' @param scTypeEval An \code{scTypeEval} object containing PCA results in the \code{reductions} slot.
 #' @param reduction_slot Character. Name(s) of the reduction(s) to plot. If \code{"all"} 
 #' (default), all available PCA reductions in the object are plotted.
-#' @param label Logical. Whether to add cluster labels to the PCA plot (default: \code{TRUE}).
+#' @param label Logical. Whether to add medoid labels to the PCA plot (default: \code{TRUE}).
 #' @param dims Integer vector of length 2. The principal component (PC) dimensions to plot 
 #' (default: \code{c(1,2)}).
 #' @param show_legend Logical. Whether to display a legend (default: \code{FALSE}).
 #'
 #' @return A named list of PCA plots (\link[ggplot2]{ggplot} objects) corresponding to 
-#' the PCA analyses stored in the \code{reductions} slot of an \code{scTypeEval} object 
-#' (generated by \link{add_dim_reduction}). If only one reduction is selected, a single ggplot object 
-#' is returned.
+#' the PCA analyses stored in the \code{reductions} slot of an \code{scTypeEval} object.
+#' If only one reduction is selected, a single ggplot object is returned.
 #'
-#' @seealso \link{add_dim_reduction}
+#' @seealso 
+#' \code{\link{add_dim_reduction}}, \code{\link{run_pca}}
 #'
 #' @examples
 #' # Create and process test data
@@ -1526,7 +1528,7 @@ get_consistency <- function(scTypeEval,
 #'                              min_cells = 3, verbose = FALSE)
 #' sceval <- run_hvg(sceval,
 #'                   var_method = "basic",
-#'                   ngenes = 20,
+#'                   ngenes = 100,
 #'                   verbose = FALSE)
 #' 
 #' # Run PCA on HVG genes
@@ -1626,7 +1628,7 @@ plot_pca <- function(scTypeEval,
 #'                              min_cells = 3, verbose = FALSE)
 #' sceval <- run_hvg(sceval,
 #'                   var_method = "basic",
-#'                   ngenes = 10,
+#'                   ngenes = 100,
 #'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
@@ -1724,7 +1726,7 @@ get_hierarchy <- function(scTypeEval,
 #'                              min_cells = 3, verbose = FALSE)
 #' sceval <- run_hvg(sceval,
 #'                   var_method = "basic",
-#'                   ngenes = 10,
+#'                   ngenes = 100,
 #'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
@@ -1735,6 +1737,8 @@ get_hierarchy <- function(scTypeEval,
 #'                  knn_graph_k = 5,
 #'                  normalize = TRUE,
 #'                  verbose = FALSE)
+#'                  
+#' @seealso \link{run_dissimilarity}
 #'
 #' @export get_nn
 
@@ -1785,7 +1789,7 @@ get_nn <- function(scTypeEval,
 #' @param scTypeEval An `scTypeEval` object containing one or more dissimilarity assays.
 #' @param dissimilarity_slot Character string specifying which dissimilarity assay(s) 
 #'   to use. If `"all"`, all available dissimilarity assays are plotted (default: `"all"`).
-#' @param label Logical; whether to add cluster labels to the MDS plot (default: `TRUE`).
+#' @param label Logical; whether to add medoid labels to the MDS plot (default: `TRUE`).
 #' @param dims Integer vector of length 2; the MDS dimensions to plot (default: `c(1, 2)`).
 #' @param show_legend Logical; whether to display a legend (default: `FALSE`).
 #'
@@ -1822,7 +1826,7 @@ get_nn <- function(scTypeEval,
 #'                              min_cells = 3, verbose = FALSE)
 #' sceval <- run_hvg(sceval,
 #'                   var_method = "basic",
-#'                   ngenes = 10,
+#'                   ngenes = 100,
 #'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
@@ -1830,6 +1834,8 @@ get_nn <- function(scTypeEval,
 #'                             reduction = FALSE, verbose = FALSE)
 #' # Plot MDS for all dissimilarity assays
 #' mds_plots <- plot_mds(sceval)
+#' 
+#' @seealso \link{run_dissimilarity}
 #'
 #' @export plot_mds
 
@@ -1884,7 +1890,7 @@ plot_mds <- function(scTypeEval,
 #' @description
 #' Visualize dissimilarity matrices stored in an `scTypeEval` object as annotated
 #' heatmaps. Each selected dissimilarity assay is shown as a heatmap where rows and
-#' columns represenent cell type and sample, ordered by cell type and optionally sorted by similarity
+#' columns represent cell type and sample, ordered by cell type and optionally sorted by similarity
 #' or consistency metrics. Group boundaries are marked to highlight cell-type consistency.
 #'
 #' @param scTypeEval An `scTypeEval` object containing one or more dissimilarity assays.
@@ -1894,8 +1900,8 @@ plot_mds <- function(scTypeEval,
 #'   for ordering cells by similarity (hierarchical clustering within each cell type).
 #' @param sort_consistency Optional. Character string specifying a consistency metric
 #'   (passed to `get_consistency()`) for ordering cell types by overall consistency.
-#' @param low_color Color for the low end of the heatmap gradient (default: `"black"`).
-#' @param high_color Color for the low end of the heatmap gradient (default: `"white"`).
+#' @param low_color Color for the low dissimilarity end of the heatmap gradient (default: `"black"`).
+#' @param high_color Color for the high dissimilarity end of the heatmap gradient (default: `"white"`).
 #' @param hclust_method Clustering method to use when `sort_similarity` is provided
 #'   (default: `"ward.D2"`).
 #' @param verbose Logical. Whether to print progress and diagnostic messages (default: `TRUE`).
@@ -1940,7 +1946,7 @@ plot_mds <- function(scTypeEval,
 #'                              min_cells = 3, verbose = FALSE)
 #' sceval <- run_hvg(sceval,
 #'                   var_method = "basic",
-#'                   ngenes = 10,
+#'                   ngenes = 100,
 #'                   verbose = FALSE)
 #' 
 #' # Compute Pseudobulk Euclidean dissimilarity
@@ -2265,7 +2271,7 @@ load_single_cell_object <- function(path,
 #' 
 #' This function integrates multiple internal \pkg{scTypeEval} pipeline steps, 
 #' including data preparation, HVG selection, PCA reduction, and dissimilarity computation, 
-#' providing a streamlined workflow for single-cell data evaluation.
+#' providing a streamlined workflow for single-cell data annotation evaluation.
 #' @param scTypeEval An `scTypeEval` object generated by \code{create_scTypeEval}. 
 #' If null count_matrix and metadata must be provided to build scTypeEval object internally.
 #' @param count_matrix A numeric or sparse \code{dgCMatrix} of raw counts 
@@ -2275,7 +2281,7 @@ load_single_cell_object <- function(path,
 #'   cell identities (e.g., cell types or clusters).
 #' @param sample Character string specifying the metadata column containing 
 #'   sample identifiers (used for pseudobulk aggregation).
-#' @param aggregation Method to group cells, either `"single-cell"` or `"pseudobulk"`. Default is `"single-cell"`.
+#' @param aggregation Method to group cells, either `"single-cell"` or `"pseudobulk"`, or both. Default is both.
 #' @param gene_list Optional named list of gene sets to include in the analysis.  
 #'   If \code{NULL}, highly variable genes (HVGs) are automatically computed.
 #' @param reduction Logical; if \code{TRUE}, performs PCA dimensionality 
@@ -2297,7 +2303,7 @@ load_single_cell_object <- function(path,
 #'     \item \code{"recip_classif:Match"}
 #'     \item \code{"recip_classif:Score"}
 #'   }
-#'   Multiple methods can be provided for comparative evaluation.
+#'   By default all supported methods are run, and multiple methods can be provided.
 #' @param min_samples Integer; minimum number of samples required for pseudobulk analysis (default: \code{5}).
 #' @param min_cells Integer; minimum number of cells required per group for inclusion (default: \code{10}).
 #' @param ncores Integer; number of CPU cores for parallel execution (default: \code{1}).

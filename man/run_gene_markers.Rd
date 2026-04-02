@@ -18,8 +18,7 @@ run_gene_markers(
 )
 }
 \arguments{
-\item{scTypeEval}{An \code{scTypeEval} object containing normalized data in the
-\code{"single-cell"} slot (see \code{run_processing_data}).}
+\item{scTypeEval}{An \code{scTypeEval} object containing normalized data (see \code{run_processing_data}).}
 
 \item{method}{A character string specifying the marker gene identification
 method. Currently supported:
@@ -57,7 +56,7 @@ The modified \code{scTypeEval} object with marker genes added to
 \description{
 Identifies cell type marker genes from normalized single-cell data
 stored in an \code{scTypeEval} object. The identified markers are stored in the
-\code{gene_lists} slot under the chosen method (e.g. \code{"scran.findMarkers"}).
+\code{gene_lists} slot under the chosen method.
 }
 \details{
 \itemize{
