@@ -230,7 +230,7 @@ custom_prop_match <- function(ident, clusters, normalize = FALSE){
 
 compute_prop_match <- function(ident,
                               clusters,
-                              label_conservation = c("PropMatch", "NMI", "ARI"),
+                              label_conservation = c("PropMatch"),
                               normalize = FALSE){
    
    label_conservation <- label_conservation[1]
@@ -238,16 +238,8 @@ compute_prop_match <- function(ident,
                     "PropMatch" = custom_prop_match(ident,
                                                    clusters,
                                                    normalize),
-                    "NMI" = aricode::NMI(factor(ident),
-                                         factor(clusters)),
-                    "ARI" = aricode::ARI(factor(ident),
-                                         factor(clusters)),
                     stop(label_conservation, " is not a supported label conservation metrics.")
    )
-   # change name if global score
-   if(label_conservation %in% c("NMI", "ARI")){
-      names(scores) <- "global"
-   }
    return(scores)
 }
 

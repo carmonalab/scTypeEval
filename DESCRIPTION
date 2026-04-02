@@ -72,7 +72,6 @@ Suggests:
   BiocStyle,
   BiocManager,
   SeuratObject,
-  aricode,
   ggpubr,
   rlang,
   stringr,
