@@ -29,8 +29,23 @@ Accurate cell type annotation is essential but difficult in single-cell RNA sequ
 ## Installation
 
 ``` r
-# install.packages("remotes")
+# Option 1 (recommended): Bioconductor/devel install (R >= 4.6.0)
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+BiocManager::install("scTypeEval")
+```
+
+``` r
+# Option 2: Install GitHub releases
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+# Installing without @<tag> pulls the current GitHub branch (R >= 4.6.0)
 remotes::install_github("carmonalab/scTypeEval")
+
+# v0.99.30 installs the pre-release compatible with R >= 4.3.0
+remotes::install_github("carmonalab/scTypeEval@v0.99.30")
 ```
 
 
