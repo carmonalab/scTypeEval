@@ -166,7 +166,7 @@ score_pairs <- function(pred1, true1,
 
    pred1 <- score_tidy(pred1, true2)
    pred2 <- score_tidy(pred2, true1)
-   names(pred2)[1:2] <- c("celltype", "true")
+   names(pred2)[seq_len(2)] <- c("celltype", "true")
 
    pred <- dplyr::inner_join(pred1, pred2,
                              by = c("true", "celltype")) |>
@@ -202,7 +202,7 @@ match_pairs <- function(pred1, pred2,
    
    pred1 <- match_tidy(pred1, true1 = true1, true2 = true2)
    pred2 <- match_tidy(pred2, true1 = true2, true2 = true1)
-   names(pred2)[1:2] <- c("label", "true")
+   names(pred2)[seq_len(2)] <- c("label", "true")
    
    pred <- dplyr::inner_join(pred1, pred2, by = c("true", "label")) |>
       dplyr::rowwise() |>
