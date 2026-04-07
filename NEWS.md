@@ -1,5 +1,19 @@
 # scTypeEval News
 
+## Version 0.99.30 (2026-04-07)
+
+### Improvements
+
+* Updated both vignettes to use fully runnable toy data workflows for matrix, Seurat, and SingleCellExperiment inputs.
+* Removed non-justified `eval = FALSE` vignette chunks and aligned examples with the current API.
+* Updated reciprocal classification vignette examples to use `reduction = FALSE`, avoiding unsupported dimensional-reduction usage for `recip_classif` methods.
+* Standardized function and parameter naming to snake_case across the active package API.
+* Curated naming/style consistency in active source, including replacement of remaining `1:...` indexing patterns.
+
+### Changes
+
+* Removed `get.optimal_clustering` from the public package workflow/documentation while it remains in development.
+
 ## Version 0.99.21 (2024-01-27)
 
 ### New Features
