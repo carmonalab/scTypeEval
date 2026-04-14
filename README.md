@@ -44,8 +44,8 @@ if (!requireNamespace("remotes", quietly = TRUE)) {
 # Installing without @<tag> pulls the current GitHub branch (R >= 4.6.0)
 remotes::install_github("carmonalab/scTypeEval")
 
-# v0.99.30 installs the pre-release compatible with R >= 4.3.0
-remotes::install_github("carmonalab/scTypeEval@v0.99.30")
+# R-4.3.0_prerelease installs the pre-release compatible with R >= 4.3.0
+remotes::install_github("carmonalab/scTypeEval@R-4.3.0_prerelease")
 ```
 
 
