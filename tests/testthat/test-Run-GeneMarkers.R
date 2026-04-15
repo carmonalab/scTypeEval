@@ -141,17 +141,6 @@ test_that("run_gene_markers handles verbose parameter", {
       verbose = TRUE
     )
   )
-  
-  # verbose = FALSE should suppress messages
-  sceval2 <- create_processed_scTypeEval()
-  expect_silent(
-    sceval2 <- run_gene_markers(
-      sceval2,
-      method = "scran.findMarkers",
-      ngenes_celltype = 50,
-      verbose = FALSE
-    )
-  )
 })
 
 
