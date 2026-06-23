@@ -23,7 +23,7 @@ and/or dimensional reduction assays.}
 
 \item{method}{Character. Dissimilarity method to use. Must be one of
 \code{"WasserStein", "Pseudobulk:Euclidean", "Pseudobulk:Cosine",
-        "Pseudobulk:Pearson", "recip_classif:Match", or "recip_classif:Score"}.
+ "Pseudobulk:Pearson", "recip_classif:Match", or "recip_classif:Score"}.
 Default is \code{"Pseudobulk:Euclidean"}.}
 
 \item{reduction}{Logical. Whether to compute dissimilarity on dimensional
