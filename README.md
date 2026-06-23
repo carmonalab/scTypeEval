@@ -1,5 +1,13 @@
 # scTypeEval :microscope: :chart_with_upwards_trend:
 
+[![](https://www.bioconductor.org/shields/build/release/bioc/scTypeEval.svg)](https://bioconductor.org/checkResults/release/bioc-LATEST/scTypeEval)
+[![](https://www.bioconductor.org/shields/availability/release/scTypeEval.svg)](https://bioconductor.org/packages/release/bioc/html/scTypeEval.html)
+[![](https://www.bioconductor.org/shields/years-in-bioc/scTypeEval.svg)](https://bioconductor.org/packages/release/bioc/html/scTypeEval.html)
+[![](https://www.bioconductor.org/shields/downloads/release/scTypeEval.svg)](https://bioconductor.org/packages/stats/bioc/scTypeEval)
+[![GitHub stars](https://img.shields.io/github/stars/josepgarnica/scTypeEval?style=social)](https://github.com/carmonlab/scTypeEval/stargazers)
+
+[![DOI](https://img.shields.io/badge/DOI-10.64898%2F2026.06.10.731285-blue)](https://doi.org/10.64898/2026.06.10.731285)
+
 <p align="center">
 
 <img src="docs/scTypeEval_logo.png" height="180"/>
@@ -337,5 +345,11 @@ Benchmarking utilities used for the manuscript (task simulations + scoring helpe
 
 ## Citation  
 
-The manuscript describing these methods is currently in preparation. A citation will be provided once the paper is published.  
+If you use scTypeEval in your work, please cite the associated preprint:
+
+Garnica-Caparros J, Andreatta M, Carmona SJ (2026).
+Evaluating cell type annotations in single-cell omics in the absence of ground truth.
+Preprint. https://doi.org/10.64898/2026.06.10.731285
+
+This work is currently available as a preprint; a peer-reviewed publication will be added when available. 
 
