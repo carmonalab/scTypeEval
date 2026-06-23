@@ -86,6 +86,8 @@ minmax_norm <- function(value, min_value, max_value, inverse = FALSE) {
 
 custom_prcomp <- function(norm_mat,
                           ndim = 30, 
+                          center = TRUE,
+                          scale. = FALSE,
                           verbose = TRUE){
    # if ncol or nrow is below given ndim use this number
    ndim <- min(c((dim(norm_mat)-1), ndim))
@@ -95,8 +97,8 @@ custom_prcomp <- function(norm_mat,
    # compute PCA
    pr <- irlba::prcomp_irlba(as.matrix(Matrix::t(norm_mat)),
                              n = ndim,
-                             center = TRUE,
-                             scale. = FALSE)
+                             center = center,
+                             scale. = scale.)
    
    # keep colnames
    rownames(pr$x) <- colnames(norm_mat)

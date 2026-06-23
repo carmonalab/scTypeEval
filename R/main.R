@@ -807,6 +807,8 @@ add_gene_list <- function(scTypeEval,
 #' @param black_list Character vector of genes to exclude from PCA. If \code{NULL},
 #' the blacklist stored in \code{scTypeEval} is used.
 #' @param ndim Integer. Number of principal components to compute (default: 30).
+#' @param center Logical value indicating whether the variables should be shifted to be zero centered (default: \code{TRUE}).
+#' @param scale. Logical value indicating whether the variables should be scaled to have unit variance before the analysis takes place (default: \code{FALSE}).
 #' @param verbose Logical. Whether to print progress messages during computation (default: \code{TRUE}).
 #'
 #' @return The modified \code{scTypeEval} object with PCA results stored in the
@@ -860,6 +862,8 @@ run_pca <- function(scTypeEval,
                     gene_list = NULL,
                     black_list = NULL,
                     ndim = 30,
+                    center = TRUE,
+                    scale. = FALSE,
                     verbose = TRUE){
    
    if(length(scTypeEval@data)<1){
@@ -888,6 +892,8 @@ run_pca <- function(scTypeEval,
                          if(verbose){message("   Computing PCA space... \n")}
                          pr <- custom_prcomp(mat@matrix,
                                              ndim = ndim,
+                                             center = center,
+                                             scale. = scale.,
                                              verbose = verbose)
                          
                          # Create dim_red assay

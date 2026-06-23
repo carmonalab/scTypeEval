@@ -9,6 +9,8 @@ run_pca(
   gene_list = NULL,
   black_list = NULL,
   ndim = 30,
+  center = TRUE,
+  scale. = FALSE,
   verbose = TRUE
 )
 }
@@ -22,6 +24,10 @@ If \code{NULL}, first gene list stored in \code{scTypeEval} is used.}
 the blacklist stored in \code{scTypeEval} is used.}
 
 \item{ndim}{Integer. Number of principal components to compute (default: 30).}
+
+\item{center}{Logical value indicating whether the variables should be shifted to be zero centered (default: \code{TRUE}).}
+
+\item{scale.}{Logical value indicating whether the variables should be scaled to have unit variance before the analysis takes place (default: \code{FALSE}).}
 
 \item{verbose}{Logical. Whether to print progress messages during computation (default: \code{TRUE}).}
 }
