@@ -4,7 +4,7 @@
 [![](https://www.bioconductor.org/shields/availability/release/scTypeEval.svg)](https://bioconductor.org/packages/release/bioc/html/scTypeEval.html)
 [![](https://www.bioconductor.org/shields/years-in-bioc/scTypeEval.svg)](https://bioconductor.org/packages/release/bioc/html/scTypeEval.html)
 [![](https://www.bioconductor.org/shields/downloads/release/scTypeEval.svg)](https://bioconductor.org/packages/stats/bioc/scTypeEval)
-[![GitHub stars](https://img.shields.io/github/stars/josepgarnica/scTypeEval?style=social)](https://github.com/carmonlab/scTypeEval/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/carmonalab/scTypeEval?style=social)](https://github.com/carmonalab/scTypeEval/stargazers)
 
 [![DOI](https://img.shields.io/badge/DOI-10.64898%2F2026.06.10.731285-blue)](https://doi.org/10.64898/2026.06.10.731285)
 
