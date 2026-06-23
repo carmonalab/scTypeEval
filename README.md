@@ -340,7 +340,7 @@ isc |>
   filter(method.type %in% sel.methods)
 ```
 
-Benchmarking utilities used for the manuscript (task simulations + scoring helpers) are in [`inst/benchmarking/`](https://github.com/carmonalab/scTypeEval/tree/master/inst/benchmarking).
+Benchmarking utilities and code used for the manuscript (task simulations + scoring helpers) can be found at [ISC_benchmark_reproducibility](https://github.com/carmonalab/ISC_benchmark_reproducibility).
 
 
 ## Citation  
