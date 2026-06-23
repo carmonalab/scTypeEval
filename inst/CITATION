@@ -1,0 +1,13 @@
+bibentry(
+  bibtype  = "Misc",
+  title    = "Evaluating cell type annotations in single-cell omics in the absence of ground truth",
+  author   = c(
+    person(given = "Josep",     family = "Garnica",   comment = c(ORCID = "0000-0001-9493-1321")),
+    person(given = "Massimo",   family = "Andreatta", comment = c(ORCID = "0000-0002-8036-2647")),
+    person(given = "Santiago J.", family = "Carmona", comment = c(ORCID = "0000-0002-2495-0671"))
+  ),
+  year         = "2026",
+  note         = "bioRxiv preprint",
+  doi          = "10.64898/2026.06.10.731285",
+  url          = "https://doi.org/10.64898/2026.06.10.731285"
+)
