@@ -347,9 +347,9 @@ Benchmarking utilities and code used for the manuscript (task simulations + scor
 
 If you use scTypeEval in your work, please cite the associated preprint:
 
-Garnica-Caparros J, Andreatta M, Carmona SJ (2026).
+Garnica J, Andreatta M, Carmona SJ (2026).
 Evaluating cell type annotations in single-cell omics in the absence of ground truth.
-Preprint. https://doi.org/10.64898/2026.06.10.731285
+bioRxiv. https://doi.org/10.64898/2026.06.10.731285
 
 This work is currently available as a preprint; a peer-reviewed publication will be added when available. 
 
