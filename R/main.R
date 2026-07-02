@@ -472,7 +472,8 @@ add_processed_data <- function(scTypeEval,
 #'
 #' @param scTypeEval An `scTypeEval` object containing normalized data (see \code{run_processing_data}).
 #' @param var_method Character string specifying the method for identifying highly
-#'   variable genes. Options: `"scran"` (default) or `"basic"`.
+#'   variable genes. Options: `"scran"` (default), `"basic"`, or `"MetaNeighbor"`
+#'   for using \link[MetaNeighbor]{variableGenes}.
 #' @param ngenes Integer specifying the number of highly variable genes to retain
 #'   (default: `2000`).
 #' @param sample Logical indicating whether to leverage sample information when
@@ -562,6 +563,15 @@ run_hvg <- function(scTypeEval,
    }
    mat <- norm.mat@matrix
    
+   if(var_method == "MetaNeighbor"){
+      # MetaNeighbor in theory requires raw counts...
+      # but we will filter anyway min cells and samples
+      mat <- scTypeEval@counts[,colnames(mat)]
+      if(verbose){message("Using MetaNeighbor::variableGenes() to obtain HVG.
+                          Number of HVG will be automatically set based on variance.
+                          Omitting `ngenes` parameter.\n")}
+   }
+   
    if(sample){
       sample <- norm.mat@sample
    } else {
@@ -588,6 +598,8 @@ run_hvg <- function(scTypeEval,
                                        ngenes = ngenes,
                                        bparam = param,
                                        ...),
+                 "MetaNeighbor" = MN_variableGenes(mat = mat,
+                                                   exp_labels = sample),
                  stop(var_method, " not supported for getting variable genes.")
    )
    
