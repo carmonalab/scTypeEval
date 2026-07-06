@@ -503,6 +503,9 @@ add_processed_data <- function(scTypeEval,
 #'     model gene-specific variance and identify biologically variable genes.
 #'     \item \code{"basic"}: A simple variance-to-mean approach ranking genes by
 #'     coefficient of variation, selecting the top \code{ngenes}.
+#'     \item \code{"MetaNeighbor"}: Identifies genes with high variance compared to their median expression
+#'       (top quartile) within each experiment. Automatically selects the top variable genes based on variance median.
+#'       See \link[MetaNeighbor]{variableGenes}.
 #'   }
 #'   
 #' @seealso \link{run_processing_data}, \link{add_processed_data}
@@ -1369,6 +1372,11 @@ run_dissimilarity <- function(scTypeEval,
 #'           it computes the average distance to other cells in its group and to
 #'          cells outside its group, then combines these into a normalized score (higher = better).
 #'          Scores are then averaged per cell type. This metric is similar in spirit to a \code{"2label_silhouette"}.
+#'          \item \code{"MetaNeighbor_Supervised"} – Measures how similar cells are within
+#'           the same cell type relative to cells of other types. For each cell,
+#'           it computes the average distance to other cells in its group and to
+#'          cells outside its group, then combines these into a normalized score (higher = better).
+#'          Scores are then averaged per cell type. This metric is similar in spirit to a \code{"2label_silhouette"}.
 #'        }
 #'        Default: all supported metrics.
 #' @param knn_graph_k Integer. Number of nearest neighbors to use for 
@@ -1493,7 +1501,16 @@ get_consistency <- function(scTypeEval,
                              return(cons)
                           })
    
-   consist <- do.call(rbind, consist.list) 
+   consist <- do.call(rbind, consist.list)
+   
+   
+   # run Supervised MetaNeighbor if declared
+   if("MetaNeighbor_Supervised" %in% consistency_metric){
+      if(verbose){message("Running Supervised MetaNeighbor scoring\n")}
+      mn <- MN_supervised(scTypeEval = scTypeEval,
+                          verbose = verbose)
+      consist <- dplyr::bind_rows(consist, mn)
+   }
    
    if(!return_scTypeEval){
       return(consist)
