@@ -122,3 +122,145 @@ MN_supervised <- function(scTypeEval,
    return(df_res)
    
 }
+
+
+MN_unsupervised <- function(scTypeEval,
+                            gene_list = NULL,
+                            method = "Score",
+                            verbose = TRUE){
+   # filter cells that only passed the processing
+   filt_list <- get_filtered_raw_matrix(scTypeEval)
+   # convert to sce
+   sce <- get_sce(counts = filt_list$counts,
+                  cell_metadata = filt_list$metadata)
+   # get sample and ident from processed metadata
+   exp_labs <- sceval@data$`single-cell`@sample
+   ident <- sceval@data$`single-cell`@ident[[1]]
+   
+   geneset <- check_genelist(scTypeEval = scTypeEval,
+                             gene_list = gene_list,
+                             verbose = verbose)
+   
+   res <- MetaNeighbor::MetaNeighborUS(var_genes = geneset,
+                                       dat = sce,
+                                       i = 1,
+                                       study_id = exp_labs,
+                                       cell_type = ident,
+                                       trained_model = NULL,
+                                       fast_version = TRUE,
+                                       node_degree_normalization = TRUE,
+                                       one_vs_best = FALSE,
+                                       symmetric_output = TRUE)
+   
+   if(method == "Score"){
+      # adapt row/colnames for compatability with scTypeEval
+      rownames(res) <- gsub("[|]", "_", rownames(res))
+      colnames(res) <- gsub("[|]", "_", colnames(res))
+      return(res)
+   }
+   
+   # use MetaNeighbor function to find the reciprocal top hits in each target study
+   # but keeping self comparisons
+   top_hits <- topHitsByStudy(auroc = res,
+                              threshold = 0,
+                              n_digits = 3,
+                              collapse_duplicates = T)
+   # generate new matrix to populate with reciprocal_top_hit (0) or not (1)
+   dist_mat <- matrix(
+      1,
+      nrow = nrow(res),
+      ncol = ncol(res),
+      dimnames = list(rownames(res), colnames(res))
+   )
+   
+   # Fill in symmetric matrix
+   for (a in seq_len(nrow(top_hits))) {
+      tmp <- top_hits[a,]
+      i <- tmp[[1]]
+      j <- tmp[[2]]
+      d <- tmp[["match_numeric"]]
+      dist_mat[i, j] <- dist_mat[j, i] <- as.numeric(d)
+   }
+   
+   rownames(dist_mat) <- gsub("[|]", "_", rownames(dist_mat))
+   colnames(dist_mat) <- gsub("[|]", "_", colnames(dist_mat))
+   
+   return(as.dist(dist_mat))
+   
+}
+
+# reuse function from MetaNeighbor to not filter self comparisons
+# https://github.com/gillislab/MetaNeighbor/blob/master/R/topHits.R
+#87e4e7a36bab3b6cb38c58d6bd0117c93dc69e9c
+
+topHitsByStudy = function(auroc, threshold = 0.9, n_digits = 2, collapse_duplicates = TRUE) {
+   `%>%` <- dplyr::`%>%`
+   #could be sped up by finding same study AUROC's when in matrix form and masking them to NA (as in the old topHits function)
+   result <- tibble::as_tibble(auroc, rownames = "ref_cell_type") %>%
+      tidyr::pivot_longer(cols = -ref_cell_type,
+                          names_to = "target_cell_type",
+                          values_to = "auroc") %>%
+      dplyr::mutate(ref_study = MetaNeighbor::getStudyId(ref_cell_type),
+                    target_study = MetaNeighbor::getStudyId(target_cell_type)) %>%
+      # CHANGE: keep self - remove filter
+      #dplyr::filter(ref_study != target_study) %>%
+      dplyr::group_by(ref_cell_type, target_study) %>%
+      dplyr::filter(auroc == max(auroc, na.rm = TRUE)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(is_reciprocal = is_reciprocal_top_hit(.)) %>%
+      dplyr::filter(auroc >= threshold) %>% 
+      # CHANGE: give numerical value to reciprotal top hit (0), no possible same
+      # cell type reciprocal (0.5), or non-match (1)
+      dplyr::mutate(ref_ct = MetaNeighbor::getCellType(ref_cell_type),
+                    target_ct = MetaNeighbor::getCellType(target_cell_type))
+      dplyr::mutate(match_numeric = ifelse(Match_type == "Reciprocal_top_hit",
+                                    0, 1)) %>% 
+      dplyr::select(-ref_study, -target_study) %>%
+      
+   
+   if (collapse_duplicates) {
+      result <- result %>%
+         dplyr::group_by(ref_cell_type, target_cell_type) %>%
+         dplyr::mutate(pair_id = paste(sort(c(ref_cell_type, target_cell_type)),
+                                       collapse = "")) %>%
+         dplyr::group_by(pair_id) %>%
+         dplyr::summarize(ref_cell_type = dplyr::first(ref_cell_type),
+                          target_cell_type = dplyr::first(target_cell_type),
+                          auroc = mean(auroc),
+                          is_reciprocal = dplyr::first(is_reciprocal)) %>%
+         dplyr::ungroup() %>%
+         dplyr::select(-pair_id)
+   }
+   
+   # final formatting
+   result <- result %>%
+      dplyr::arrange(desc(auroc)) %>%
+      dplyr::mutate(auroc = round(auroc, n_digits)) %>%    
+      dplyr::mutate(Match_type = ifelse(is_reciprocal,
+                                        "Reciprocal_top_hit",
+                                        paste0("Above_", threshold))) %>%
+      dplyr::select("Study_ID|Celltype_1" = ref_cell_type,
+                    "Study_ID|Celltype_2" = target_cell_type,
+                    "AUROC" = auroc,
+                    Match_type)
+   return(result)
+}
+
+is_reciprocal_top_hit = function(best_hits) {
+   `%>%` <- dplyr::`%>%`
+   best_hits <- best_hits %>%
+      dplyr::select(-auroc)
+   reverse_hits <- best_hits %>%
+      dplyr::select(target_cell_type = ref_cell_type,
+                    reciprocal_cell_type = target_cell_type)
+   reciprocal_best_hits <- dplyr::inner_join(best_hits, reverse_hits,
+                                             by = "target_cell_type") %>%
+      dplyr::filter(ref_cell_type == reciprocal_cell_type) %>%
+      dplyr::select(-reciprocal_cell_type) %>%
+      tibble::add_column(is_reciprocal = TRUE)
+   result <- dplyr::left_join(best_hits, reciprocal_best_hits,
+                              by = c("ref_cell_type", "target_cell_type")) %>%
+      tidyr::replace_na(replace = list(is_reciprocal = FALSE)) %>%
+      dplyr::pull(is_reciprocal)
+   return(result)
+}
