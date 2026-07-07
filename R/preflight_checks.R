@@ -117,7 +117,7 @@ check_dissimilarity_assays <- function(scTypeEval,
       )
    }
    
-   if (!(length(slot) == 1 && slot == "all")) {
+   if (length(slot)>1 || slot != "all") {
       diss.assays <- diss.assays[diss.assays %in% slot]
       
       if (length(diss.assays) < 1) {
