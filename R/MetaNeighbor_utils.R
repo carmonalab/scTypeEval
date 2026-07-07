@@ -87,8 +87,8 @@ MN_supervised <- function(scTypeEval,
    sce <- get_sce(counts = filt_list$counts,
                   cell_metadata = filt_list$metadata)
    # get sample and ident from processed metadata
-   exp_labs <- sceval@data$`single-cell`@sample
-   ident <- names(sceval@data$`single-cell`@ident)
+   exp_labs <- scTypeEval@data$`single-cell`@sample
+   ident <- names(scTypeEval@data$`single-cell`@ident)
    # Metaneighbor required conversion of celltypes into a oneshot dataframe
    labs <- filt_list$metadata[[ident]]
    # Create one-hot encoding
@@ -125,8 +125,9 @@ MN_supervised <- function(scTypeEval,
 
 
 MN_unsupervised <- function(scTypeEval,
+                            group,
                             gene_list = NULL,
-                            method = "Score",
+                            method = "score",
                             verbose = TRUE){
    # filter cells that only passed the processing
    filt_list <- get_filtered_raw_matrix(scTypeEval)
@@ -134,14 +135,14 @@ MN_unsupervised <- function(scTypeEval,
    sce <- get_sce(counts = filt_list$counts,
                   cell_metadata = filt_list$metadata)
    # get sample and ident from processed metadata
-   exp_labs <- sceval@data$`single-cell`@sample
-   ident <- sceval@data$`single-cell`@ident[[1]]
+   exp_labs <- scTypeEval@data$`single-cell`@sample
+   ident <- scTypeEval@data$`single-cell`@ident[[1]]
    
    geneset <- check_genelist(scTypeEval = scTypeEval,
                              gene_list = gene_list,
                              verbose = verbose)
    
-   res <- MetaNeighbor::MetaNeighborUS(var_genes = geneset,
+   res_score <- MetaNeighbor::MetaNeighborUS(var_genes = geneset,
                                        dat = sce,
                                        i = 1,
                                        study_id = exp_labs,
@@ -152,25 +153,20 @@ MN_unsupervised <- function(scTypeEval,
                                        one_vs_best = FALSE,
                                        symmetric_output = TRUE)
    
-   if(method == "Score"){
-      # adapt row/colnames for compatability with scTypeEval
-      rownames(res) <- gsub("[|]", "_", rownames(res))
-      colnames(res) <- gsub("[|]", "_", colnames(res))
-      return(res)
-   }
-   
    # use MetaNeighbor function to find the reciprocal top hits in each target study
    # but keeping self comparisons
-   top_hits <- topHitsByStudy(auroc = res,
+   top_hits <- topHitsByStudy(auroc = res_score,
                               threshold = 0,
                               n_digits = 3,
-                              collapse_duplicates = T)
+                              collapse_duplicates = T) |>
+      mutate(match_numeric = ifelse(Match_type == "Reciprocal_top_hit",
+                                    0, 1))
    # generate new matrix to populate with reciprocal_top_hit (0) or not (1)
-   dist_mat <- matrix(
+   res_match <- matrix(
       1,
-      nrow = nrow(res),
-      ncol = ncol(res),
-      dimnames = list(rownames(res), colnames(res))
+      nrow = nrow(res_score),
+      ncol = ncol(res_score),
+      dimnames = list(rownames(res_score), colnames(res_score))
    )
    
    # Fill in symmetric matrix
@@ -179,13 +175,26 @@ MN_unsupervised <- function(scTypeEval,
       i <- tmp[[1]]
       j <- tmp[[2]]
       d <- tmp[["match_numeric"]]
-      dist_mat[i, j] <- dist_mat[j, i] <- as.numeric(d)
+      res_match[i, j] <- res_match[j, i] <- as.numeric(d)
    }
    
-   rownames(dist_mat) <- gsub("[|]", "_", rownames(dist_mat))
-   colnames(dist_mat) <- gsub("[|]", "_", colnames(dist_mat))
+   rownames(res_match) <- gsub("[|]", "_", rownames(res_match))
+   colnames(res_match) <- gsub("[|]", "_", colnames(res_match))
    
-   return(as.dist(dist_mat))
+   res <- switch (method,
+                  "score" = 1 - res_score, # invert scale
+                  "match" = res_match,
+                  stop(method, "is not a supported method for MetaNeighbor.\n")
+   )
+   
+   # adapt row/colnames for compatability with scTypeEval
+   rownames(res) <- gsub("[|]", "_", rownames(res))
+   colnames(res) <- gsub("[|]", "_", colnames(res))
+   
+   # adjust ordering
+   res <- res[group, group]
+   
+   return(as.dist(res))
    
 }
 
@@ -200,23 +209,16 @@ topHitsByStudy = function(auroc, threshold = 0.9, n_digits = 2, collapse_duplica
       tidyr::pivot_longer(cols = -ref_cell_type,
                           names_to = "target_cell_type",
                           values_to = "auroc") %>%
-      dplyr::mutate(ref_study = MetaNeighbor::getStudyId(ref_cell_type),
-                    target_study = MetaNeighbor::getStudyId(target_cell_type)) %>%
+      dplyr::mutate(ref_study = getStudyId(ref_cell_type),
+                    target_study = getStudyId(target_cell_type)) %>%
       # CHANGE: keep self - remove filter
       #dplyr::filter(ref_study != target_study) %>%
       dplyr::group_by(ref_cell_type, target_study) %>%
       dplyr::filter(auroc == max(auroc, na.rm = TRUE)) %>%
       dplyr::ungroup() %>%
-      dplyr::mutate(is_reciprocal = is_reciprocal_top_hit(.)) %>%
-      dplyr::filter(auroc >= threshold) %>% 
-      # CHANGE: give numerical value to reciprotal top hit (0), no possible same
-      # cell type reciprocal (0.5), or non-match (1)
-      dplyr::mutate(ref_ct = MetaNeighbor::getCellType(ref_cell_type),
-                    target_ct = MetaNeighbor::getCellType(target_cell_type))
-      dplyr::mutate(match_numeric = ifelse(Match_type == "Reciprocal_top_hit",
-                                    0, 1)) %>% 
       dplyr::select(-ref_study, -target_study) %>%
-      
+      dplyr::mutate(is_reciprocal = is_reciprocal_top_hit(.)) %>%
+      dplyr::filter(auroc >= threshold) 
    
    if (collapse_duplicates) {
       result <- result %>%
@@ -245,6 +247,8 @@ topHitsByStudy = function(auroc, threshold = 0.9, n_digits = 2, collapse_duplica
                     Match_type)
    return(result)
 }
+
+
 
 is_reciprocal_top_hit = function(best_hits) {
    `%>%` <- dplyr::`%>%`
