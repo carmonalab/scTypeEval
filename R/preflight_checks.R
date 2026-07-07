@@ -97,19 +97,42 @@ check_genelist <- function(scTypeEval, gene_list = NULL, verbose = TRUE){
 }
 
 check_dissimilarity_assays <- function(scTypeEval,
-                                       slot = "all"){
+                                       slot = "all",
+                                       on_missing = c("stop", "warning")) {
+   
+   on_missing <- match.arg(on_missing)
+   
+   signal_missing <- switch(
+      on_missing,
+      stop = stop,
+      warning = warning
+   )
+   
    diss.assays <- names(scTypeEval@dissimilarity)
-   if(length(diss.assays)<1){
-      stop("No Dissimilarity slots found. Please run before `run_dissimilarity()`.\n")
+   
+   if (length(diss.assays) < 1) {
+      signal_missing(
+         "No dissimilarity assays found. Please run `run_dissimilarity()` first.",
+         call. = FALSE
+      )
    }
    
-   if(length(slot)>1 || slot != "all"){
+   if (!(length(slot) == 1 && slot == "all")) {
       diss.assays <- diss.assays[diss.assays %in% slot]
-      if(length(diss.assays)<1){
-         stop("No Dissimilarity slots found for ", slot, ". Please run before `run_dissimilarity()` or specific proper slot.\n")
+      
+      if (length(diss.assays) < 1) {
+         signal_missing(
+            paste0(
+               "No dissimilarity assays found for slot(s): ",
+               paste(slot, collapse = ", "),
+               ". Please run `run_dissimilarity()` or specify a valid slot."
+            ),
+            call. = FALSE
+         )
       }
    }
-   return(diss.assays)
+   
+   diss.assays
 }
 
 check_dim_red_assays <- function(scTypeEval,
