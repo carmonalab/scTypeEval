@@ -1249,13 +1249,13 @@ run_dissimilarity <- function(scTypeEval,
          stop("No processed data slot found for ", slot ,
               ". Please run before `run_processing_data()` or add a data assay.\n")
       }
-      gene_list <- check_genelist(scTypeEval, gene_list, verbose = verbose)
+      gl <- check_genelist(scTypeEval, gene_list, verbose = verbose)
       black_list <- check_blacklist(scTypeEval, black_list, verbose = verbose)
       ident_name <- names(mat_ident@ident)
       mat_ident <- general_filtering(mat_ident,
                        black_list = black_list,
-                       gene_list = gene_list,
-                                      verbose = verbose)
+                       gene_list = gl,
+                       verbose = verbose)
       mat <- mat_ident@matrix
    }
    
@@ -1304,14 +1304,19 @@ run_dissimilarity <- function(scTypeEval,
                                     method = dist.type,
                                     bparam = param,
                                     verbose = verbose),
-      stop(aggregation, "is not a supported method.\n")
+      "metaneighborus" = MN_unsupervised(scTypeEval,
+                                         gene_list = gene_list,
+                                         group = group_levels,
+                                         method = dist.type,
+                                         verbose = TRUE),
+      stop(aggregation, " is not a supported method.\n")
    )
    
    # build dissimilarity object
    rr <- methods::new("dissimilarity_assay",
                       dissimilarity = dist,
                       method = method,
-                      gene_list = gene_list,
+                      gene_list = gl,
                       black_list = black_list,
                       aggregation = aggregation,
                       ident = ident,

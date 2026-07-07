@@ -5,12 +5,16 @@ dissimilarity_methods <-
      "Pseudobulk:Cosine" = "pseudobulk",
      "Pseudobulk:Pearson" = "pseudobulk",
      "recip_classif:Match" = "pseudobulk",
-     "recip_classif:Score" = "pseudobulk"
+     "recip_classif:Score" = "pseudobulk",
+     "MetaNeighborUS:Match" = "single-cell",
+     "MetaNeighborUS:Score" = "single-cell"
    )
 
 
 no_dr_ds <- c("recip_classif:Match",
-              "recip_classif:Score")
+              "recip_classif:Score",
+              "MetaNeighborUS:Match",
+              "MetaNeighborUS:Score")
 
 quiet_transport <- function(...) {
    suppressWarnings(
