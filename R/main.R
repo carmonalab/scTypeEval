@@ -1454,7 +1454,9 @@ get_consistency <- function(scTypeEval,
                             
 ){
    
-   diss.assays <- check_dissimilarity_assays(scTypeEval, slot = dissimilarity_slot)
+   diss.assays <- check_dissimilarity_assays(scTypeEval,
+                                             slot = dissimilarity_slot, 
+                                             on_missing = "warning")
    
    consist.list <- lapply(diss.assays,
                           function(da){
