@@ -1476,8 +1476,10 @@ get_consistency <- function(scTypeEval,
                              
                              # compute internal validation metrics
                              if(verbose){message("Computing internal validation metrics for ", da, " ... \n")}
+                             # filter out metaneighbor supervised
+                             cons_met <- consistency_metric[consistency_metric != "MetaNeighbor_Supervised"]
                              con <- calculate_int_val_metric(dist = dist,
-                                                            metrics = consistency_metric,
+                                                            metrics = cons_met,
                                                             ident = ident,
                                                             knn_graph_k = knn_graph_k,
                                                             hclust_method = hclust_method,
