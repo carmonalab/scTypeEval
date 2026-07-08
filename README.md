@@ -36,6 +36,8 @@ Accurate cell type annotation is essential but difficult in single-cell RNA sequ
 
 ## Installation
 
+Install `scTypeEval` from Bioconductor (recommended) or GitHub.
+
 ``` r
 # Option 1 (recommended): Bioconductor/devel install (R >= 4.6.0)
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
@@ -56,8 +58,54 @@ remotes::install_github("carmonalab/scTypeEval")
 remotes::install_github("carmonalab/scTypeEval@R-4.3.0_prerelease")
 ```
 
+### Typical install time on desktop computer
+
+- Only scTypeEval package: **~10 seconds**.
+- First-time Bioconductor install (including dependencies): typically **~5-10 minutes**.
+
+
+<details>
+<summary><strong>System requirements</strong></summary> 
+
+This package is supported on macOS, Linux, and Windows through continuous integration and automated builds.
+
+- **Operating systems (tested)**
+  - Developed and tested locally on **macOS**.
+  - **Bioconductor continuous checks**: package installation, examples, vignettes, and tests are run automatically on the Bioconductor build system across Linux, macOS, and Windows (release and devel).
+  - **r-universe continuous builds**: automated source and binary builds are provided for Linux, macOS, Windows, and WebAssembly (wasm).
+- **R version requirements**
+  - Package requirement: **R >= 4.6.0** (see [`DESCRIPTION`](https://github.com/carmonalab/scTypeEval/blob/master/DESCRIPTION)).
+  - Also tested in **R 4.3**, **R 4.4**, and **R 4.5** (pre-release branch/workflows).
+- **Software dependencies**
+  - Core dependencies and minimum versions are declared in [`DESCRIPTION`](https://github.com/carmonalab/scTypeEval/blob/master/DESCRIPTION) under `Imports`:
+    - `Matrix (>= 1.6-5)`
+    - `BiocParallel (>= 1.34.2)`
+    - `dplyr (>= 1.1.4)`
+    - `tidyr (>= 1.3.1)`
+    - `scran (>= 1.30.2)`
+    - `bluster (>= 1.12.0)`
+    - `ggplot2 (>= 3.5.1)`
+    - `ggrepel (>= 0.9.6)`
+    - `cluster (>= 2.1.4)`
+    - `SingleR (>= 2.4.1)`
+    - `irlba (>= 2.3.5.1)`
+    - `transport (>= 0.15-4)`
+    - Base/recommended: `grDevices`, `methods`, `stats`, `utils`
+- **Non-standard hardware**: None required.
+</details>
 
 ## Usage
+
+To run `scTypeEval` on your own data, follow the workflow below.
+
+For complete runnable examples, see the repository vignettes:
+- Full workflow vignette: [vignettes/scTypeEval.Rmd](https://github.com/carmonalab/scTypeEval/blob/master/vignettes/scTypeEval.Rmd) - Runtime: 16s
+- Quick start vignette: [vignettes/quick-start.Rmd](https://github.com/carmonalab/scTypeEval/blob/master/vignettes/quick-start.Rmd) - Runtime: 2s
+
+For larger datasets, runtime increases with dataset size (especially number of samples), feature space, and selected dissimilarity method:
+- **Pseudobulk-based methods** are typically very fast (often milliseconds to seconds).
+- **Reciprocal classification methods** from seconds to a few minutes.
+- **Wasserstein-based methods** are usually slower and can require several minutes.
 
 <details>
 <summary><strong>1. Create scTypeEval object</strong></summary>
@@ -340,7 +388,13 @@ isc |>
   filter(method.type %in% sel.methods)
 ```
 
-Benchmarking utilities and code used for the manuscript (task simulations + scoring helpers) can be found at [ISC_benchmark_reproducibility](https://github.com/carmonalab/ISC_benchmark_reproducibility).
+## Reproduction instructions
+
+To reproduce the manuscript benchmarking analyses and figures (task simulations + scoring helpers), use:
+
+- [ISC_benchmark_reproducibility](https://github.com/carmonalab/ISC_benchmark_reproducibility)
+
+This external repository contains the dedicated code and instructions for full quantitative reproduction.
 
 
 ## Citation  
