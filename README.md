@@ -34,6 +34,11 @@ Accurate cell type annotation is essential but difficult in single-cell RNA sequ
 - **Customizable** – Works with Seurat, SCE, or matrices; supports custom gene lists and parameters.  
 - **Robust** – Sensitive to misclassification; reliable across batch effects, label granularity, and sample sizes.  
 
+## Documentation & Resources
+
+For comprehensive tutorials, detailed metric explanations, and real-world case studies, please visit our documentation website:  
+**[scTypeEval Tutorials and Case Studies](https://carmonalab.github.io/scTypeEval_CaseStudies/)**
+
 ## Installation
 
 Install `scTypeEval` from Bioconductor (recommended) or GitHub.
