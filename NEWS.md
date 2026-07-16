@@ -1,5 +1,20 @@
 # scTypeEval News
 
+## Version 1.1.2 (2026-07-16)
+
+### New Features
+
+* Added `aggregation`, `center`, and `scale` parameters to `run_pca()` function, allowing users to tune PCA computation for single-cell and/or pseudobulk data.
+
+### Improvements
+
+* Added comprehensive test coverage for the `aggregation` parameter in `run_pca()`, including selective aggregation and error handling.
+* Enhanced README documentation with link to external resources page (tutorials, case studies, and metric explanations).
+
+### Bug Fixes
+
+* Fixed incorrect name assignment in `run_pca()` when using selective `aggregation` parameter—now correctly assigns names based on computed aggregations rather than all data slots.
+
 ## Version 0.99.30 (2026-04-07)
 
 ### Improvements
