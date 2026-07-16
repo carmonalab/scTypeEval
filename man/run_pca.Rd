@@ -8,6 +8,7 @@ run_pca(
   scTypeEval,
   gene_list = NULL,
   black_list = NULL,
+  aggregation = c("single-cell", "pseudobulk"),
   ndim = 30,
   center = TRUE,
   scale. = FALSE,
@@ -22,6 +23,8 @@ If \code{NULL}, first gene list stored in \code{scTypeEval} is used.}
 
 \item{black_list}{Character vector of genes to exclude from PCA. If \code{NULL},
 the blacklist stored in \code{scTypeEval} is used.}
+
+\item{aggregation}{Method to group cells stored in \code{scTypeEval@data}, either \code{"single-cell"} or \code{"pseudobulk"}. Default is both: c(\code{"single-cell"}, \code{"pseudobulk"}).}
 
 \item{ndim}{Integer. Number of principal components to compute (default: 30).}
 

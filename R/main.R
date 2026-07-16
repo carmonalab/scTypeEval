@@ -806,6 +806,7 @@ add_gene_list <- function(scTypeEval,
 #' If \code{NULL}, first gene list stored in \code{scTypeEval} is used.
 #' @param black_list Character vector of genes to exclude from PCA. If \code{NULL},
 #' the blacklist stored in \code{scTypeEval} is used.
+#' @param aggregation Method to group cells stored in `scTypeEval@data`, either `"single-cell"` or `"pseudobulk"`. Default is both: c(`"single-cell"`, `"pseudobulk"`).
 #' @param ndim Integer. Number of principal components to compute (default: 30).
 #' @param center Logical value indicating whether the variables should be shifted to be zero centered (default: \code{TRUE}).
 #' @param scale. Logical value indicating whether the variables should be scaled to have unit variance before the analysis takes place (default: \code{FALSE}).
@@ -861,6 +862,7 @@ add_gene_list <- function(scTypeEval,
 run_pca <- function(scTypeEval,
                     gene_list = NULL,
                     black_list = NULL,
+                    aggregation = c("single-cell", "pseudobulk"),
                     ndim = 30,
                     center = TRUE,
                     scale. = FALSE,
@@ -873,13 +875,14 @@ run_pca <- function(scTypeEval,
    gene_list <- check_genelist(scTypeEval, gene_list, verbose = verbose)
    black_list <- check_blacklist(scTypeEval, black_list, verbose = verbose)
    
-   pca.list <- lapply(names(scTypeEval@data),
+   pca.list <- lapply(aggregation,
                       function(ag){
                          if(verbose){message("# Computing PCA data for ", ag, " ... \n")}
                          # normalized matrix
                          mat <- scTypeEval@data[[ag]]
                          if(is.null(mat)){
-                            stop("No normalization slot found. Please run before `run_processing_data()`.\n")
+                            stop("No normalization slot found for `", ag,
+                            "`. Please run before `run_processing_data()`.\n")
                          }
                          ident_name <- names(mat@ident)
                          
@@ -910,7 +913,7 @@ run_pca <- function(scTypeEval,
                          return(rr)
                       })
    
-   names(pca.list) <- names(scTypeEval@data)
+   names(pca.list) <- aggregation
    
    # add to scTypeEval object
    for(n in names(pca.list)){
