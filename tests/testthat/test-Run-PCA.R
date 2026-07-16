@@ -183,3 +183,102 @@ test_that("run_pca computes PCA for all data assays", {
   expect_equal(length(sceval@reductions), length(sceval@data))
   expect_true(all(names(sceval@data) %in% names(sceval@reductions)))
 })
+
+test_that("run_pca respects aggregation parameter - single-cell only", {
+  sceval <- create_processed_scTypeEval()
+  
+  sceval <- run_pca(
+    sceval,
+    aggregation = "single-cell",
+    ndim = 5,
+    verbose = FALSE
+  )
+  
+  # Should have PCA only for single-cell
+  expect_true("single-cell" %in% names(sceval@reductions))
+  expect_s4_class(sceval@reductions[["single-cell"]], "dim_red")
+  expect_equal(sceval@reductions[["single-cell"]]@aggregation, "single-cell")
+})
+
+test_that("run_pca respects aggregation parameter - pseudobulk only", {
+  sceval <- create_processed_scTypeEval()
+  
+  sceval <- run_pca(
+    sceval,
+    aggregation = "pseudobulk",
+    ndim = 5,
+    verbose = FALSE
+  )
+  
+  # Should have PCA only for pseudobulk
+  expect_true("pseudobulk" %in% names(sceval@reductions))
+  expect_s4_class(sceval@reductions[["pseudobulk"]], "dim_red")
+  expect_equal(sceval@reductions[["pseudobulk"]]@aggregation, "pseudobulk")
+})
+
+test_that("run_pca respects aggregation parameter - both", {
+  sceval <- create_processed_scTypeEval()
+  
+  sceval <- run_pca(
+    sceval,
+    aggregation = c("single-cell", "pseudobulk"),
+    ndim = 5,
+    verbose = FALSE
+  )
+  
+  # Should have PCA for both
+  expect_true("single-cell" %in% names(sceval@reductions))
+  expect_true("pseudobulk" %in% names(sceval@reductions))
+  expect_s4_class(sceval@reductions[["single-cell"]], "dim_red")
+  expect_s4_class(sceval@reductions[["pseudobulk"]], "dim_red")
+})
+
+test_that("run_pca stores correct aggregation in dim_red object", {
+  sceval <- create_processed_scTypeEval()
+  
+  sceval <- run_pca(
+    sceval,
+    aggregation = c("single-cell", "pseudobulk"),
+    ndim = 5,
+    verbose = FALSE
+  )
+  
+  # Verify aggregation slot matches key name
+  sc_dimred <- sceval@reductions[["single-cell"]]
+  pb_dimred <- sceval@reductions[["pseudobulk"]]
+  
+  expect_equal(sc_dimred@aggregation, "single-cell")
+  expect_equal(pb_dimred@aggregation, "pseudobulk")
+})
+
+test_that("run_pca produces different results for single-cell vs pseudobulk", {
+  sceval <- create_processed_scTypeEval()
+  
+  sceval <- run_pca(
+    sceval,
+    aggregation = c("single-cell", "pseudobulk"),
+    ndim = 5,
+    verbose = FALSE
+  )
+  
+  sc_embeddings <- sceval@reductions[["single-cell"]]@embeddings
+  pb_embeddings <- sceval@reductions[["pseudobulk"]]@embeddings
+  
+  # Dimensions should differ (single-cell has more observations)
+  expect_true(ncol(sc_embeddings) > ncol(pb_embeddings))
+})
+
+test_that("run_pca errors when aggregation not in data", {
+  sceval <- create_processed_scTypeEval()
+  
+  # Try to run PCA with non-existent aggregation type
+  expect_error(
+    run_pca(
+      sceval,
+      aggregation = "invalid-aggregation",
+      ndim = 5,
+      verbose = FALSE
+    ),
+    "No normalization slot found for"
+  )
+})
