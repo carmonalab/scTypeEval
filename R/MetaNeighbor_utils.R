@@ -3,13 +3,13 @@
 # Function to keep filtering of min samples and cells but on raw counts
 get_filtered_raw_matrix <- function(scTypeEval){
    
-   if(is.null(sceval@data$`single-cell`)){
+   if(is.null(scTypeEval@data$`single-cell`)){
       stop("No normalization slot found. Please run before `run_processing_data()`.\n")
    }
    
-   k <- colnames(sceval@data$`single-cell`@matrix)
-   sub <- list(counts = sceval@counts[,k],
-               metadata = sceval@metadata[k,])
+   k <- colnames(scTypeEval@data$`single-cell`@matrix)
+   sub <- list(counts = scTypeEval@counts[,k],
+               metadata = scTypeEval@metadata[k,])
    return(sub)
 }
    
@@ -69,7 +69,7 @@ MN_variableGenes <- function(mat,
                              exp_labels){
    sce <- get_sce(counts = mat)
    
-   var_genes = MetaNeighbor::variableGenes(dat = sce,
+   var_genes <- MetaNeighbor::variableGenes(dat = sce,
                                            exp_labels = exp_labels)
    
    return(var_genes)
@@ -92,7 +92,7 @@ MN_supervised <- function(scTypeEval,
    # Metaneighbor required conversion of celltypes into a oneshot dataframe
    labs <- filt_list$metadata[[ident]]
    # Create one-hot encoding
-   one_hot <- model.matrix(~ labs - 1)
+   one_hot <- stats::model.matrix(~ labs - 1)
    # Clean column names
    colnames(one_hot) <- sub("^labs", "", colnames(one_hot))
    # Preserve row names
@@ -159,7 +159,7 @@ MN_unsupervised <- function(scTypeEval,
                               threshold = 0,
                               n_digits = 3,
                               collapse_duplicates = T) |>
-      mutate(match_numeric = ifelse(Match_type == "Reciprocal_top_hit",
+      dplyr::mutate(match_numeric = ifelse(Match_type == "Reciprocal_top_hit",
                                     0, 1))
    # generate new matrix to populate with reciprocal_top_hit (0) or not (1)
    res_match <- matrix(
@@ -209,8 +209,8 @@ topHitsByStudy = function(auroc, threshold = 0.9, n_digits = 2, collapse_duplica
       tidyr::pivot_longer(cols = -ref_cell_type,
                           names_to = "target_cell_type",
                           values_to = "auroc") %>%
-      dplyr::mutate(ref_study = getStudyId(ref_cell_type),
-                    target_study = getStudyId(target_cell_type)) %>%
+      dplyr::mutate(ref_study = MetaNeighbor::getStudyId(ref_cell_type),
+                    target_study = MetaNeighbor::getStudyId(target_cell_type)) %>%
       # CHANGE: keep self - remove filter
       #dplyr::filter(ref_study != target_study) %>%
       dplyr::group_by(ref_cell_type, target_study) %>%
@@ -236,7 +236,7 @@ topHitsByStudy = function(auroc, threshold = 0.9, n_digits = 2, collapse_duplica
    
    # final formatting
    result <- result %>%
-      dplyr::arrange(desc(auroc)) %>%
+      dplyr::arrange(dplyr::desc(auroc)) %>%
       dplyr::mutate(auroc = round(auroc, n_digits)) %>%    
       dplyr::mutate(Match_type = ifelse(is_reciprocal,
                                         "Reciprocal_top_hit",
