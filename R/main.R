@@ -1249,12 +1249,12 @@ run_dissimilarity <- function(scTypeEval,
          stop("No processed data slot found for ", slot ,
               ". Please run before `run_processing_data()` or add a data assay.\n")
       }
-      gl <- check_genelist(scTypeEval, gene_list, verbose = verbose)
+      gene_list <- check_genelist(scTypeEval, gene_list, verbose = verbose)
       black_list <- check_blacklist(scTypeEval, black_list, verbose = verbose)
       ident_name <- names(mat_ident@ident)
       mat_ident <- general_filtering(mat_ident,
                        black_list = black_list,
-                       gene_list = gl,
+                       gene_list = gene_list,
                        verbose = verbose)
       mat <- mat_ident@matrix
    }
@@ -1316,7 +1316,7 @@ run_dissimilarity <- function(scTypeEval,
    rr <- methods::new("dissimilarity_assay",
                       dissimilarity = dist,
                       method = method,
-                      gene_list = gl,
+                      gene_list = gene_list,
                       black_list = black_list,
                       aggregation = aggregation,
                       ident = ident,
