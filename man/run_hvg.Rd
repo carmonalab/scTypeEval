@@ -22,7 +22,8 @@ run_hvg(
 \item{scTypeEval}{An \code{scTypeEval} object containing normalized data (see \code{run_processing_data}).}
 
 \item{var_method}{Character string specifying the method for identifying highly
-variable genes. Options: \code{"scran"} (default) or \code{"basic"}.}
+variable genes. Options: \code{"scran"} (default), \code{"basic"}, or \code{"MetaNeighbor"}
+for using \link[MetaNeighbor]{variableGenes}.}
 
 \item{ngenes}{Integer specifying the number of highly variable genes to retain
 (default: \code{2000}).}
@@ -68,6 +69,9 @@ stored in the \code{gene_lists} slot under \code{"HVG"}.
 model gene-specific variance and identify biologically variable genes.
 \item \code{"basic"}: A simple variance-to-mean approach ranking genes by
 coefficient of variation, selecting the top \code{ngenes}.
+\item \code{"MetaNeighbor"}: Identifies genes with high variance compared to their median expression
+(top quartile) within each experiment. Automatically selects the top variable genes based on variance median.
+See \link[MetaNeighbor]{variableGenes}.
 }
 }
 }

@@ -57,6 +57,11 @@ the same cell type relative to cells of other types. For each cell,
 it computes the average distance to other cells in its group and to
 cells outside its group, then combines these into a normalized score (higher = better).
 Scores are then averaged per cell type. This metric is similar in spirit to a \code{"2label_silhouette"}.
+\item \code{"MetaNeighbor_Supervised"} – Measures how similar cells are within
+the same cell type relative to cells of other types. For each cell,
+it computes the average distance to other cells in its group and to
+cells outside its group, then combines these into a normalized score (higher = better).
+Scores are then averaged per cell type. This metric is similar in spirit to a \code{"2label_silhouette"}.
 }
 Default: all supported metrics.}
 
