@@ -282,16 +282,38 @@ test_that("get_consistency returns numeric measures", {
   expect_true(is.numeric(consistency$measure))
 })
 
-
-test_that("get_consistency errors without dissimilarity data", {
+test_that("get_consistency runs dissimilarity-based and Supervised Metaneighbor", {
   sceval <- create_processed_scTypeEval()
+  sceval <- run_dissimilarity(sceval, method = "Pseudobulk:Euclidean", 
+                              reduction = FALSE, verbose = FALSE)
   
-  expect_error(
-    get_consistency(
-      sceval,
-      dissimilarity_slot = "Pseudobulk:Euclidean",
-      consistency_metric = "silhouette",
-      verbose = FALSE
-    )
+  consistency <- get_consistency(
+    sceval,
+    dissimilarity_slot = "Pseudobulk:Euclidean",
+    consistency_metric = c("silhouette","MetaNeighbor_Supervised"),
+    verbose = FALSE
   )
+  
+  expect_true(is.numeric(consistency$measure))
+})
+
+
+test_that("get_consistency computes MetaNeighbor_Supervised without dissimilarity assays", {
+  skip_if_not_installed("MetaNeighbor")
+
+  sceval <- create_processed_scTypeEval()
+
+  expect_warning(
+    consistency <- get_consistency(
+      sceval,
+      consistency_metric = "MetaNeighbor_Supervised",
+      verbose = FALSE
+    ),
+    "No dissimilarity assays found"
+  )
+
+  expect_s3_class(consistency, "data.frame")
+  expect_true(nrow(consistency) > 0)
+  expect_true(all(consistency$consistency_metric == "MetaNeighbor_Supervised"))
+  expect_true(all(is.na(consistency$dissimilarity_method)))
 })
