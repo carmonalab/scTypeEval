@@ -317,3 +317,76 @@ test_that("get_consistency computes MetaNeighbor_Supervised without dissimilarit
   expect_true(all(consistency$consistency_metric == "MetaNeighbor_Supervised"))
   expect_true(all(is.na(consistency$dissimilarity_method)))
 })
+
+
+test_that("get_consistency computes nsa_silhouette without dissimilarity assays", {
+  sceval <- create_processed_scTypeEval()
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
+
+  consistency <- get_consistency(
+    sceval,
+    consistency_metric = "nsa_silhouette",
+    verbose = FALSE
+  )
+
+  expect_s3_class(consistency, "data.frame")
+  expect_true(nrow(consistency) > 0)
+  expect_true(all(consistency$consistency_metric == "nsa_silhouette"))
+  expect_true(all(is.na(consistency$dissimilarity_method)))
+  expect_true(is.numeric(consistency$measure))
+})
+
+
+test_that("get_consistency computes nsa_cLISI without dissimilarity assays", {
+  skip_if_not_installed("scIntegrationMetrics")
+
+  sceval <- create_processed_scTypeEval()
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
+
+  consistency <- get_consistency(
+    sceval,
+    consistency_metric = "nsa_cLISI",
+    verbose = FALSE
+  )
+
+  expect_s3_class(consistency, "data.frame")
+  expect_true(nrow(consistency) > 0)
+  expect_true(all(consistency$consistency_metric == "nsa_cLISI"))
+  expect_true(all(is.na(consistency$dissimilarity_method)))
+  expect_true(is.numeric(consistency$measure))
+})
+
+
+
+test_that("get_consistency computes all non-dissimilarity metrics", {
+  skip_if_not_installed("MetaNeighbor")
+  skip_if_not_installed("scIntegrationMetrics")
+  skip_if_not_installed("ROGUE")
+  skip_if_not_installed("tibble")
+
+  suppressPackageStartupMessages(library(tibble))
+
+  sceval <- create_processed_scTypeEval(small = FALSE, hvg = TRUE)
+  sceval <- run_pca(sceval, ndim = 5, verbose = FALSE)
+
+  expected_metrics <- c(
+    "MetaNeighbor_Supervised",
+    "nsa_silhouette",
+    "nsa_cLISI"
+  )
+
+  expect_warning(
+    consistency <- get_consistency(
+      sceval,
+      consistency_metric = expected_metrics,
+      verbose = FALSE
+    ),
+    "No dissimilarity assays found"
+  )
+
+  expect_s3_class(consistency, "data.frame")
+  expect_true(nrow(consistency) > 0)
+  expect_true(all(expected_metrics %in% consistency$consistency_metric))
+  expect_true(all(is.na(consistency$dissimilarity_method)))
+  expect_true(is.numeric(consistency$measure))
+})

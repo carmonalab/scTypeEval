@@ -66,9 +66,10 @@ nsa_rogue <- function(scTypeEval,
                       slot = "single-cell"){
    
    
-   emb <- scTypeEval@reductions[["single-cell"]]@embeddings
+   emb <- scTypeEval@reductions[[slot]]@embeddings
    labels <- scTypeEval@reductions[[slot]]@ident[[1]]
-   hvg <- scTypeEval@reductions[["single-cell"]]@gene_list
+   ident_name <- names(scTypeEval@reductions[[slot]]@ident)
+   hvg <- scTypeEval@reductions[[slot]]@gene_list
    rogue_counts <- scTypeEval@counts[hvg, colnames(emb)]
    
    rogue_scores <- ROGUE::rogue(rogue_counts,
